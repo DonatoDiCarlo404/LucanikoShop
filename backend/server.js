@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -15,12 +16,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 
+// Routes
+app.use('/api/auth', authRoutes);
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connesso a MongoDB'))
   .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
 
-// Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Benvenuto in LucanikoShop API' });
 });

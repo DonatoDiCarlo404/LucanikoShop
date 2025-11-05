@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
@@ -91,8 +92,19 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Indice per ricerca email
-userSchema.index({ email: 1 });
+// Hash della password prima di salvare
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
+    next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Metodo per confrontare la password
+userSchema.methods.matchPassword = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
 
 const User = mongoose.model('User', userSchema);
 
