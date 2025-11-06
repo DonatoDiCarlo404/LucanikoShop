@@ -99,8 +99,8 @@ export const googleCallback = async (req, res) => {
     const token = generateToken(req.user._id);
     
     // Reindirizza al frontend con il token
-    res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+    res.redirect(`http://localhost:5173/auth/success?token=${token}`);
   } catch (error) {
-    res.redirect('http://localhost:3000/auth/error');
+    res.redirect('http://localhost:5173/auth/error');
   }
 };
