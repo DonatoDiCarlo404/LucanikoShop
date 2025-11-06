@@ -89,3 +89,18 @@ export const getProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Google OAuth callback
+// @route   GET /api/auth/google/callback
+// @access  Public
+export const googleCallback = async (req, res) => {
+  try {
+    // L'utente è già stato autenticato da Passport
+    const token = generateToken(req.user._id);
+    
+    // Reindirizza al frontend con il token
+    res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+  } catch (error) {
+    res.redirect('http://localhost:3000/auth/error');
+  }
+};
