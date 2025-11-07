@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.use(passport.initialize());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/products', productRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

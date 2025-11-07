@@ -5,16 +5,23 @@ import cloudinary from '../config/cloudinary.js';
 // @access  Private (seller/admin)
 export const uploadProductImage = async (req, res) => {
   try {
+    console.log('🔵 uploadProductImage chiamato');
+    console.log('📁 req.file:', req.file);
+    console.log('👤 req.user:', req.user);
+    
     if (!req.file) {
+      console.log('❌ Nessun file trovato');
       return res.status(400).json({ message: 'Nessuna immagine caricata' });
     }
 
+    console.log('✅ Immagine caricata:', req.file.path);
     res.status(200).json({
       message: 'Immagine caricata con successo',
       url: req.file.path,
       public_id: req.file.filename,
     });
   } catch (error) {
+    console.log('❌ Errore in uploadProductImage:', error);
     res.status(500).json({ message: error.message });
   }
 };

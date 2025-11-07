@@ -45,3 +45,97 @@ export const authAPI = {
     return handleResponse(response);
   },
 };
+
+// Products API
+export const productsAPI = {
+  // Ottieni tutti i prodotti (con filtri)
+  getAll: async (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_URL}/products?${queryString}`);
+    return handleResponse(response);
+  },
+
+  // Ottieni singolo prodotto
+  getById: async (id) => {
+    const response = await fetch(`${API_URL}/products/${id}`);
+    return handleResponse(response);
+  },
+
+  // Crea prodotto (seller/admin)
+  create: async (productData, token) => {
+    const response = await fetch(`${API_URL}/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productData),
+    });
+    return handleResponse(response);
+  },
+
+  // Aggiorna prodotto (seller/admin)
+  update: async (id, productData, token) => {
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(productData),
+    });
+    return handleResponse(response);
+  },
+
+  // Elimina prodotto (seller/admin)
+  delete: async (id, token) => {
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Aggiungi immagine al prodotto
+  addImage: async (id, imageData, token) => {
+    const response = await fetch(`${API_URL}/products/${id}/images`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(imageData),
+    });
+    return handleResponse(response);
+  },
+
+  // Ottieni i prodotti del seller loggato
+  getMyProducts: async (token) => {
+    const response = await fetch(`${API_URL}/products/seller/my-products`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};
+
+// Upload API
+export const uploadAPI = {
+  uploadProductImage: async (file, token) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${API_URL}/upload/product`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    return handleResponse(response);
+  },
+};
