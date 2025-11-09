@@ -40,6 +40,19 @@ export const admin = (req, res, next) => {
 // Middleware per verificare se l'utente è seller
 export const seller = (req, res, next) => {
   if (req.user && (req.user.role === 'seller' || req.user.role === 'admin')) {
+    // Gli admin bypassano sempre il controllo isApproved
+    if (req.user.role === 'admin') {
+      return next();
+    }
+    
+    // I seller devono essere approvati
+    if (req.user.role === 'seller' && !req.user.isApproved) {
+      return res.status(403).json({ 
+        message: 'Account in attesa di approvazione',
+        needsApproval: true 
+      });
+    }
+    
     next();
   } else {
     res.status(403).json({ message: 'Accesso negato, solo seller' });

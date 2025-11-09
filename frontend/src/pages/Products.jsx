@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Badge, Spinner, Alert, Form, InputGroup, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Spinner, Alert, Form, InputGroup, Button } from 'react-bootstrap';
 import { productsAPI } from '../services/api';
+import ProductCard from '../components/ProductCard';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -9,8 +9,6 @@ const Products = () => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadProducts();
@@ -103,46 +101,7 @@ const Products = () => {
         <Row>
           {products.map((product) => (
             <Col key={product._id} md={3} sm={6} className="mb-4">
-              <Card
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/products/${product._id}`)}
-              >
-                {product.images.length > 0 ? (
-                  <Card.Img
-                    variant="top"
-                    src={product.images[product.images.length - 1].url}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      height: '200px',
-                      backgroundColor: '#f0f0f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <span className="text-muted">Nessuna immagine</span>
-                  </div>
-                )}
-                <Card.Body>
-                  <Card.Title style={{ fontSize: '1rem', height: '48px', overflow: 'hidden' }}>
-                    {product.name}
-                  </Card.Title>
-                  
-                  <Badge bg="secondary" className="mb-2">
-                    {product.category}
-                  </Badge>
-                  
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5 className="text-primary mb-0">€{product.price}</h5>
-                    <small className="text-muted">
-                      {product.stock > 0 ? `${product.stock} ${product.unit}` : 'Esaurito'}
-                    </small>
-                  </div>
-                </Card.Body>
-              </Card>
+              <ProductCard product={product} />
             </Col>
           ))}
         </Row>

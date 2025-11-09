@@ -18,6 +18,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // Controlla se il seller non è approvato
+  if (user.role === 'seller' && !user.isApproved) {
+    return <Navigate to="/pending-approval" replace />;
+  }
+
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return (
       <Container className="py-5">

@@ -54,10 +54,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register
-  const register = async (name, email, password, role = 'buyer') => {
+  const register = async (name, email, password, role = 'buyer', businessName = '', vatNumber = '') => {
     try {
       setError(null);
-      const data = await authAPI.register({ name, email, password, role });
+      const userData = { name, email, password, role };
+      
+      // Aggiungi dati business solo se è un seller e sono stati forniti
+      if (role === 'seller') {
+        if (businessName) userData.businessName = businessName;
+        if (vatNumber) userData.vatNumber = vatNumber;
+      }
+      
+      const data = await authAPI.register(userData);
       
       localStorage.setItem('token', data.token);
       setUser(data);

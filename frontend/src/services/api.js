@@ -139,3 +139,58 @@ export const uploadAPI = {
     return handleResponse(response);
   },
 };
+
+// Admin API
+export const adminAPI = {
+  // Get statistiche
+  getStats: async (token) => {
+    const response = await fetch(`${API_URL}/admin/stats`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Get venditori in attesa
+  getPendingSellers: async (token) => {
+    const response = await fetch(`${API_URL}/admin/pending-sellers`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Get tutti i venditori
+  getAllSellers: async (token) => {
+    const response = await fetch(`${API_URL}/admin/sellers`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Approva venditore
+  approveSeller: async (id, token) => {
+    const response = await fetch(`${API_URL}/admin/approve-seller/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Rifiuta venditore
+  rejectSeller: async (id, token) => {
+    const response = await fetch(`${API_URL}/admin/reject-seller/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};

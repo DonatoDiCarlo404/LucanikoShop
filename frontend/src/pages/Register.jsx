@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
+import { Container, Form, Button, Card, Alert, InputGroup } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 
@@ -9,6 +9,10 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('buyer');
+  const [businessName, setBusinessName] = useState('');
+  const [vatNumber, setVatNumber] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -29,10 +33,16 @@ const Register = () => {
 
     setLoading(true);
 
-    const result = await register(name, email, password, role);
+    const result = await register(name, email, password, role, businessName, vatNumber);
 
     if (result.success) {
-      navigate('/');
+      // Se è un seller, vai alla pagina pending approval
+      if (role === 'seller') {
+        navigate('/pending-approval');
+      } else {
+        // Se è un buyer, vai alla home
+        navigate('/');
+      }
     } else {
       setError(result.error);
     }
@@ -73,24 +83,40 @@ const Register = () => {
 
             <Form.Group className="mb-3" controlId="password">
               <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Inserisci password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <InputGroup>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Inserisci password (min 6 caratteri)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Button 
+                  variant="outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </Button>
+              </InputGroup>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="confirmPassword">
               <Form.Label>Conferma Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Conferma password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <InputGroup>
+                <Form.Control
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Conferma password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+                <Button 
+                  variant="outline-secondary"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? '🙈' : '👁️'}
+                </Button>
+              </InputGroup>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="role">
@@ -100,6 +126,39 @@ const Register = () => {
                 <option value="seller">Venditore</option>
               </Form.Select>
             </Form.Group>
+
+            {/* Campi extra per venditori */}
+            {role === 'seller' && (
+              <>
+                <Alert variant="info" className="small">
+                  <strong>ℹ️ Info Venditore:</strong> Questi campi sono opzionali ma consigliati per velocizzare l'approvazione.
+                </Alert>
+                
+                <Form.Group className="mb-3" controlId="businessName">
+                  <Form.Label>Nome Azienda</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Es: La Bottega del Gusto"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="vatNumber">
+                  <Form.Label>Partita IVA</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Es: 12345678901"
+                    value={vatNumber}
+                    onChange={(e) => setVatNumber(e.target.value)}
+                    maxLength={11}
+                  />
+                  <Form.Text className="text-muted">
+                    11 cifre per P.IVA italiana
+                  </Form.Text>
+                </Form.Group>
+              </>
+            )}
 
             <Button variant="primary" type="submit" className="w-100 mb-3" disabled={loading}>
               {loading ? 'Caricamento...' : 'Registrati'}
