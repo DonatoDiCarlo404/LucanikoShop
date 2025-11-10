@@ -6,7 +6,7 @@ import cloudinary from '../config/cloudinary.js';
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, page = 1, limit = 12 } = req.query;
+    const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
 
     // Costruisci query
     let query = { isActive: true };
@@ -31,11 +31,26 @@ export const getProducts = async (req, res) => {
     // Paginazione
     const skip = (page - 1) * limit;
 
+    // Determina l'ordinamento
+    let sortOptions = { createdAt: -1 }; // default: più recenti
+
+    if (sortBy === 'price-asc') {
+      sortOptions = { price: 1 };
+    } else if (sortBy === 'price-desc') {
+      sortOptions = { price: -1 };
+    } else if (sortBy === 'name') {
+      sortOptions = { name: 1 };
+    } else if (sortBy === 'date-asc') {
+      sortOptions = { createdAt: 1 };
+    } else if (sortBy === 'date-desc') {
+      sortOptions = { createdAt: -1 };
+    }
+
     const products = await Product.find(query)
       .populate('seller', 'name businessName email')
       .limit(Number(limit))
       .skip(skip)
-      .sort({ createdAt: -1 });
+      .sort(sortOptions);
 
     const total = await Product.countDocuments(query);
 
