@@ -1,10 +1,32 @@
+import { useState } from 'react';
 import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/authContext';
+import { checkoutAPI } from '../services/api';
 
 const Cart = () => {
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+
+  const handleCheckout = async () => {
+    if (cartCount === 0) return;
+
+    setIsCheckingOut(true);
+    try {
+      const { sessionId, url } = await checkoutAPI.createSession(cartItems, user.token);
+
+      // Reindirizza a Stripe Checkout
+      window.location.href = url;
+    } catch (error) {
+      console.error('Errore durante il checkout:', error);
+      alert('Errore durante il checkout. Riprova.');
+      setIsCheckingOut(false);
+    }
+  };
+
 
   if (cartCount === 0) {
     return (
@@ -113,8 +135,13 @@ const Cart = () => {
               </ListGroup>
 
               <div className="d-grid gap-2 mt-3">
-                <Button variant="primary" size="lg">
-                  Procedi al Checkout
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut}
+                >
+                  {isCheckingOut ? 'Caricamento...' : 'Procedi al Checkout'}
                 </Button>
                 <Button variant="outline-secondary" onClick={() => navigate('/products')}>
                   ← Continua lo shopping

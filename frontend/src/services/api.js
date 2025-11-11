@@ -1,3 +1,5 @@
+import { createSession } from "react-router-dom";
+
 const API_URL = 'http://localhost:5000/api';
 
 // Helper per gestire le chiamate fetch
@@ -190,6 +192,22 @@ export const adminAPI = {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
+    });
+    return handleResponse(response);
+  },
+};
+
+// Checkout API
+export const checkoutAPI = {
+  // Crea sessione di Stripe Checkout
+  createSession: async (cartItems, token) => {
+    const response = await fetch(`${API_URL}/checkout/create-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ cartItems }),
     });
     return handleResponse(response);
   },
