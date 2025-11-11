@@ -14,12 +14,13 @@ import {
 } from 'react-bootstrap';
 import { productsAPI } from '../services/api';
 import { useAuth } from '../context/authContext';
+import { useCart } from '../context/CartContext';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+  const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,9 +42,9 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    // TODO: implementare carrello (Giorno 10-11)
-    alert('Funzionalità carrello disponibile prossimamente! 🛒');
-  };
+  addToCart(product, 1);
+  alert(`✅ ${product.name} aggiunto al carrello!`);
+};
 
   if (loading) {
     return (

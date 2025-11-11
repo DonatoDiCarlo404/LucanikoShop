@@ -12,62 +12,67 @@ import ProductForm from './pages/ProductForm';
 import MyProducts from './pages/MyProducts';
 import AdminDashboard from './pages/AdminDashboard';
 import PendingApproval from './pages/PendingApproval';
+import { CartProvider } from './context/CartContext';
+import Cart from './pages/Cart';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/auth/success" element={<AuthSuccess />} />
-          <Route path="/pending-approval" element={<PendingApproval />} />
-          
-          {/* Prodotti pubblici */}
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          
-          {/* Prodotti protetti (solo seller/admin) */}
-          <Route
-            path="/my-products"
-            element={
-              <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                <MyProducts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/products/new"
-            element={
-              <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                <ProductForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/products/edit/:id"
-            element={
-              <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                <ProductForm />
-              </ProtectedRoute>
-            }
-          />
-          
-          {/* Admin routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
+      <CartProvider>
+        <Router>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/auth/success" element={<AuthSuccess />} />
+            <Route path="/pending-approval" element={<PendingApproval />} />
+
+            {/* Prodotti pubblici */}
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+
+            {/* Prodotti protetti (solo seller/admin) */}
+            <Route
+              path="/my-products"
+              element={
+                <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                  <MyProducts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products/new"
+              element={
+                <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                  <ProductForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products/edit/:id"
+              element={
+                <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                  <ProductForm />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin routes */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </CartProvider>
     </AuthProvider>
   );
 }
