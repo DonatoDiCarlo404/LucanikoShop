@@ -23,6 +23,10 @@ export const createCheckoutSession = async (req, res) => {
                     images: item.images && item.images.length > 0
                         ? [item.images[item.images.length - 1].url]
                         : [],
+                    metadata: {
+                        productId: item._id,
+                        sellerId: item.seller,
+                    },
                 },
                 unit_amount: Math.round(item.price * 100), // Converti in centesimi
             },
@@ -37,8 +41,19 @@ export const createCheckoutSession = async (req, res) => {
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
             customer_email: req.user.email,
+            billing_address_collection: 'required', // Richiedi indirizzo di fatturazione
+            shipping_address_collection: {
+                allowed_countries: ['IT', 'FR', 'DE', 'ES', 'US'], // Paesi supportati per spedizione
+            },
             metadata: {
                 userId: req.user._id.toString(),
+                cartItems: JSON.stringify(cartItems.map(item => ({
+                    productId: item._id,
+                    sellerId: item.seller,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                }))),
             },
         });
 

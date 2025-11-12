@@ -103,6 +103,11 @@ const orderSchema = new mongoose.Schema(
     paidAt: {
       type: Date
     },
+    stripeSessionId: {
+      type: String,
+      unique: true,
+      sparse: true, // Permette null values per ordini non Stripe
+    },
     isDelivered: {
       type: Boolean,
       default: false
