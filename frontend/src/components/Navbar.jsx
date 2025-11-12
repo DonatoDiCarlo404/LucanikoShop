@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navbar as BSNavbar, Nav, Container, Badge, Button } from 'react-bootstrap';
+import { Navbar as BSNavbar, Nav, Container, Badge, Button, NavDropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { adminAPI } from '../services/api';
@@ -85,14 +85,23 @@ const Navbar = () => {
 
           <Nav>
             {isAuthenticated ? (
-              <>
-                <BSNavbar.Text className="me-3">
-                  Ciao, <strong>{user.name}</strong> ({user.role})
-                </BSNavbar.Text>
-                <Button variant="outline-light" size="sm" onClick={handleLogout}>
+              <NavDropdown
+                title={
+                  <>
+                    Ciao, {user.name} <Badge bg="secondary">{user.role}</Badge>
+                  </>
+                }
+                id="user-dropdown"
+                align="end"
+              >
+                <NavDropdown.Item onClick={() => navigate('/orders')}>
+                  I Miei Ordini
+                </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={handleLogout}>
                   Logout
-                </Button>
-              </>
+                </NavDropdown.Item>
+              </NavDropdown>
             ) : (
               <>
                 <Nav.Link as={Link} to="/login">
@@ -103,10 +112,10 @@ const Navbar = () => {
                 </Nav.Link>
               </>
             )}
-          </Nav>
-        </BSNavbar.Collapse>
-      </Container>
-    </BSNavbar>
+        </Nav>
+      </BSNavbar.Collapse>
+    </Container>
+    </BSNavbar >
   );
 };
 

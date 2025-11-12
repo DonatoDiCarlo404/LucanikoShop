@@ -197,6 +197,31 @@ export const adminAPI = {
   },
 };
 
+// Order API
+export const orderAPI = {
+  // Ottieni tutti gli ordini dell'utente
+  getMyOrders: async (token) => {
+    const response = await fetch(`${API_URL}/orders/my-orders`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Ottieni dettagli di un singolo ordine
+  getOrderById: async (orderId, token) => {
+    const response = await fetch(`${API_URL}/orders/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};
+
 // Checkout API
 export const checkoutAPI = {
   // Crea sessione di Stripe Checkout

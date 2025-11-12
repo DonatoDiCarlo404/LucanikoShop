@@ -16,6 +16,8 @@ import { CartProvider } from './context/CartContext';
 import Cart from './pages/Cart';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
+import OrderHistory from './pages/OrderHistory';
+import OrderDetail from './pages/OrderDetail';
 
 function App() {
   return (
@@ -59,6 +61,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['seller', 'admin']}>
                   <ProductForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <OrderHistory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderDetail />
                 </ProtectedRoute>
               }
             />
