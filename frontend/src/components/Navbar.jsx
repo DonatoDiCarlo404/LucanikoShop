@@ -45,10 +45,10 @@ const Navbar = () => {
         <BSNavbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/products">
-              Prodotti
+              <span><i className="bi bi-journal-arrow-up">  Catalogo</i></span>
             </Nav.Link>
             <Nav.Link as={Link} to="/cart">
-              Carrello
+              <span><i className="bi bi-cart"> Carrello</i></span>
               {cartCount > 0 && (
                 <Badge bg="danger" className="ms-2">
                   {cartCount}
@@ -69,10 +69,10 @@ const Navbar = () => {
             {isAuthenticated && user.role === 'admin' && (
               <>
                 <Nav.Link as={Link} to="/my-products">
-                  Gestione prodotti
+                  <span><i className="bi bi-kanban"></i> Gestione prodotti</span>
                 </Nav.Link>
                 <Nav.Link as={Link} to="/admin/dashboard">
-                  🛡️ Dashboard Admin
+                  <span><i className="bi bi-shield-lock"></i> Dashboard Admin</span>
                   {pendingCount > 0 && (
                     <Badge bg="warning" className="ms-2">
                       {pendingCount}
@@ -95,11 +95,11 @@ const Navbar = () => {
                 align="end"
               >
                 <NavDropdown.Item onClick={() => navigate('/orders')}>
-                  I Miei Ordini
+                  <span><i className="bi bi-list-ul me-2"></i> I Miei Ordini</span>
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={handleLogout}>
-                  Logout
+                  <span><i className="bi bi-power me-2"></i> Logout</span>
                 </NavDropdown.Item>
               </NavDropdown>
             ) : (

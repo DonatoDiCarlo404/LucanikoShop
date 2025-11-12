@@ -7,7 +7,7 @@ import { productsAPI, uploadAPI } from '../services/api';
 const ProductForm = () => {
   const { id } = useParams();
   const isEditMode = !!id;
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -18,13 +18,13 @@ const ProductForm = () => {
     expiryDate: '',
     tags: '',
   });
-  
+
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -94,7 +94,7 @@ const ProductForm = () => {
       // 2. Se c'è una nuova immagine
       if (image) {
         setUploading(true);
-        
+
         // 2a. Se in edit mode, elimina le vecchie immagini da Cloudinary
         if (isEditMode && currentProduct && currentProduct.images.length > 0) {
           console.log('🗑️ Eliminazione vecchie immagini...');
@@ -116,12 +116,12 @@ const ProductForm = () => {
             }
           }
         }
-        
+
         // 2b. Upload nuova immagine
         console.log('📤 Uploading image...');
         const uploadResponse = await uploadAPI.uploadProductImage(image, user.token);
         console.log('✅ Upload response:', uploadResponse);
-        
+
         // 2c. Aggiungi l'immagine al prodotto
         console.log('🔗 Adding image to product...');
         await productsAPI.addImage(
@@ -162,9 +162,9 @@ const ProductForm = () => {
       <Card>
         <Card.Body>
           <h2 className="mb-4">{isEditMode ? 'Modifica Prodotto' : 'Nuovo Prodotto'}</h2>
-          
+
           {error && <Alert variant="danger">{error}</Alert>}
-          
+
           <Form onSubmit={handleSubmit}>
             <Row>
               <Col md={8}>
@@ -316,14 +316,14 @@ const ProductForm = () => {
                     ? 'Caricamento immagine...'
                     : 'Salvataggio...'
                   : isEditMode
-                  ? 'Aggiorna Prodotto'
-                  : 'Crea Prodotto'}
+                    ? <><i className="bi bi-pencil-square"> Aggiorna Prodotto</i></>
+                    : <><i className="bi bi-node-plus"> Crea Prodotto</i></>}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => navigate('/my-products')}
               >
-                Annulla
+                <span><i className="bi bi-slash-square"> Annulla</i></span>
               </Button>
             </div>
           </Form>

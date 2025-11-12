@@ -86,7 +86,7 @@ const Products = () => {
 
   return (
     <Container className="py-5">
-      <h2 className="mb-4">Prodotti</h2>
+      <h2 className="mb-4">Catalogo Prodotti</h2>
 
       {/* Filtri */}
       <Row className="mb-3">
@@ -100,7 +100,7 @@ const Products = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
               <Button variant="primary" type="submit">
-                🔍 Cerca
+                <span><i className="bi bi-search"> Cerca</i></span>
               </Button>
             </InputGroup>
           </Form>
@@ -139,7 +139,7 @@ const Products = () => {
               step="0.01"
             />
             <Button variant="primary" onClick={handleApplyPriceFilter}>
-              Cerca
+              <span><i className="bi bi-search"> Cerca</i></span>
             </Button>
           </InputGroup>
         </Col>
@@ -162,7 +162,7 @@ const Products = () => {
         </Col>
         <Col md={4}>
           <Button variant="outline-secondary" onClick={handleResetFilters} className="w-100">
-            🔄 Resetta filtri
+            <span><i className="bi bi-x-octagon"> Reset filtri</i></span>
           </Button>
         </Col>
         <Col md={4}>

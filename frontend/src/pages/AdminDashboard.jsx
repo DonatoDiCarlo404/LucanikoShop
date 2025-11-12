@@ -79,7 +79,7 @@ const AdminDashboard = () => {
   return (
     <Container className="py-5">
       <h2 className="mb-4">
-        🛡️ Admin Dashboard
+        <span><i className="bi bi-shield-shaded text-primary"></i> Dashboard Admin</span>
       </h2>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
           eventKey="pending" 
           title={
             <span>
-              ⏳ In Attesa 
+              <span><i className="bi bi-hourglass-split text-warning"></i> In Attesa</span> 
               {pendingSellers.length > 0 && (
                 <Badge bg="warning" className="ms-2">{pendingSellers.length}</Badge>
               )}
@@ -189,7 +189,7 @@ const AdminDashboard = () => {
         </Tab>
 
         {/* Tab Tutti i Venditori */}
-        <Tab eventKey="all" title="📋 Tutti i Venditori">
+        <Tab eventKey="all" title={<span><i className="bi bi-person-lines-fill text-success"></i> Tutti i Venditori</span>}>
           <Card>
             <Card.Body>
               {allSellers.length === 0 ? (

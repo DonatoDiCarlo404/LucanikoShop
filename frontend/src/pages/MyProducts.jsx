@@ -100,14 +100,14 @@ const MyProducts = () => {
                       size="sm"
                       onClick={() => navigate(`/products/edit/${product._id}`)}
                     >
-                      Modifica
+                      <span><i className="bi bi-pencil-square"> Modifica</i></span>
                     </Button>
                     <Button
                       variant="outline-danger"
                       size="sm"
                       onClick={() => handleDelete(product._id)}
                     >
-                      Elimina
+                      <span><i className="bi bi-trash3"> Elimina</i></span>
                     </Button>
                   </div>
                 </Card.Body>
