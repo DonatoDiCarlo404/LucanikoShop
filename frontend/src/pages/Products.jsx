@@ -15,10 +15,11 @@ const Products = () => {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [resetTrigger, setResetTrigger] = useState(0);
 
   useEffect(() => {
     loadProducts();
-  }, [category, sortBy, page]);
+  }, [category, sortBy, page, resetTrigger]);
 
   const handleApplyPriceFilter = () => {
     setPage(1); // Reset alla pagina 1
@@ -58,8 +59,8 @@ const Products = () => {
     setMaxPrice('');
     setSortBy('');
     setPage(1);
-    // Ricarica i prodotti dopo il reset
-    setTimeout(() => loadProducts(), 0);
+    // Incrementa il trigger per forzare il reload
+    setResetTrigger(prev => prev + 1);
   };
 
   const categories = [

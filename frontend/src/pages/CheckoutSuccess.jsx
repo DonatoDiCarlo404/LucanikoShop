@@ -1,19 +1,10 @@
-import { useEffect } from 'react';
 import { Container, Card, Button } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { clearCart } = useCart();
   const sessionId = searchParams.get('session_id');
-
-  useEffect(() => {
-    // Svuota il carrello dopo il pagamento riuscito
-    clearCart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <Container className="py-5">

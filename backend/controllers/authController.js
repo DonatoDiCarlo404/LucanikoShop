@@ -29,6 +29,7 @@ export const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        isApproved: user.isApproved,
         token: generateToken(user._id)
       });
     } else {
@@ -55,6 +56,7 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        isApproved: user.isApproved,
         token: generateToken(user._id)
       });
     } else {
@@ -78,6 +80,7 @@ export const getProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        isApproved: user.isApproved,
         phone: user.phone,
         address: user.address,
         avatar: user.avatar

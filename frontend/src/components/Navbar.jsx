@@ -36,7 +36,7 @@ const Navbar = () => {
   };
 
   return (
-    <BSNavbar bg="dark" variant="dark" expand="lg" sticky="top">
+    <BSNavbar bg="light" variant="light" expand="lg" sticky="top">
       <Container>
         <BSNavbar.Brand as={Link} to="/">
           🛍️ LucanikoShop

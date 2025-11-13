@@ -18,6 +18,10 @@ const Cart = () => {
     try {
       const { sessionId, url } = await checkoutAPI.createSession(cartItems, user.token);
 
+      // Salva esplicitamente il carrello prima del redirect
+      localStorage.setItem('cart', JSON.stringify(cartItems));
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Reindirizza a Stripe Checkout
       window.location.href = url;
     } catch (error) {

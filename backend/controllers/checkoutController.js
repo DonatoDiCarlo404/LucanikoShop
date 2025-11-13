@@ -25,7 +25,7 @@ export const createCheckoutSession = async (req, res) => {
                         : [],
                     metadata: {
                         productId: item._id,
-                        sellerId: item.seller,
+                        sellerId: item.seller._id || item.seller,
                     },
                 },
                 unit_amount: Math.round(item.price * 100), // Converti in centesimi
@@ -49,7 +49,7 @@ export const createCheckoutSession = async (req, res) => {
                 userId: req.user._id.toString(),
                 cartItems: JSON.stringify(cartItems.map(item => ({
                     productId: item._id,
-                    sellerId: item.seller,
+                    sellerId: item.seller._id || item.seller,
                     name: item.name,
                     quantity: item.quantity,
                     price: item.price,

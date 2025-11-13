@@ -67,7 +67,7 @@ const Login = () => {
                   variant="outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <i className="bi bi-eye-slash-fill"></i> : <i className="bi bi-eye-fill"></i>}
                 </Button>
               </InputGroup>
             </Form.Group>

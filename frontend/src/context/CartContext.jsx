@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useAuth } from './authContext';
 
 const CartContext = createContext();
 
@@ -12,20 +13,34 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+  const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carica carrello da localStorage all'avvio
+  // Genera la chiave del carrello basata sull'utente
+  const getCartKey = () => {
+    return user ? `cart_${user._id}` : 'cart_guest';
+  };
+
+  // Carica carrello da localStorage all'avvio o quando l'utente cambia
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
+    const cartKey = getCartKey();
+    const savedCart = localStorage.getItem(cartKey);
     if (savedCart) {
       setCartItems(JSON.parse(savedCart));
+    } else {
+      setCartItems([]); // Carrello vuoto per nuovo utente
     }
-  }, []);
+    setIsLoaded(true);
+  }, [user?._id]); // Ricarica quando cambia utente
 
-  // Salva carrello in localStorage quando cambia
+  // Salva carrello in localStorage quando cambia (solo dopo il primo caricamento)
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (isLoaded) {
+      const cartKey = getCartKey();
+      localStorage.setItem(cartKey, JSON.stringify(cartItems));
+    }
+  }, [cartItems, isLoaded, user?._id]);
 
     // Aggiungi prodotto al carrello
   const addToCart = (product, quantity = 1) => {

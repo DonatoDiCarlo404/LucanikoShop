@@ -95,7 +95,7 @@ const Register = () => {
                   variant="outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ? <i className="bi bi-eye-slash-fill"></i> : <i className="bi bi-eye-fill"></i>}
                 </Button>
               </InputGroup>
             </Form.Group>
@@ -114,7 +114,7 @@ const Register = () => {
                   variant="outline-secondary"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? '🙈' : '👁️'}
+                  {showConfirmPassword ? <i className="bi bi-eye-slash-fill"></i> : <i className="bi bi-eye-fill"></i>}
                 </Button>
               </InputGroup>
             </Form.Group>
