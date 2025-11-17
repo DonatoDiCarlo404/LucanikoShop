@@ -1,4 +1,4 @@
-import { Card, Badge } from 'react-bootstrap';
+import { Card, Badge, Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
@@ -12,12 +12,21 @@ const ProductCard = ({ product }) => {
       className="h-100 shadow-sm hover-shadow"
     >
       {product.images && product.images.length > 0 ? (
-        <Card.Img
-          variant="top"
-          src={product.images[product.images.length - 1].url}
-          alt={product.name}
-          style={{ height: '200px', objectFit: 'cover' }}
-        />
+        <Carousel interval={2500}
+        indicators={product.images.length > 1} 
+        controls={product.images.length > 1}
+        onClick={e => e.stopPropagation()}
+        >
+          {product.images.map((img, idx) => (
+            <Carousel.Item key={idx}>
+              <img
+                src={img.url}
+                alt={product.name}
+                style={{ height: '200px', width: '100%', objectFit: 'cover' }}
+              />
+            </Carousel.Item>
+          ))}
+        </Carousel>
       ) : (
         <div
           style={{
@@ -31,28 +40,28 @@ const ProductCard = ({ product }) => {
           <span className="text-muted">Nessuna immagine</span>
         </div>
       )}
-      
+
       <Card.Body className="d-flex flex-column">
-        <Card.Title 
-          style={{ 
-            fontSize: '1rem', 
-            height: '48px', 
+        <Card.Title
+          style={{
+            fontSize: '1rem',
+            height: '48px',
             overflow: 'hidden',
             marginBottom: '12px'
           }}
         >
           {product.name}
         </Card.Title>
-        
+
         <Badge bg="secondary" className="mb-2 align-self-start">
           {product.category}
         </Badge>
-        
+
         {product.description && (
-          <Card.Text 
-            className="text-muted small" 
-            style={{ 
-              height: '40px', 
+          <Card.Text
+            className="text-muted small"
+            style={{
+              height: '40px',
               overflow: 'hidden',
               marginBottom: '12px'
             }}
@@ -60,7 +69,7 @@ const ProductCard = ({ product }) => {
             {product.description}
           </Card.Text>
         )}
-        
+
         <div className="mt-auto">
           <div className="d-flex justify-content-between align-items-center">
             <h5 className="text-primary mb-0">
@@ -69,7 +78,7 @@ const ProductCard = ({ product }) => {
                 /{product.unit}
               </small>
             </h5>
-            
+
             {product.stock > 0 ? (
               <Badge bg="success">
                 Disponibile
@@ -80,7 +89,7 @@ const ProductCard = ({ product }) => {
               </Badge>
             )}
           </div>
-          
+
           {product.stock > 0 && (
             <small className="text-muted d-block mt-1">
               {product.stock} {product.unit} disponibili

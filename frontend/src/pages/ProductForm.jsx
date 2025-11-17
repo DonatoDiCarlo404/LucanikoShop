@@ -19,8 +19,8 @@ const ProductForm = () => {
     tags: '',
   });
 
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [images, setImages] = useState([]); // array di File
+  const [imagePreviews, setImagePreviews] = useState([]); // array di url
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +50,7 @@ const ProductForm = () => {
       });
       // Mostra l'ultima immagine caricata (non la prima)
       if (product.images.length > 0) {
-        setImagePreview(product.images[product.images.length - 1].url);
+        setImagePreviews(product.images.map(img => img.url));
       }
     } catch (err) {
       setError(err.message);
@@ -65,11 +65,9 @@ const ProductForm = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+    const files = Array.from(e.target.files);
+    setImages(files);
+    setImagePreviews(files.map(file => URL.createObjectURL(file)));
   };
 
   const handleSubmit = async (e) => {
@@ -91,17 +89,15 @@ const ProductForm = () => {
         productId = newProduct._id;
       }
 
-      // 2. Se c'è una nuova immagine
-      if (image) {
+      // 2. Se ci sono nuove immagini
+      if (images.length > 0) {
         setUploading(true);
 
         // 2a. Se in edit mode, elimina le vecchie immagini da Cloudinary
         if (isEditMode && currentProduct && currentProduct.images.length > 0) {
-          console.log('🗑️ Eliminazione vecchie immagini...');
           for (const img of currentProduct.images) {
             if (img.public_id) {
               try {
-                // Usa il public_id completo per l'eliminazione
                 const encodedPublicId = encodeURIComponent(img.public_id);
                 await fetch(`http://localhost:5000/api/upload/${encodedPublicId}`, {
                   method: 'DELETE',
@@ -109,7 +105,6 @@ const ProductForm = () => {
                     'Authorization': `Bearer ${user.token}`,
                   },
                 });
-                console.log(`✅ Eliminata immagine: ${img.public_id}`);
               } catch (err) {
                 console.error('Errore eliminazione immagine:', err);
               }
@@ -117,22 +112,18 @@ const ProductForm = () => {
           }
         }
 
-        // 2b. Upload nuova immagine
-        console.log('📤 Uploading image...');
-        const uploadResponse = await uploadAPI.uploadProductImage(image, user.token);
-        console.log('✅ Upload response:', uploadResponse);
-
-        // 2c. Aggiungi l'immagine al prodotto
-        console.log('🔗 Adding image to product...');
-        await productsAPI.addImage(
-          productId,
-          {
-            url: uploadResponse.url,
-            public_id: uploadResponse.public_id,
-          },
-          user.token
-        );
-        console.log('✅ Image added!');
+        // 2b. Upload tutte le nuove immagini
+        for (const imgFile of images) {
+          const uploadResponse = await uploadAPI.uploadProductImage(imgFile, user.token);
+          await productsAPI.addImage(
+            productId,
+            {
+              url: uploadResponse.url,
+              public_id: uploadResponse.public_id,
+            },
+            user.token
+          );
+        }
       }
 
       navigate('/my-products');
@@ -142,6 +133,11 @@ const ProductForm = () => {
       setLoading(false);
       setUploading(false);
     }
+  };
+
+  const handleRemoveImage = (idx) => {
+    setImages(prev => prev.filter((_, i) => i !== idx));
+    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
   const categories = [
@@ -286,19 +282,44 @@ const ProductForm = () => {
 
               <Col md={4}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Immagine Prodotto</Form.Label>
+                  <Form.Label>Immagini Prodotto</Form.Label>
                   <Form.Control
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={handleImageChange}
                   />
-                  {imagePreview && (
-                    <div className="mt-3">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        style={{ width: '100%', borderRadius: '8px' }}
-                      />
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-3 d-flex flex-wrap gap-2">
+                      {imagePreviews.map((src, idx) => (
+                        <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                          <img
+                            src={src}
+                            alt={`Preview ${idx + 1}`}
+                            style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            style={{
+                              position: 'absolute',
+                              top: 2,
+                              right: 2,
+                              background: 'rgba(255,255,255,0.8)',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: 22,
+                              height: 22,
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              color: '#d00',
+                              lineHeight: '18px',
+                              padding: 0
+                            }}
+                            title="Elimina immagine"
+                          >×</button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </Form.Group>
