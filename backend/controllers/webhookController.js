@@ -1,5 +1,8 @@
 import Stripe from 'stripe';
 import Order from '../models/Order.js';
+import Review from '../models/Review.js';
+import Product from '../models/Product.js';
+import User from '../models/User.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -30,12 +33,12 @@ export const handleStripeWebhook = async (req, res) => {
 
       // Estrai userId dai metadata
       const userId = session.metadata.userId;
-      
+
       if (!userId) {
         console.error('❌ userId mancante nei metadata');
         return res.status(400).send('userId mancante');
       }
-      
+
       // Recupera i dati del carrello dai metadata
       const cartItemsData = JSON.parse(session.metadata.cartItems)
 
@@ -80,6 +83,36 @@ export const handleStripeWebhook = async (req, res) => {
       });
 
       console.log('✅ Ordine creato:', order._id);
+
+      // Recensione automatica per ogni prodotto acquistato
+      for (const item of order.items) {
+        // Controlla se esiste già una review di questo utente per questo prodotto
+        const alreadyReviewed = await Review.findOne({
+          product: item.product,
+          user: userId
+        });
+
+        if (!alreadyReviewed) {
+          // Recupera nome utente per la review
+          const user = await User.findById(userId);
+          await Review.create({
+            product: item.product,
+            user: userId,
+            name: user ? user.name : 'Acquirente',
+            rating: 5,
+            comment: 'Recensione automatica: nessun feedback lasciato dall’acquirente.',
+            isVerified: true
+          });
+
+          // Aggiorna rating medio e numero recensioni del prodotto
+          const reviews = await Review.find({ product: item.product });
+          const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+          await Product.findByIdAndUpdate(item.product, {
+            rating: avgRating,
+            numReviews: reviews.length
+          });
+        }
+      }
 
     } catch (error) {
       console.error('❌ Errore creazione ordine:', error);

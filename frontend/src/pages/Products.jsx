@@ -37,6 +37,7 @@ const Products = () => {
       if (sortBy) params.sortBy = sortBy;
 
       const data = await productsAPI.getAll(params);
+      console.log('Prodotti dal backend:', data.products);
       setProducts(data.products);
       setPages(data.pages || 1);
       setTotal(data.total || 0);

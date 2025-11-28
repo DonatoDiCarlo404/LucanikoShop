@@ -13,9 +13,9 @@ const ProductCard = ({ product }) => {
     >
       {product.images && product.images.length > 0 ? (
         <Carousel interval={2500}
-        indicators={product.images.length > 1} 
-        controls={product.images.length > 1}
-        onClick={e => e.stopPropagation()}
+          indicators={product.images.length > 1}
+          controls={product.images.length > 1}
+          onClick={e => e.stopPropagation()}
         >
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
@@ -45,13 +45,22 @@ const ProductCard = ({ product }) => {
         <Card.Title
           style={{
             fontSize: '1rem',
-            height: '48px',
+            height: '20px',
             overflow: 'hidden',
             marginBottom: '12px'
           }}
         >
           {product.name}
         </Card.Title>
+
+        <div className="d-flex align-items-center mb-2 justify-content-between">
+          <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
+            {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
+          </span>
+          <span className="text-muted small" style={{ marginLeft: 4 }}>
+            {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews || 0})
+          </span>
+        </div>
 
         <Badge bg="secondary" className="mb-2 align-self-start">
           {product.category}

@@ -8,10 +8,12 @@ import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import productRoutes from './routes/productRoutes.js';
+
 import adminRoutes from './routes/adminRoutes.js';
 import checkoutRoutes from './routes/checkoutRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,12 +30,14 @@ app.use(helmet());
 app.use(passport.initialize());
 
 // Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
