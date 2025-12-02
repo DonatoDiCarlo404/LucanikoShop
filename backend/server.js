@@ -8,12 +8,12 @@ import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import productRoutes from './routes/productRoutes.js';
-
 import adminRoutes from './routes/adminRoutes.js';
 import checkoutRoutes from './routes/checkoutRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +51,12 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
+
+// Rotta NOT FOUND
+app.use(notFound);
+
+// Middleware gestione errori
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {

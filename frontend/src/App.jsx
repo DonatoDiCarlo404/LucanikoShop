@@ -18,6 +18,8 @@ import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
+import Footer from './components/Footer';
+import Error from './pages/Error';
 
 function App() {
   return (
@@ -40,59 +42,18 @@ function App() {
             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
 
             {/* Prodotti protetti (solo seller/admin) */}
-            <Route
-              path="/my-products"
-              element={
-                <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                  <MyProducts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/products/new"
-              element={
-                <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                  <ProductForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/products/edit/:id"
-              element={
-                <ProtectedRoute allowedRoles={['seller', 'admin']}>
-                  <ProductForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders"
-              element={
-                <ProtectedRoute>
-                  <OrderHistory />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/orders/:id"
-              element={
-                <ProtectedRoute>
-                  <OrderDetail />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/my-products" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <MyProducts /> </ProtectedRoute>} />
+            <Route path="/products/new" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
+            <Route path="/products/edit/:id" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+            <Route path="/orders/:id" element={<ProtectedRoute> <OrderDetail /> </ProtectedRoute>} />
 
             {/* Admin routes */}
-            <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
 
-            <Route path="*" element={<Navigate to="/" />} />
+            <Route path="*" element={<Error />} />
           </Routes>
+          <Footer />
         </Router>
       </CartProvider>
     </AuthProvider>
