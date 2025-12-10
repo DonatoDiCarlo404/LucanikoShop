@@ -18,17 +18,27 @@ import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
+import VendorDashboard from './pages/VendorDashboard';
 import Footer from './components/Footer';
 import Error from './pages/Error';
+import SplashScreen from './components/SplashScreen';
+import { useState, useEffect } from 'react';
 
 function App() {
-  return (
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 3000); 
+    return () => clearTimeout(timer);
+  }, []);
+
+  return showSplash ? <SplashScreen /> : (
     <AuthProvider>
       <CartProvider>
         <Router>
           <Navbar />
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Products />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/auth/success" element={<AuthSuccess />} />
@@ -47,6 +57,9 @@ function App() {
             <Route path="/products/edit/:id" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute> <OrderDetail /> </ProtectedRoute>} />
+
+            {/* Vendor Dashboard */}
+            <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />

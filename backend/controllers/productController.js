@@ -8,8 +8,8 @@ export const getProducts = async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
 
-    // Costruisci query
-    let query = { isActive: true };
+    // Costruisci query - solo prodotti attivi e approvati per catalogo pubblico
+    let query = { isActive: true, isApproved: true };
 
     // Ricerca full-text
     if (search) {
@@ -216,6 +216,18 @@ export const getMyProducts = async (req, res) => {
     const products = await Product.find({ seller: req.user._id }).sort({ createdAt: -1 });
 
     res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Conta prodotti in attesa di approvazione
+// @route   GET /api/products/pending-count
+// @access  Private (admin)
+export const getPendingProductsCount = async (req, res) => {
+  try {
+    const count = await Product.countDocuments({ isApproved: false, isActive: true });
+    res.json({ count });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

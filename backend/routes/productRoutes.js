@@ -7,14 +7,18 @@ import {
   deleteProduct,
   addProductImage,
   getMyProducts,
+  getPendingProductsCount,
 } from '../controllers/productController.js';
-import { protect, seller } from '../middlewares/auth.js';
+import { protect, seller, admin } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // Rotte pubbliche
 router.get('/', getProducts);
 router.get('/:id', getProductById);
+
+// Rotta per contare prodotti in attesa (admin)
+router.get('/pending/count', protect, admin, getPendingProductsCount);
 
 // Rotte protette (seller/admin)
 router.post('/', protect, seller, createProduct);

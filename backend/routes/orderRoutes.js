@@ -1,7 +1,14 @@
 import express from 'express';
 const router = express.Router();
 
-import { getMyOrders, getOrderById, filterOrders } from '../controllers/orderController.js';
+import { 
+  getMyOrders, 
+  getOrderById, 
+  filterOrders,
+  getVendorOrders,
+  getVendorStats,
+  updateOrderStatus
+} from '../controllers/orderController.js';
 import { protect } from '../middlewares/auth.js';
 import Order from '../models/Order.js';
 
@@ -26,6 +33,11 @@ router.get('/check-purchased/:productId', protect, async (req, res) => {
 
 // Filtra ordini per query string (productId, buyer, isPaid)
 router.get('/', protect, filterOrders);
+
+// Route specifiche per venditore (devono venire prima di /:id)
+router.get('/vendor/received', protect, getVendorOrders);
+router.get('/vendor/stats', protect, getVendorStats);
+router.put('/:id/status', protect, updateOrderStatus);
 
 // Ottieni tutti gli ordini dell'utente loggato
 router.get('/my-orders', protect, getMyOrders);
