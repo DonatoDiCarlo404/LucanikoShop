@@ -72,9 +72,14 @@ const OrderDetail = () => {
 
   return (
     <Container className="py-5">
-      <Button variant="outline-secondary" className="mb-4" onClick={() => navigate('/orders')}>
-        ← Torna agli ordini
-      </Button>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <Button variant="outline-secondary" onClick={() => navigate('/orders')}>
+          ← Torna agli ordini
+        </Button>
+        <Button variant="primary" onClick={() => navigate(`/orders/${id}/tracking`)}>
+          <i className="bi bi-truck"></i> Traccia Spedizione
+        </Button>
+      </div>
 
       <Row>
         <Col lg={8}>

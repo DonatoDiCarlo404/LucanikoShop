@@ -4,7 +4,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Home from './pages/Home';
 import AuthSuccess from './pages/AuthSuccess';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -18,6 +17,7 @@ import CheckoutSuccess from './pages/CheckoutSuccess';
 import CheckoutCancel from './pages/CheckoutCancel';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
+import OrderTracking from './pages/OrderTracking';
 import VendorDashboard from './pages/VendorDashboard';
 import Footer from './components/Footer';
 import Error from './pages/Error';
@@ -57,6 +57,7 @@ function App() {
             <Route path="/products/edit/:id" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute> <OrderDetail /> </ProtectedRoute>} />
+            <Route path="/orders/:id/tracking" element={<ProtectedRoute> <OrderTracking /> </ProtectedRoute>} />
 
             {/* Vendor Dashboard */}
             <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />

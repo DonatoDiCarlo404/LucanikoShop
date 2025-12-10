@@ -150,7 +150,7 @@ export const getVendorStats = async (req, res) => {
 // @access  Private (seller/admin)
 export const updateOrderStatus = async (req, res) => {
     try {
-        const { status, trackingNumber } = req.body;
+        const { status, trackingNumber, carrier } = req.body;
 
         // Solo seller e admin possono accedere
         if (req.user.role !== 'seller' && req.user.role !== 'admin') {
@@ -181,12 +181,17 @@ export const updateOrderStatus = async (req, res) => {
             }
         }
 
-        // Aggiungi tracking number se fornito
-        if (trackingNumber) {
+        // Aggiungi tracking info se fornito
+        if (trackingNumber || carrier) {
             if (!order.trackingInfo) {
                 order.trackingInfo = {};
             }
-            order.trackingInfo.trackingNumber = trackingNumber;
+            if (trackingNumber) {
+                order.trackingInfo.trackingNumber = trackingNumber;
+            }
+            if (carrier) {
+                order.trackingInfo.carrier = carrier;
+            }
             order.trackingInfo.updatedAt = Date.now();
         }
 

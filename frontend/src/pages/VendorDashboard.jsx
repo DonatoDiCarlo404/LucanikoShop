@@ -33,6 +33,7 @@ const VendorDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [newStatus, setNewStatus] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [carrier, setCarrier] = useState('');
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState('');
 
@@ -109,6 +110,7 @@ const VendorDashboard = () => {
     setSelectedOrder(order);
     setNewStatus(order.status);
     setTrackingNumber(order.trackingInfo?.trackingNumber || '');
+    setCarrier(order.trackingInfo?.carrier || '');
     setUpdateError('');
     setShowModal(true);
   };
@@ -127,7 +129,8 @@ const VendorDashboard = () => {
         },
         body: JSON.stringify({
           status: newStatus,
-          trackingNumber: trackingNumber || undefined
+          trackingNumber: trackingNumber || undefined,
+          carrier: carrier || undefined
         })
       });
 
@@ -485,6 +488,23 @@ const VendorDashboard = () => {
                   <option value="shipped">Spedito</option>
                   <option value="delivered">Consegnato</option>
                   <option value="cancelled">Annullato</option>
+                </Form.Select>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Corriere (opzionale)</Form.Label>
+                <Form.Select
+                  value={carrier}
+                  onChange={(e) => setCarrier(e.target.value)}
+                >
+                  <option value="">Seleziona corriere</option>
+                  <option value="DHL">DHL</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="UPS">UPS</option>
+                  <option value="Poste Italiane">Poste Italiane</option>
+                  <option value="BRT">BRT</option>
+                  <option value="GLS">GLS</option>
+                  <option value="Altro">Altro</option>
                 </Form.Select>
               </Form.Group>
 
