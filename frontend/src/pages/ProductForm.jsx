@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
-import { productsAPI, uploadAPI } from '../services/api';
+import { productsAPI, uploadAPI, categoriesAPI } from '../services/api';
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -12,7 +12,7 @@ const ProductForm = () => {
     name: '',
     description: '',
     price: '',
-    category: 'Frutta e Verdura',
+    category: '',
     stock: '',
     unit: 'pz',
     expiryDate: '',
@@ -24,6 +24,7 @@ const ProductForm = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,6 +35,21 @@ const ProductForm = () => {
       loadProduct();
     }
   }, [id]);
+
+  // Carica categorie
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoriesAPI.getAll();
+      setCategories(data.map(cat => cat.name));
+    } catch (err) {
+      console.error('Errore caricamento categorie:', err);
+      setCategories(['Altro']);
+    }
+  };
 
   const loadProduct = async () => {
     try {
@@ -140,18 +156,6 @@ const ProductForm = () => {
     setImagePreviews(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const categories = [
-    'Frutta e Verdura',
-    'Carne e Pesce',
-    'Latticini',
-    'Pane e Dolci',
-    'Pasta e Cereali',
-    'Bevande',
-    'Condimenti',
-    'Snack',
-    'Surgelati',
-    'Altro',
-  ];
 
   return (
     <Container className="py-5">
@@ -245,24 +249,33 @@ const ProductForm = () => {
                         value={formData.unit}
                         onChange={handleChange}
                       >
-                        <option value="pz">Pezzo</option>
+                        <option value="pz">Pezzi</option>
                         <option value="kg">Kg</option>
                         <option value="g">Grammi</option>
                         <option value="l">Litri</option>
                         <option value="ml">Millilitri</option>
+                        <option value="m">Metri</option>
+                        <option value="cm">Centimetri</option>
+                        <option value="confezione">Confezione</option>
+                        <option value="set">Set</option>
+                        <option value="scatola">Scatola</option>
+                        <option value="altro">Altro</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>
                 </Row>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Data di scadenza (opzionale)</Form.Label>
+                  <Form.Label>Data di scadenza (opzionale - per prodotti alimentari/deperibili)</Form.Label>
                   <Form.Control
                     type="date"
                     name="expiryDate"
                     value={formData.expiryDate}
                     onChange={handleChange}
                   />
+                  <Form.Text className="text-muted">
+                    Lascia vuoto se il prodotto non ha data di scadenza
+                  </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
@@ -272,7 +285,7 @@ const ProductForm = () => {
                     name="tags"
                     value={formData.tags}
                     onChange={handleChange}
-                    placeholder="Es. bio, locale, stagionale"
+                    placeholder="Es. bio, artigianale, made in italy, eco-friendly"
                   />
                   <Form.Text className="text-muted">
                     Aiuta i clienti a trovare il tuo prodotto

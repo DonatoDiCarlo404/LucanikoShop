@@ -5,11 +5,11 @@ const API_URL = 'http://localhost:5000/api';
 // Helper per gestire le chiamate fetch
 const handleResponse = async (response) => {
   const data = await response.json();
-  
+
   if (!response.ok) {
     throw new Error(data.message || 'Qualcosa è andato storto');
   }
-  
+
   return data;
 };
 
@@ -236,4 +236,13 @@ export const checkoutAPI = {
     });
     return handleResponse(response);
   },
+};
+
+// Category API
+export const categoriesAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_URL}/categories`);
+    if (!response.ok) throw new Error('Errore nel recupero delle categorie');
+    return response.json();
+  }
 };

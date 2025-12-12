@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Row, Col, Spinner, Alert, Form, InputGroup, Button } from 'react-bootstrap';
-import { productsAPI } from '../services/api';
+import { productsAPI, categoriesAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 
 const Products = () => {
@@ -16,10 +16,25 @@ const Products = () => {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     loadProducts();
   }, [category, sortBy, page, resetTrigger]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const data = await categoriesAPI.getAll();
+      setCategories(data.map(cat => cat.name));
+    } catch (err) {
+      console.error('Errore caricamento categorie:', err);
+      setCategories(['Altro']); // fallback
+    }
+  };
 
   const handleApplyPriceFilter = () => {
     setPage(1); // Reset alla pagina 1
@@ -64,18 +79,6 @@ const Products = () => {
     setResetTrigger(prev => prev + 1);
   };
 
-  const categories = [
-    'Frutta e Verdura',
-    'Carne e Pesce',
-    'Latticini',
-    'Pane e Dolci',
-    'Pasta e Cereali',
-    'Bevande',
-    'Condimenti',
-    'Snack',
-    'Surgelati',
-    'Altro',
-  ];
 
   if (loading) {
     return (
