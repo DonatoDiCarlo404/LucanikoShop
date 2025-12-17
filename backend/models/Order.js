@@ -86,6 +86,15 @@ const orderSchema = new mongoose.Schema(
       required: true,
       default: 0.0
     },
+    // Campi per gestione sconti/coupon
+    appliedDiscount: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Discount'
+    },
+    discountAmount: {
+      type: Number,
+      default: 0.0
+    },
     totalPrice: {
       type: Number,
       required: true,

@@ -11,6 +11,13 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
 
+  // State per gestione coupon
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
   const handleCheckout = async () => {
     if (cartCount === 0) return;
 
@@ -30,6 +37,78 @@ const Cart = () => {
       setIsCheckingOut(false);
     }
   };
+
+
+  // Funzione per applicare il coupon (simulazione calcolo lato client)
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError('Inserisci un codice coupon');
+      return;
+    }
+
+    setApplyingCoupon(true);
+    setCouponError('');
+
+    try {
+      // Verifica coupon tramite API
+      const res = await fetch('http://localhost:5000/api/discounts/validate-coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          couponCode: couponCode.toUpperCase(),
+          cartTotal
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Codice coupon non valido');
+      }
+
+      // Calcola lo sconto
+      let discount = 0;
+      if (data.discount.discountType === 'percentage') {
+        discount = (cartTotal * data.discount.discountValue) / 100;
+        
+        // Applica limite massimo se presente
+        if (data.discount.maxDiscountAmount && discount > data.discount.maxDiscountAmount) {
+          discount = data.discount.maxDiscountAmount;
+        }
+      } else if (data.discount.discountType === 'fixed') {
+        discount = data.discount.discountValue;
+        
+        // Lo sconto non può essere maggiore del totale
+        if (discount > cartTotal) {
+          discount = cartTotal;
+        }
+      }
+
+      setAppliedCoupon(data.discount);
+      setDiscountAmount(parseFloat(discount.toFixed(2)));
+      setCouponError('');
+    } catch (err) {
+      setCouponError(err.message);
+      setAppliedCoupon(null);
+      setDiscountAmount(0);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  // Rimuovi coupon applicato
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCode('');
+    setCouponError('');
+  };
+
+  // Calcola il totale finale con sconto
+  const finalTotal = cartTotal - discountAmount;
 
 
   if (cartCount === 0) {
@@ -132,11 +211,61 @@ const Cart = () => {
                   <span>Spedizione</span>
                   <Badge bg="success">GRATIS</Badge>
                 </ListGroup.Item>
+                
+                {/* Sconto applicato */}
+                {appliedCoupon && discountAmount > 0 && (
+                  <ListGroup.Item className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span className="text-success">Sconto ({appliedCoupon.couponCode})</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-danger p-0 ms-2"
+                        onClick={handleRemoveCoupon}
+                        style={{ textDecoration: 'none' }}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                    <strong className="text-success">-€{discountAmount.toFixed(2)}</strong>
+                  </ListGroup.Item>
+                )}
+
                 <ListGroup.Item className="d-flex justify-content-between">
                   <h5 className="mb-0">Totale</h5>
-                  <h5 className="mb-0 text-primary">€{cartTotal.toFixed(2)}</h5>
+                  <h5 className="mb-0 text-primary">€{finalTotal.toFixed(2)}</h5>
                 </ListGroup.Item>
               </ListGroup>
+
+              {/* Campo Coupon */}
+              {!appliedCoupon && (
+                <div className="mt-3">
+                  <Form.Group>
+                    <Form.Label className="small">Hai un codice sconto?</Form.Label>
+                    <div className="d-flex gap-2">
+                      <Form.Control
+                        type="text"
+                        placeholder="Inserisci codice"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      />
+                      <Button
+                        variant="outline-primary"
+                        onClick={handleApplyCoupon}
+                        disabled={applyingCoupon || !couponCode.trim()}
+                      >
+                        {applyingCoupon ? 'Verifica...' : 'Applica'}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <Form.Text className="text-danger">
+                        {couponError}
+                      </Form.Text>
+                    )}
+                  </Form.Group>
+                </div>
+              )}
 
               <div className="d-grid gap-2 mt-3">
                 <Button

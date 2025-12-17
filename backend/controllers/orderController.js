@@ -1,4 +1,5 @@
 import Order from "../models/Order.js";
+import { Discount } from "../models/index.js";
 
 // @desc    Filtra ordini per query string (productId, buyer, isPaid)
 // @route   GET /api/orders?productId=...&buyer=...&isPaid=true
@@ -201,5 +202,130 @@ export const updateOrderStatus = async (req, res) => {
     } catch (error) {
         console.error('Errore nell\'aggiornamento ordine:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Applica coupon/sconto a un ordine
+// @route   POST /api/orders/:id/apply-discount
+// @access  Private
+export const applyDiscountToOrder = async (req, res) => {
+    try {
+        const { couponCode } = req.body;
+
+        if (!couponCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Il codice coupon è obbligatorio'
+            });
+        }
+
+        // Trova l'ordine
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Ordine non trovato'
+            });
+        }
+
+        // Verifica che l'ordine appartenga all'utente
+        if (order.buyer.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Non autorizzato ad applicare sconti a questo ordine'
+            });
+        }
+
+        // Verifica che l'ordine non sia già stato pagato
+        if (order.isPaid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Non puoi applicare uno sconto a un ordine già pagato'
+            });
+        }
+
+        // Verifica che non ci sia già uno sconto applicato
+        if (order.appliedDiscount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Questo ordine ha già uno sconto applicato'
+            });
+        }
+
+        // Trova il coupon/sconto
+        const discount = await Discount.findOne({
+            couponCode: couponCode.toUpperCase(),
+            applicationType: 'coupon',
+            isActive: true
+        });
+
+        if (!discount) {
+            return res.status(404).json({
+                success: false,
+                message: 'Codice coupon non valido'
+            });
+        }
+
+        // Verifica che il coupon sia valido (date e limiti)
+        if (!discount.isValidNow()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Questo coupon è scaduto o non è più valido'
+            });
+        }
+
+        // Verifica l'importo minimo di acquisto
+        if (order.itemsPrice < discount.minPurchaseAmount) {
+            return res.status(400).json({
+                success: false,
+                message: `Importo minimo di acquisto richiesto: €${discount.minPurchaseAmount}`
+            });
+        }
+
+        // Calcola lo sconto
+        let discountAmount = 0;
+        if (discount.discountType === 'percentage') {
+            discountAmount = (order.itemsPrice * discount.discountValue) / 100;
+            
+            // Applica il limite massimo di sconto se presente
+            if (discount.maxDiscountAmount && discountAmount > discount.maxDiscountAmount) {
+                discountAmount = discount.maxDiscountAmount;
+            }
+        } else if (discount.discountType === 'fixed') {
+            discountAmount = discount.discountValue;
+            
+            // Lo sconto non può essere maggiore dell'importo totale
+            if (discountAmount > order.itemsPrice) {
+                discountAmount = order.itemsPrice;
+            }
+        }
+
+        // Arrotonda a 2 decimali
+        discountAmount = Math.round(discountAmount * 100) / 100;
+
+        // Applica lo sconto all'ordine
+        order.appliedDiscount = discount._id;
+        order.discountAmount = discountAmount;
+        order.totalPrice = order.itemsPrice + order.shippingPrice + order.taxPrice - discountAmount;
+
+        // Incrementa il contatore di utilizzo del coupon
+        discount.usageCount += 1;
+        await discount.save();
+
+        await order.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Sconto applicato con successo',
+            order,
+            discountAmount
+        });
+    } catch (error) {
+        console.error('Errore nell\'applicazione dello sconto:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };

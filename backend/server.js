@@ -15,6 +15,9 @@ import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import discountRoutes from './routes/discountRoutes.js';
+import shopSettingsRoutes from './routes/shopSettingsRoutes.js';
+import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,10 +43,34 @@ app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/discounts', discountRoutes);
+app.use('/api/shop-settings', shopSettingsRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connesso a MongoDB'))
+  .then(() => {
+    console.log('✅ Connesso a MongoDB');
+    
+    // Esegui il controllo degli sconti all'avvio
+    updateExpiredDiscounts()
+      .then(result => {
+        console.log(`✅ Controllo sconti completato: ${result.expired} scaduti, ${result.activated} attivati`);
+      })
+      .catch(error => {
+        console.error('❌ Errore nel controllo sconti:', error);
+      });
+    
+    // Programma il controllo degli sconti ogni ora
+    setInterval(() => {
+      updateExpiredDiscounts()
+        .then(result => {
+          console.log(`🔄 Controllo sconti orario: ${result.expired} scaduti, ${result.activated} attivati`);
+        })
+        .catch(error => {
+          console.error('❌ Errore nel controllo sconti orario:', error);
+        });
+    }, 60 * 60 * 1000); // Ogni ora
+  })
   .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
 
 app.get('/', (req, res) => {

@@ -7,7 +7,8 @@ import {
   filterOrders,
   getVendorOrders,
   getVendorStats,
-  updateOrderStatus
+  updateOrderStatus,
+  applyDiscountToOrder
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/auth.js';
 import Order from '../models/Order.js';
@@ -41,6 +42,9 @@ router.put('/:id/status', protect, updateOrderStatus);
 
 // Ottieni tutti gli ordini dell'utente loggato
 router.get('/my-orders', protect, getMyOrders);
+
+// Applica coupon/sconto a un ordine
+router.post('/:id/apply-discount', protect, applyDiscountToOrder);
 
 // Ottieni dettagli di un singolo ordine
 router.get('/:id', protect, getOrderById);

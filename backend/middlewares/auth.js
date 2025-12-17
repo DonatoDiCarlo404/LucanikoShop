@@ -44,7 +44,6 @@ export const seller = (req, res, next) => {
     if (req.user.role === 'admin') {
       return next();
     }
-    
     // I seller devono essere approvati
     if (req.user.role === 'seller' && !req.user.isApproved) {
       return res.status(403).json({ 
@@ -52,9 +51,18 @@ export const seller = (req, res, next) => {
         needsApproval: true 
       });
     }
-    
     next();
   } else {
     res.status(403).json({ message: 'Accesso negato, solo seller' });
   }
+};
+
+// Middleware per autorizzare uno o più ruoli
+export const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Accesso negato, ruolo non autorizzato' });
+    }
+    next();
+  };
 };

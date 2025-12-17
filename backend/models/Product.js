@@ -18,21 +18,32 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Il prezzo è obbligatorio'],
       min: [0, 'Il prezzo non può essere negativo']
     },
+    // Gestione prezzi e sconti
+    originalPrice: {
+      type: Number,
+      min: [0, 'Il prezzo originale non può essere negativo']
+    },
+    discountedPrice: {
+      type: Number,
+      min: [0, 'Il prezzo scontato non può essere negativo']
+    },
+    activeDiscount: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Discount'
+    },
+    hasActiveDiscount: {
+      type: Boolean,
+      default: false
+    },
+    discountPercentage: { // Per visualizzazione rapida
+      type: Number,
+      min: [0, 'La percentuale di sconto non può essere negativa'],
+      max: [100, 'La percentuale di sconto non può superare 100']
+    },
     category: {
-      type: String,
-      required: [true, 'La categoria è obbligatoria'],
-      enum: [
-        'Frutta e Verdura',
-        'Carne e Pesce',
-        'Latticini',
-        'Pane e Dolci',
-        'Pasta e Cereali',
-        'Bevande',
-        'Condimenti',
-        'Snack',
-        'Surgelati',
-        'Altro'
-      ]
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: [true, 'La categoria è obbligatoria']
     },
     images: [{
       url: {
@@ -96,6 +107,43 @@ productSchema.index({ category: 1, price: 1 });
 productSchema.index({ seller: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ hasActiveDiscount: 1 });
+
+// Metodo virtuale per ottenere il prezzo corrente (scontato o originale)
+productSchema.virtual('currentPrice').get(function() {
+  return this.hasActiveDiscount && this.discountedPrice ? this.discountedPrice : this.price;
+});
+
+// Metodo per applicare uno sconto al prodotto
+productSchema.methods.applyDiscount = function(discount) {
+  if (!discount || !discount.isValidNow()) {
+    this.removeDiscount();
+    return;
+  }
+
+  this.originalPrice = this.price;
+  this.discountedPrice = discount.calculateDiscountedPrice(this.price);
+  this.activeDiscount = discount._id;
+  this.hasActiveDiscount = true;
+  
+  // Calcola la percentuale di sconto effettiva
+  if (this.price > 0) {
+    this.discountPercentage = Math.round(((this.price - this.discountedPrice) / this.price) * 100);
+  }
+};
+
+// Metodo per rimuovere lo sconto
+productSchema.methods.removeDiscount = function() {
+  this.originalPrice = undefined;
+  this.discountedPrice = undefined;
+  this.activeDiscount = undefined;
+  this.hasActiveDiscount = false;
+  this.discountPercentage = undefined;
+};
+
+// Assicura che i virtual siano inclusi nella serializzazione JSON
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
 
 const Product = mongoose.model('Product', productSchema);
 

@@ -37,6 +37,26 @@ const VendorDashboard = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState('');
 
+  // State per gestione sconti
+  const [discounts, setDiscounts] = useState([]);
+  const [loadingDiscounts, setLoadingDiscounts] = useState(false);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState(null);
+  const [discountForm, setDiscountForm] = useState({
+    name: '',
+    description: '',
+    discountType: 'percentage',
+    discountValue: '',
+    applicationType: 'coupon',
+    products: [],
+    couponCode: '',
+    startDate: '',
+    endDate: '',
+    usageLimit: '',
+    minPurchaseAmount: '',
+    maxDiscountAmount: ''
+  });
+
   // Verifica autorizzazione
   useEffect(() => {
     if (!user || (user.role !== 'seller' && user.role !== 'admin')) {
@@ -48,6 +68,7 @@ const VendorDashboard = () => {
   useEffect(() => {
     if (user && (user.role === 'seller' || user.role === 'admin')) {
       loadDashboardData();
+      loadDiscounts();
     }
   }, [user]);
 
@@ -170,6 +191,167 @@ const VendorDashboard = () => {
       .filter(item => item.seller._id === user._id || user.role === 'admin')
       .reduce((sum, item) => sum + (item.price * item.quantity), 0)
       .toFixed(2);
+  };
+
+  // === GESTIONE SCONTI ===
+
+  // Carica lista sconti
+  const loadDiscounts = async () => {
+    try {
+      setLoadingDiscounts(true);
+      const res = await fetch('http://localhost:5000/api/discounts', {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error('Errore nel caricamento sconti');
+      }
+
+      const data = await res.json();
+      setDiscounts(data.discounts || []);
+    } catch (err) {
+      console.error('Errore caricamento sconti:', err);
+    } finally {
+      setLoadingDiscounts(false);
+    }
+  };
+
+  // Apri modal per nuovo sconto
+  const handleNewDiscount = () => {
+    setEditingDiscount(null);
+    setDiscountForm({
+      name: '',
+      description: '',
+      discountType: 'percentage',
+      discountValue: '',
+      applicationType: 'coupon',
+      products: [],
+      couponCode: '',
+      startDate: '',
+      endDate: '',
+      usageLimit: '',
+      minPurchaseAmount: '',
+      maxDiscountAmount: ''
+    });
+    setShowDiscountModal(true);
+  };
+
+  // Apri modal per modifica sconto
+  const handleEditDiscount = (discount) => {
+    setEditingDiscount(discount);
+    setDiscountForm({
+      name: discount.name || '',
+      description: discount.description || '',
+      discountType: discount.discountType || 'percentage',
+      discountValue: discount.discountValue || '',
+      applicationType: discount.applicationType || 'coupon',
+      products: discount.products || [],
+      couponCode: discount.couponCode || '',
+      startDate: discount.startDate ? discount.startDate.split('T')[0] : '',
+      endDate: discount.endDate ? discount.endDate.split('T')[0] : '',
+      usageLimit: discount.usageLimit || '',
+      minPurchaseAmount: discount.minPurchaseAmount || '',
+      maxDiscountAmount: discount.maxDiscountAmount || ''
+    });
+    setShowDiscountModal(true);
+  };
+
+  // Salva sconto (crea o aggiorna)
+  const handleSaveDiscount = async () => {
+    try {
+      setUpdating(true);
+      setUpdateError('');
+
+      const body = {
+        name: discountForm.name,
+        description: discountForm.description,
+        discountType: discountForm.discountType,
+        discountValue: parseFloat(discountForm.discountValue),
+        applicationType: discountForm.applicationType,
+        products: discountForm.applicationType === 'product' ? discountForm.products : [],
+        couponCode: discountForm.applicationType === 'coupon' ? discountForm.couponCode.toUpperCase() : undefined,
+        startDate: discountForm.startDate,
+        endDate: discountForm.endDate,
+        usageLimit: discountForm.usageLimit ? parseInt(discountForm.usageLimit) : undefined,
+        minPurchaseAmount: discountForm.minPurchaseAmount ? parseFloat(discountForm.minPurchaseAmount) : 0,
+        maxDiscountAmount: discountForm.maxDiscountAmount ? parseFloat(discountForm.maxDiscountAmount) : undefined
+      };
+
+      const url = editingDiscount
+        ? `http://localhost:5000/api/discounts/${editingDiscount._id}`
+        : 'http://localhost:5000/api/discounts';
+
+      const method = editingDiscount ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Errore nel salvataggio dello sconto');
+      }
+
+      await loadDiscounts();
+      setShowDiscountModal(false);
+      setEditingDiscount(null);
+    } catch (err) {
+      setUpdateError(err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Elimina sconto
+  const handleDeleteDiscount = async (discountId) => {
+    if (!window.confirm('Sei sicuro di voler eliminare questo sconto?')) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Errore eliminazione sconto');
+      }
+
+      await loadDiscounts();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // Toggle attivo/disattivo sconto
+  const handleToggleDiscount = async (discountId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}/toggle`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Errore toggle sconto');
+      }
+
+      await loadDiscounts();
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   if (loading) {
@@ -408,6 +590,121 @@ const VendorDashboard = () => {
           </Card>
         </Tab>
 
+        <Tab eventKey="discounts" title={`Sconti e Coupon (${discounts.length})`}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5>Gestisci Sconti e Coupon</h5>
+                <Button variant="success" onClick={handleNewDiscount}>
+                  + Nuovo Sconto
+                </Button>
+              </div>
+
+              {loadingDiscounts ? (
+                <div className="text-center py-4">
+                  <Spinner animation="border" />
+                </div>
+              ) : discounts.length === 0 ? (
+                <Alert variant="info">Non hai ancora creato sconti o coupon.</Alert>
+              ) : (
+                <div className="table-responsive">
+                  <Table striped bordered hover>
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Valore</th>
+                        <th>Applicazione</th>
+                        <th>Codice Coupon</th>
+                        <th>Validità</th>
+                        <th>Utilizzi</th>
+                        <th>Stato</th>
+                        <th>Azioni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {discounts.map((discount) => (
+                        <tr key={discount._id}>
+                          <td>
+                            <strong>{discount.name}</strong>
+                            {discount.description && (
+                              <div><small className="text-muted">{discount.description}</small></div>
+                            )}
+                          </td>
+                          <td>
+                            <Badge bg={discount.discountType === 'percentage' ? 'info' : 'warning'}>
+                              {discount.discountType === 'percentage' ? 'Percentuale' : 'Fisso'}
+                            </Badge>
+                          </td>
+                          <td>
+                            <strong>
+                              {discount.discountType === 'percentage' 
+                                ? `${discount.discountValue}%` 
+                                : `€${discount.discountValue}`}
+                            </strong>
+                          </td>
+                          <td>
+                            {discount.applicationType === 'coupon' && 'Coupon'}
+                            {discount.applicationType === 'product' && 'Prodotto'}
+                            {discount.applicationType === 'category' && 'Categoria'}
+                          </td>
+                          <td>
+                            {discount.couponCode ? (
+                              <Badge bg="primary">{discount.couponCode}</Badge>
+                            ) : (
+                              <small className="text-muted">-</small>
+                            )}
+                          </td>
+                          <td>
+                            <small>
+                              {new Date(discount.startDate).toLocaleDateString('it-IT')} - {new Date(discount.endDate).toLocaleDateString('it-IT')}
+                            </small>
+                          </td>
+                          <td>
+                            {discount.usageCount || 0}
+                            {discount.usageLimit && ` / ${discount.usageLimit}`}
+                          </td>
+                          <td>
+                            <Badge bg={discount.isActive ? 'success' : 'secondary'}>
+                              {discount.isActive ? 'Attivo' : 'Disattivo'}
+                            </Badge>
+                          </td>
+                          <td>
+                            <Button
+                              size="sm"
+                              variant={discount.isActive ? 'outline-warning' : 'outline-success'}
+                              onClick={() => handleToggleDiscount(discount._id)}
+                              className="me-2 mb-1"
+                            >
+                              {discount.isActive ? 'Disattiva' : 'Attiva'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => handleEditDiscount(discount)}
+                              className="me-2 mb-1"
+                            >
+                              Modifica
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-danger"
+                              onClick={() => handleDeleteDiscount(discount._id)}
+                              className="mb-1"
+                            >
+                              Elimina
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+
         {stats && (
           <Tab eventKey="stats" title="Statistiche Dettagliate">
             <Card>
@@ -533,6 +830,201 @@ const VendorDashboard = () => {
             disabled={updating}
           >
             {updating ? 'Salvataggio...' : 'Salva Modifiche'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Gestione Sconto */}
+      <Modal show={showDiscountModal} onHide={() => setShowDiscountModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingDiscount ? 'Modifica Sconto' : 'Nuovo Sconto'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {updateError && <Alert variant="danger">{updateError}</Alert>}
+          
+          <Form>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Nome Sconto *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Es: Sconto Natale 2025"
+                    value={discountForm.name}
+                    onChange={(e) => setDiscountForm({ ...discountForm, name: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tipo Applicazione *</Form.Label>
+                  <Form.Select
+                    value={discountForm.applicationType}
+                    onChange={(e) => setDiscountForm({ ...discountForm, applicationType: e.target.value })}
+                  >
+                    <option value="coupon">Coupon (con codice)</option>
+                    <option value="product">Prodotto specifico</option>
+                    <option value="category">Categoria</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Descrizione</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="Breve descrizione dello sconto"
+                value={discountForm.description}
+                onChange={(e) => setDiscountForm({ ...discountForm, description: e.target.value })}
+              />
+            </Form.Group>
+
+            {discountForm.applicationType === 'coupon' && (
+              <Form.Group className="mb-3">
+                <Form.Label>Codice Coupon *</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Es: NATALE2025"
+                  value={discountForm.couponCode}
+                  onChange={(e) => setDiscountForm({ ...discountForm, couponCode: e.target.value.toUpperCase() })}
+                  required
+                />
+                <Form.Text className="text-muted">
+                  Codice univoco che gli utenti dovranno inserire per applicare lo sconto
+                </Form.Text>
+              </Form.Group>
+            )}
+
+            {discountForm.applicationType === 'product' && (
+              <Alert variant="info">
+                <small>
+                  Per applicare lo sconto a prodotti specifici, selezionali dopo aver creato lo sconto.
+                  Al momento puoi lasciare vuoto questo campo e modificare in seguito.
+                </small>
+              </Alert>
+            )}
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Tipo Sconto *</Form.Label>
+                  <Form.Select
+                    value={discountForm.discountType}
+                    onChange={(e) => setDiscountForm({ ...discountForm, discountType: e.target.value })}
+                  >
+                    <option value="percentage">Percentuale (%)</option>
+                    <option value="fixed">Importo Fisso (€)</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Valore Sconto *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={discountForm.discountType === 'percentage' ? 'Es: 20' : 'Es: 10.00'}
+                    value={discountForm.discountValue}
+                    onChange={(e) => setDiscountForm({ ...discountForm, discountValue: e.target.value })}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    {discountForm.discountType === 'percentage' ? 'Percentuale (0-100)' : 'Importo in euro'}
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Data Inizio *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={discountForm.startDate}
+                    onChange={(e) => setDiscountForm({ ...discountForm, startDate: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Data Fine *</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={discountForm.endDate}
+                    onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Importo Minimo (€)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={discountForm.minPurchaseAmount}
+                    onChange={(e) => setDiscountForm({ ...discountForm, minPurchaseAmount: e.target.value })}
+                  />
+                  <Form.Text className="text-muted">
+                    Spesa minima richiesta
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Sconto Massimo (€)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Illimitato"
+                    value={discountForm.maxDiscountAmount}
+                    onChange={(e) => setDiscountForm({ ...discountForm, maxDiscountAmount: e.target.value })}
+                  />
+                  <Form.Text className="text-muted">
+                    Per sconti percentuali
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Limite Utilizzi</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    placeholder="Illimitato"
+                    value={discountForm.usageLimit}
+                    onChange={(e) => setDiscountForm({ ...discountForm, usageLimit: e.target.value })}
+                  />
+                  <Form.Text className="text-muted">
+                    Quante volte usabile
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDiscountModal(false)}>
+            Annulla
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleSaveDiscount}
+            disabled={updating || !discountForm.name || !discountForm.discountValue || !discountForm.startDate || !discountForm.endDate || (discountForm.applicationType === 'coupon' && !discountForm.couponCode)}
+          >
+            {updating ? 'Salvataggio...' : 'Salva Sconto'}
           </Button>
         </Modal.Footer>
       </Modal>
