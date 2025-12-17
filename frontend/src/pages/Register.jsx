@@ -15,9 +15,13 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  function isPasswordStrong(password) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(password);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,8 +31,8 @@ const Register = () => {
       return setError('Le password non coincidono');
     }
 
-    if (password.length < 6) {
-      return setError('La password deve essere di almeno 6 caratteri');
+    if (!isPasswordStrong(password)) {
+      return setError('La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo.');
     }
 
     setLoading(true);
@@ -46,7 +50,7 @@ const Register = () => {
     } else {
       setError(result.error);
     }
-    
+
     setLoading(false);
   };
 
@@ -55,9 +59,9 @@ const Register = () => {
       <Card style={{ width: '400px' }}>
         <Card.Body>
           <h2 className="text-center mb-4">Registrati</h2>
-          
+
           {error && <Alert variant="danger">{error}</Alert>}
-          
+
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="name">
               <Form.Label>Nome</Form.Label>
@@ -91,7 +95,10 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <Button 
+                <Form.Text className="text-muted">
+                  La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo.
+                </Form.Text>
+                <Button
                   variant="outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -110,7 +117,7 @@ const Register = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
-                <Button 
+                <Button
                   variant="outline-secondary"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
@@ -133,7 +140,7 @@ const Register = () => {
                 <Alert variant="info" className="small">
                   <strong>ℹ️ Info Venditore:</strong> Questi campi sono opzionali ma consigliati per velocizzare l'approvazione.
                 </Alert>
-                
+
                 <Form.Group className="mb-3" controlId="businessName">
                   <Form.Label>Nome Azienda</Form.Label>
                   <Form.Control

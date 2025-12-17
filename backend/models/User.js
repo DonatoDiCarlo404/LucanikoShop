@@ -20,8 +20,15 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'La password è obbligatoria'],
-      minlength: [6, 'La password deve essere di almeno 6 caratteri'],
-      select: false // Non restituisce la password nelle query di default
+        minlength: [8, 'La password deve essere di almeno 8 caratteri'], // Modificato per la lunghezza minima
+        validate: {
+          validator: function (v) {
+            // Almeno una maiuscola, una minuscola, un numero, un simbolo
+            return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(v);
+          },
+          message: 'La password deve contenere almeno una maiuscola, una minuscola, un numero e un simbolo'
+        },
+        select: false // Non restituisce la password nelle query di default
     },
     role: {
       type: String,
