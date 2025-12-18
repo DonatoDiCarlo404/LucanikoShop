@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
+import { sendWelcomeEmail } from '../utils/emailTemplates.js';
 
 // @desc    Registra un nuovo utente
 // @route   POST /api/auth/register
@@ -24,6 +25,13 @@ export const register = async (req, res) => {
     });
 
     if (user) {
+      // Invia email di benvenuto (non blocca la registrazione se fallisce)
+      try {
+        await sendWelcomeEmail(user.email, user.name);
+      } catch (emailError) {
+        console.error('Errore invio email di benvenuto:', emailError);
+      }
+
       res.status(201).json({
         _id: user._id,
         name: user.name,

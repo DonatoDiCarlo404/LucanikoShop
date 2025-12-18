@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Review from '../models/Review.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import { sendPurchaseConfirmationEmail } from '../utils/emailTemplates.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -83,6 +84,19 @@ export const handleStripeWebhook = async (req, res) => {
       });
 
       console.log('✅ Ordine creato:', order._id);
+
+      // Invia email di conferma acquisto
+      try {
+        const user = await User.findById(userId);
+        if (user) {
+          await sendPurchaseConfirmationEmail(user.email, user.name, {
+            orderId: order._id,
+            total: order.totalPrice
+          });
+        }
+      } catch (emailError) {
+        console.error('Errore invio email conferma acquisto:', emailError);
+      }
 
       // Recensione automatica per ogni prodotto acquistato
       for (const item of order.items) {
