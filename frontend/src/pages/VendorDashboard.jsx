@@ -42,6 +42,7 @@ const VendorDashboard = () => {
   const [loadingDiscounts, setLoadingDiscounts] = useState(false);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [discountForm, setDiscountForm] = useState({
     name: '',
     description: '',
@@ -49,6 +50,7 @@ const VendorDashboard = () => {
     discountValue: '',
     applicationType: 'coupon',
     products: [],
+    categories: [],
     couponCode: '',
     startDate: '',
     endDate: '',
@@ -69,8 +71,22 @@ const VendorDashboard = () => {
     if (user && (user.role === 'seller' || user.role === 'admin')) {
       loadDashboardData();
       loadDiscounts();
+      loadCategories();
     }
   }, [user]);
+
+  // Carica categorie
+  const loadCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento categorie:', err);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -228,6 +244,7 @@ const VendorDashboard = () => {
       discountValue: '',
       applicationType: 'coupon',
       products: [],
+      categories: [],
       couponCode: '',
       startDate: '',
       endDate: '',
@@ -247,7 +264,8 @@ const VendorDashboard = () => {
       discountType: discount.discountType || 'percentage',
       discountValue: discount.discountValue || '',
       applicationType: discount.applicationType || 'coupon',
-      products: discount.products || [],
+      products: discount.products?.map(p => p._id || p) || [],
+      categories: discount.categories || [],
       couponCode: discount.couponCode || '',
       startDate: discount.startDate ? discount.startDate.split('T')[0] : '',
       endDate: discount.endDate ? discount.endDate.split('T')[0] : '',
@@ -271,6 +289,7 @@ const VendorDashboard = () => {
         discountValue: parseFloat(discountForm.discountValue),
         applicationType: discountForm.applicationType,
         products: discountForm.applicationType === 'product' ? discountForm.products : [],
+        categories: discountForm.applicationType === 'category' ? discountForm.categories : [],
         couponCode: discountForm.applicationType === 'coupon' ? discountForm.couponCode.toUpperCase() : undefined,
         startDate: discountForm.startDate,
         endDate: discountForm.endDate,
@@ -899,12 +918,51 @@ const VendorDashboard = () => {
             )}
 
             {discountForm.applicationType === 'product' && (
-              <Alert variant="info">
-                <small>
-                  Per applicare lo sconto a prodotti specifici, selezionali dopo aver creato lo sconto.
-                  Al momento puoi lasciare vuoto questo campo e modificare in seguito.
-                </small>
-              </Alert>
+              <Form.Group className="mb-3">
+                <Form.Label>Seleziona Prodotti *</Form.Label>
+                <Form.Select
+                  multiple
+                  value={discountForm.products}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setDiscountForm({ ...discountForm, products: selected });
+                  }}
+                  style={{ minHeight: '150px' }}
+                >
+                  {products.filter(p => p.isApproved).map(product => (
+                    <option key={product._id} value={product._id}>
+                      {product.name} - €{product.price.toFixed(2)}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Text className="text-muted">
+                  Tieni premuto Ctrl (o Cmd su Mac) per selezionare più prodotti. Lo sconto verrà applicato automaticamente.
+                </Form.Text>
+              </Form.Group>
+            )}
+
+            {discountForm.applicationType === 'category' && (
+              <Form.Group className="mb-3">
+                <Form.Label>Seleziona Categorie *</Form.Label>
+                <Form.Select
+                  multiple
+                  value={discountForm.categories}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    setDiscountForm({ ...discountForm, categories: selected });
+                  }}
+                  style={{ minHeight: '150px' }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Text className="text-muted">
+                  Tieni premuto Ctrl (o Cmd su Mac) per selezionare più categorie. Lo sconto verrà applicato automaticamente a tutti i tuoi prodotti in queste categorie.
+                </Form.Text>
+              </Form.Group>
             )}
 
             <Row>
@@ -1022,7 +1080,16 @@ const VendorDashboard = () => {
           <Button 
             variant="primary" 
             onClick={handleSaveDiscount}
-            disabled={updating || !discountForm.name || !discountForm.discountValue || !discountForm.startDate || !discountForm.endDate || (discountForm.applicationType === 'coupon' && !discountForm.couponCode)}
+            disabled={
+              updating || 
+              !discountForm.name || 
+              !discountForm.discountValue || 
+              !discountForm.startDate || 
+              !discountForm.endDate || 
+              (discountForm.applicationType === 'coupon' && !discountForm.couponCode) ||
+              (discountForm.applicationType === 'product' && discountForm.products.length === 0) ||
+              (discountForm.applicationType === 'category' && discountForm.categories.length === 0)
+            }
           >
             {updating ? 'Salvataggio...' : 'Salva Sconto'}
           </Button>

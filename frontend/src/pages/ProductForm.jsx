@@ -44,10 +44,10 @@ const ProductForm = () => {
   const loadCategories = async () => {
     try {
       const data = await categoriesAPI.getAll();
-      setCategories(data.map(cat => cat.name));
+      setCategories(data); // Mantieni l'oggetto completo con _id e name
     } catch (err) {
       console.error('Errore caricamento categorie:', err);
-      setCategories(['Altro']);
+      setCategories([]);
     }
   };
 
@@ -58,7 +58,7 @@ const ProductForm = () => {
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category,
+        category: product.category._id || product.category, // Usa _id se è un oggetto popolato
         stock: product.stock,
         unit: product.unit,
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
@@ -217,9 +217,10 @@ const ProductForm = () => {
                         onChange={handleChange}
                         required
                       >
+                        <option value="">Seleziona una categoria</option>
                         {categories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
                           </option>
                         ))}
                       </Form.Select>

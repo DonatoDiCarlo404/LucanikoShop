@@ -55,7 +55,7 @@
    - Informazioni cliente
    - Dettagli prodotti venduti
    - Stato pagamento
-   - Tracking spedizione
+   - Tracking spedizione __ da eliminare
 
 3. **✏️ Aggiornamento Ordini**
    - Modal per aggiornare stato ordine
@@ -141,7 +141,7 @@ curl -X PUT -H "Content-Type: application/json" \
 
 ✅ Calcolo automatico fatturato per venditore
 ✅ Conteggio prodotti venduti
-✅ Sistema tracking spedizioni
+✅ Sistema tracking spedizioni __ da eliminare
 ✅ Badge colorati per stati ordine
 ✅ Responsive design per mobile
 ✅ Modal per aggiornamento rapido

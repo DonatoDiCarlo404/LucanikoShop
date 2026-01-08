@@ -43,7 +43,8 @@ const discountSchema = new mongoose.Schema(
     }],
     // Categorie (se applicationType = 'category')
     categories: [{
-      type: String
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category'
     }],
     // Codice coupon (se applicationType = 'coupon')
     couponCode: {

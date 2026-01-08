@@ -11,6 +11,23 @@ const ProductCard = ({ product }) => {
       onClick={() => navigate(`/products/${product._id}`)}
       className="h-100 shadow-sm hover-shadow"
     >
+      {/* Badge sconto in alto a destra */}
+      {product.hasActiveDiscount && product.discountPercentage && (
+        <Badge 
+          bg="danger" 
+          style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            right: '10px', 
+            zIndex: 10,
+            fontSize: '1rem',
+            padding: '8px 12px'
+          }}
+        >
+          -{product.discountPercentage}%
+        </Badge>
+      )}
+      
       {product.images && product.images.length > 0 ? (
         <Carousel interval={2500}
           indicators={product.images.length > 1}
@@ -81,12 +98,28 @@ const ProductCard = ({ product }) => {
 
         <div className="mt-auto">
           <div className="d-flex justify-content-between align-items-center">
-            <h5 className="text-primary mb-0">
-              €{product.price.toFixed(2)}
-              <small className="text-muted" style={{ fontSize: '0.75rem' }}>
-                /{product.unit}
-              </small>
-            </h5>
+            <div>
+              {product.hasActiveDiscount && product.originalPrice ? (
+                <>
+                  <h5 className="text-primary mb-0">
+                    €{product.discountedPrice.toFixed(2)}
+                    <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                      /{product.unit}
+                    </small>
+                  </h5>
+                  <small className="text-muted" style={{ textDecoration: 'line-through' }}>
+                    €{product.originalPrice.toFixed(2)}
+                  </small>
+                </>
+              ) : (
+                <h5 className="text-primary mb-0">
+                  €{product.price.toFixed(2)}
+                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                    /{product.unit}
+                  </small>
+                </h5>
+              )}
+            </div>
 
             {product.stock > 0 ? (
               <Badge bg="success">

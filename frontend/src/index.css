@@ -15,6 +15,10 @@ body {
   background-color: #f8f9fa;
 }
 
+.logonavbar {
+  height: 2rem;
+}
+
 #root {
   min-height: 100vh;
 }

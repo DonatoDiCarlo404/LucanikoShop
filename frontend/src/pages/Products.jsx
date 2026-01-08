@@ -104,7 +104,7 @@ const Products = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button variant="primary" type="submit">
+              <Button variant="danger" type="submit">
                 <span><i className="bi bi-search"> Cerca</i></span>
               </Button>
             </InputGroup>

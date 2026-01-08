@@ -15,6 +15,9 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [uniqueCode, setUniqueCode] = useState('');
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -64,13 +67,23 @@ const Register = () => {
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="name">
-              <Form.Label>Nome</Form.Label>
+              <Form.Label>Nome e Cognome</Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Inserisci nome"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="businessName">
+              <Form.Label>Numero di Telefono</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Es: +39 123 456 7890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
               />
             </Form.Group>
 
@@ -138,11 +151,11 @@ const Register = () => {
             {role === 'seller' && (
               <>
                 <Alert variant="info" className="small">
-                  <strong>ℹ️ Info Venditore:</strong> Questi campi sono opzionali ma consigliati per velocizzare l'approvazione.
+                  <strong>ℹ️ Info Venditore:</strong> Questi campi sono obbligatori per l'approvazione come Venditore.
                 </Alert>
 
                 <Form.Group className="mb-3" controlId="businessName">
-                  <Form.Label>Nome Azienda</Form.Label>
+                  <Form.Label>Ragione Sociale</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="Es: La Bottega del Gusto"
@@ -163,6 +176,26 @@ const Register = () => {
                   <Form.Text className="text-muted">
                     11 cifre per P.IVA italiana
                   </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="businessName">
+                  <Form.Label>Indirizzo</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Es: via Roma 10, Milano"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </Form.Group>
+
+                <Form.Group className="mb-3" controlId="businessName">
+                  <Form.Label>Codice Univoco</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Es: M5UXCR1"
+                    value={uniqueCode}
+                    onChange={(e) => setUniqueCode(e.target.value)}
+                  />
                 </Form.Group>
               </>
             )}

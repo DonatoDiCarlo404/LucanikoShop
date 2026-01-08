@@ -1,4 +1,4 @@
-import Product from '../models/Product.js';
+import { Product, Category } from '../models/index.js';
 import cloudinary from '../config/cloudinary.js';
 
 // @desc    Ottieni tutti i prodotti (con filtri e ricerca)
@@ -8,17 +8,28 @@ export const getProducts = async (req, res) => {
   try {
     const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
 
-    // Costruisci query - solo prodotti attivi e approvati per catalogo pubblico
-    let query = { isActive: true, isApproved: true };
+    // Costruisci query - solo prodotti attivi per catalogo pubblico
+    let query = { isActive: true };
 
     // Ricerca full-text
     if (search) {
       query.$text = { $search: search };
     }
 
-    // Filtro categoria
+    // Filtro categoria - cerca per nome e usa l'ObjectId
     if (category) {
-      query.category = category;
+      const categoryDoc = await Category.findOne({ name: category });
+      if (categoryDoc) {
+        query.category = categoryDoc._id;
+      } else {
+        // Se la categoria non esiste, ritorna array vuoto
+        return res.json({
+          products: [],
+          page: Number(page),
+          pages: 0,
+          total: 0,
+        });
+      }
     }
 
     // Filtro prezzo
@@ -88,11 +99,6 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const { name, description, price, category, stock, unit, expiryDate, tags } = req.body;
-
-    // Verifica che il seller sia approvato
-    if (req.user.role === 'seller' && !req.user.isApproved) {
-      return res.status(403).json({ message: 'Il tuo account deve essere approvato per vendere prodotti' });
-    }
 
     const product = await Product.create({
       name,
@@ -221,13 +227,12 @@ export const getMyProducts = async (req, res) => {
   }
 };
 
-// @desc    Conta prodotti in attesa di approvazione
+// @desc    Conta prodotti in attesa di approvazione (DEPRECATO - approvazione rimossa)
 // @route   GET /api/products/pending-count
 // @access  Private (admin)
 export const getPendingProductsCount = async (req, res) => {
   try {
-    const count = await Product.countDocuments({ isApproved: false, isActive: true });
-    res.json({ count });
+    res.json({ count: 0 });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

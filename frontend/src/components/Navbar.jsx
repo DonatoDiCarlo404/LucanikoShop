@@ -60,7 +60,7 @@ const Navbar = () => {
     <BSNavbar bg="light" variant="light" expand="lg" sticky="top">
       <Container>
         <BSNavbar.Brand as={Link} to="/">
-          🛍️ LucanikoShop
+          <img src="lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
         </BSNavbar.Brand>
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
