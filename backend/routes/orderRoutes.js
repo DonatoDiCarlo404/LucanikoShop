@@ -8,7 +8,8 @@ import {
   getVendorOrders,
   getVendorStats,
   updateOrderStatus,
-  applyDiscountToOrder
+  applyDiscountToOrder,
+  calculateShippingCost
 } from '../controllers/orderController.js';
 import { protect } from '../middlewares/auth.js';
 import Order from '../models/Order.js';
@@ -39,6 +40,9 @@ router.get('/', protect, filterOrders);
 router.get('/vendor/received', protect, getVendorOrders);
 router.get('/vendor/stats', protect, getVendorStats);
 router.put('/:id/status', protect, updateOrderStatus);
+
+// Calcola costo spedizione per il carrello
+router.post('/calculate-shipping', protect, calculateShippingCost);
 
 // Ottieni tutti gli ordini dell'utente loggato
 router.get('/my-orders', protect, getMyOrders);

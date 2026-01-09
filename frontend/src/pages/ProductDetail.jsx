@@ -349,13 +349,32 @@ const ProductDetail = () => {
                 <h5>Venduto da</h5>
                 <ListGroup variant="flush">
                   <ListGroup.Item>
-                    <strong>Azienda:</strong> {product.seller.businessName || product.seller.name}
+                    <strong>Azienda:</strong>{' '}
+                    <span 
+                      style={{ 
+                        color: '#0d6efd', 
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                    >
+                      {product.seller.businessName || product.seller.name}
+                    </span>
                   </ListGroup.Item>
                   {product.seller.email && (
                     <ListGroup.Item>
                       <strong>Email:</strong> {product.seller.email}
                     </ListGroup.Item>
                   )}
+                  <ListGroup.Item>
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                    >
+                      Vedi tutti i prodotti di questo venditore →
+                    </Button>
+                  </ListGroup.Item>
                 </ListGroup>
               </Card.Body>
             </Card>

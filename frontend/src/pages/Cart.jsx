@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
@@ -17,6 +17,59 @@ const Cart = () => {
   const [couponError, setCouponError] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
+
+  // State per gestione spedizione
+  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingDetails, setShippingDetails] = useState(null);
+  const [loadingShipping, setLoadingShipping] = useState(false);
+
+  // Calcola costo spedizione
+  const calculateShipping = async () => {
+    if (cartCount === 0 || !user) return;
+
+    setLoadingShipping(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/orders/calculate-shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            product: item._id,
+            quantity: item.quantity
+          })),
+          shippingAddress: {
+            country: 'Italia',
+            state: ''
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setShippingCost(data.totalShipping || 0);
+        setShippingDetails(data.vendorShippingCosts || null);
+      } else {
+        console.error('Errore calcolo spedizione:', data.message);
+        setShippingCost(0);
+        setShippingDetails(null);
+      }
+    } catch (error) {
+      console.error('Errore nella richiesta calcolo spedizione:', error);
+      setShippingCost(0);
+      setShippingDetails(null);
+    } finally {
+      setLoadingShipping(false);
+    }
+  };
+
+  // Ricalcola spedizione quando il carrello cambia
+  useEffect(() => {
+    calculateShipping();
+  }, [cartItems, user]);
 
   const handleCheckout = async () => {
     if (cartCount === 0) return;
@@ -107,8 +160,8 @@ const Cart = () => {
     setCouponError('');
   };
 
-  // Calcola il totale finale con sconto
-  const finalTotal = cartTotal - discountAmount;
+  // Calcola il totale finale con sconto e spedizione
+  const finalTotal = cartTotal + shippingCost - discountAmount;
 
 
   if (cartCount === 0) {
@@ -209,7 +262,13 @@ const Cart = () => {
                 </ListGroup.Item>
                 <ListGroup.Item className="d-flex justify-content-between">
                   <span>Spedizione</span>
-                  <Badge bg="success">GRATIS</Badge>
+                  {loadingShipping ? (
+                    <Spinner animation="border" size="sm" />
+                  ) : shippingCost === 0 ? (
+                    <Badge bg="success">GRATIS</Badge>
+                  ) : (
+                    <strong>€{shippingCost.toFixed(2)}</strong>
+                  )}
                 </ListGroup.Item>
                 
                 {/* Sconto applicato */}
@@ -281,9 +340,24 @@ const Cart = () => {
                 </Button>
               </div>
 
-              <Alert variant="info" className="mt-3 small mb-0">
-                <strong>Spedizione gratuita</strong> su tutti gli ordini!
-              </Alert>
+              {shippingCost === 0 ? (
+                <Alert variant="success" className="mt-3 small mb-0">
+                  <strong>🎉 Spedizione gratuita</strong> per questo ordine!
+                </Alert>
+              ) : (
+                <Alert variant="info" className="mt-3 small mb-0">
+                  <strong>📦 Spedizione:</strong> I costi variano in base al peso e alla destinazione.
+                  {shippingDetails && (
+                    <div className="mt-2">
+                      {Object.entries(shippingDetails).map(([vendorId, details]) => (
+                        <div key={vendorId} className="small text-muted">
+                          • {details.message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Alert>
+              )}
             </Card.Body>
           </Card>
         </Col>

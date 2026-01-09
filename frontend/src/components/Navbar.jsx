@@ -60,7 +60,7 @@ const Navbar = () => {
     <BSNavbar bg="light" variant="light" expand="lg" sticky="top">
       <Container>
         <BSNavbar.Brand as={Link} to="/">
-          <img src="lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
+          <img src="/lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
         </BSNavbar.Brand>
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
@@ -126,6 +126,14 @@ const Navbar = () => {
                 id="user-dropdown"
                 align="end"
               >
+                {(user.role === 'seller' || user.role === 'admin') && (
+                  <>
+                    <NavDropdown.Item onClick={() => navigate('/vendor/profile')}>
+                      <span><i className="bi bi-person-badge me-2"></i> Profilo Aziendale</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Divider />
+                  </>
+                )}
                 <NavDropdown.Item onClick={() => navigate('/orders')}>
                   <span><i className="bi bi-list-ul me-2"></i> I Miei Ordini</span>
                 </NavDropdown.Item>

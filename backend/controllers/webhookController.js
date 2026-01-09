@@ -55,6 +55,9 @@ export const handleStripeWebhook = async (req, res) => {
       // Ottieni indirizzo di spedizione (se presente)
       const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
 
+      // Ottieni costo spedizione dai metadata
+      const shippingCost = parseFloat(session.metadata.shippingCost || '0');
+
       // Crea l'ordine nel database
       const order = await Order.create({
         buyer: userId,
@@ -74,7 +77,7 @@ export const handleStripeWebhook = async (req, res) => {
           email_address: session.customer_details?.email,
         },
         itemsPrice: session.amount_subtotal / 100,
-        shippingPrice: 0,
+        shippingPrice: shippingCost,
         taxPrice: 0,
         totalPrice: session.amount_total / 100,
         status: 'processing',

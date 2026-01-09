@@ -19,6 +19,8 @@ import OrderHistory from './pages/OrderHistory';
 import OrderDetail from './pages/OrderDetail';
 import OrderTracking from './pages/OrderTracking';
 import VendorDashboard from './pages/VendorDashboard';
+import VendorProfile from './pages/VendorProfile';
+import ShopPage from './pages/ShopPage';
 import Footer from './components/Footer';
 import Error from './pages/Error';
 import SplashScreen from './components/SplashScreen';
@@ -47,6 +49,7 @@ function App() {
             {/* Prodotti pubblici */}
             <Route path="/products" element={<Products />} />
             <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/shop/:sellerId" element={<ShopPage />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
@@ -61,6 +64,7 @@ function App() {
 
             {/* Vendor Dashboard */}
             <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />
+            <Route path="/vendor/profile" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorProfile /> </ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />

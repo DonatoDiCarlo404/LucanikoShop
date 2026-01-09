@@ -55,14 +55,55 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    ragioneSociale: {
+      type: String,
+      trim: true
+    },
     businessDescription: {
       type: String,
       maxlength: [500, 'La descrizione non può superare 500 caratteri']
+    },
+    logo: {
+      url: String,
+      public_id: String // Per Cloudinary
+    },
+    // Contatti negozio
+    businessEmail: {
+      type: String,
+      trim: true,
+      lowercase: true
+    },
+    businessPhone: String,
+    businessWhatsapp: String,
+    website: String,
+    socialLinks: {
+      facebook: String,
+      instagram: String,
+      twitter: String,
+      linkedin: String,
+      tiktok: String
+    },
+    // Indirizzo punto vendita fisico
+    storeAddress: {
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+      coordinates: {
+        lat: Number,
+        lng: Number
+      }
     },
     vatNumber: { // Partita IVA
       type: String,
       trim: true,
       sparse: true // Permette null ma deve essere unico se presente
+    },
+    codiceSDI: { // Codice SDI per fatturazione elettronica
+      type: String,
+      trim: true,
+      maxlength: [7, 'Il codice SDI non può superare 7 caratteri']
     },
     businessAddress: {
       street: String,
@@ -77,6 +118,52 @@ const userSchema = new mongoose.Schema(
     },
     // Configurazioni negozio (per seller)
     shopSettings: {
+      // Metodi di pagamento
+      paymentMethods: {
+        bankTransfer: {
+          enabled: {
+            type: Boolean,
+            default: true
+          },
+          iban: String,
+          bankName: String,
+          accountHolder: String
+        },
+        paypal: {
+          enabled: {
+            type: Boolean,
+            default: false
+          },
+          email: String
+        },
+        stripe: {
+          enabled: {
+            type: Boolean,
+            default: false
+          },
+          accountId: String, // Stripe Connect Account ID
+          onboardingComplete: {
+            type: Boolean,
+            default: false
+          }
+        },
+        cashOnDelivery: {
+          enabled: {
+            type: Boolean,
+            default: false
+          },
+          extraFee: Number
+        }
+      },
+      // Termini e condizioni personalizzati
+      termsAndConditions: {
+        content: String,
+        lastUpdated: Date,
+        version: {
+          type: Number,
+          default: 1
+        }
+      },
       // Configurazioni spedizioni
       shipping: {
         freeShipping: {
@@ -92,12 +179,18 @@ const userSchema = new mongoose.Schema(
           description: String,
           calculationType: {
             type: String,
-            enum: ['fixed', 'weight', 'price'], // fisso, basato su peso, basato su prezzo
+            enum: ['fixed', 'weight', 'price', 'zone'], // fisso, peso, prezzo, zona geografica
             default: 'fixed'
           },
           baseRate: Number, // Tariffa base
           ratePerUnit: Number, // Tariffa per kg o per euro
-          estimatedDays: String // Es: "3-5 giorni"
+          estimatedDays: String, // Es: "3-5 giorni"
+          zones: [{ // Zone geografiche per spedizioni
+            name: String, // Es: "Nord Italia", "Sud Italia", "Isole", "Estero UE"
+            regions: [String], // Es: ["Lombardia", "Piemonte"], oppure ["IT", "FR", "DE"]
+            rate: Number,
+            estimatedDays: String
+          }]
         }],
         defaultShippingRate: Number // Tariffa predefinita
       },

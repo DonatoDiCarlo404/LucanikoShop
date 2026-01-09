@@ -224,7 +224,20 @@ const AdminDashboard = () => {
                       <tr key={seller._id}>
                         <td>{seller.name}</td>
                         <td>{seller.email}</td>
-                        <td>{seller.businessName || '-'}</td>
+                        <td>
+                          {seller.businessName ? (
+                            <span 
+                              style={{ 
+                                color: '#0d6efd', 
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                              }}
+                              onClick={() => navigate(`/shop/${seller._id}`)}
+                            >
+                              {seller.businessName}
+                            </span>
+                          ) : '-'}
+                        </td>
                         <td>{seller.vatNumber || '-'}</td>
                         <td>{new Date(seller.createdAt).toLocaleDateString('it-IT')}</td>
                         <td>
@@ -278,7 +291,20 @@ const AdminDashboard = () => {
                       <tr key={seller._id}>
                         <td>{seller.name}</td>
                         <td>{seller.email}</td>
-                        <td>{seller.businessName || '-'}</td>
+                        <td>
+                          {seller.businessName ? (
+                            <span 
+                              style={{ 
+                                color: '#0d6efd', 
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                              }}
+                              onClick={() => navigate(`/shop/${seller._id}`)}
+                            >
+                              {seller.businessName}
+                            </span>
+                          ) : '-'}
+                        </td>
                         <td>{seller.vatNumber || '-'}</td>
                         <td>
                           {seller.isApproved ? (

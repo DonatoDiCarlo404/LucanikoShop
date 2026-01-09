@@ -1,5 +1,8 @@
 import Order from "../models/Order.js";
 import { Discount } from "../models/index.js";
+import User from "../models/User.js";
+import Product from "../models/Product.js";
+import { calculateMultiVendorShipping } from "../utils/shippingCalculator.js";
 
 // @desc    Filtra ordini per query string (productId, buyer, isPaid)
 // @route   GET /api/orders?productId=...&buyer=...&isPaid=true
@@ -323,6 +326,74 @@ export const applyDiscountToOrder = async (req, res) => {
         });
     } catch (error) {
         console.error('Errore nell\'applicazione dello sconto:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// @desc    Calcola costo di spedizione per il carrello
+// @route   POST /api/orders/calculate-shipping
+// @access  Private
+export const calculateShippingCost = async (req, res) => {
+    try {
+        const { items, shippingAddress } = req.body;
+
+        if (!items || items.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Il carrello è vuoto' 
+            });
+        }
+
+        // Raggruppa items per venditore
+        const itemsByVendor = {};
+
+        for (const item of items) {
+            const product = await Product.findById(item.product).populate('seller', 'shopSettings');
+            
+            if (!product) {
+                return res.status(404).json({ 
+                    success: false,
+                    message: `Prodotto non trovato: ${item.product}` 
+                });
+            }
+
+            const vendorId = product.seller._id.toString();
+
+            if (!itemsByVendor[vendorId]) {
+                itemsByVendor[vendorId] = {
+                    vendorId,
+                    vendorName: product.seller.name,
+                    items: [],
+                    vendorShippingSettings: product.seller.shopSettings?.shipping || null
+                };
+            }
+
+            itemsByVendor[vendorId].items.push({
+                product: {
+                    _id: product._id,
+                    name: product.name,
+                    weight: product.weight || 0
+                },
+                quantity: item.quantity
+            });
+        }
+
+        // Calcola spedizione per ogni venditore
+        const vendorShippingArray = Object.values(itemsByVendor);
+        const shippingResult = calculateMultiVendorShipping(
+            vendorShippingArray,
+            shippingAddress || { country: 'Italia', state: '' }
+        );
+
+        res.status(200).json({
+            success: true,
+            ...shippingResult
+        });
+    } catch (error) {
+        console.error('Errore nel calcolo spedizione:', error);
         res.status(500).json({
             success: false,
             message: error.message

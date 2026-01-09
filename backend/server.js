@@ -17,6 +17,7 @@ import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import discountRoutes from './routes/discountRoutes.js';
 import shopSettingsRoutes from './routes/shopSettingsRoutes.js';
+import vendorRoutes from './routes/vendorRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/shop-settings', shopSettingsRoutes);
+app.use('/api/vendors', vendorRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

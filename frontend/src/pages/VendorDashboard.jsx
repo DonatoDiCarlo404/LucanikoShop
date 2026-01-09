@@ -392,20 +392,14 @@ const VendorDashboard = () => {
 
   return (
     <Container className="mt-4 mb-5">
-      <h2 className="mb-4">📊 Dashboard Venditore</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 Dashboard Venditore</h2>
+        <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
+          <i className="bi bi-person-badge me-2"></i>
+          Profilo Aziendale
+        </Button>
+      </div>
 
-      {/* Notifica prodotti in attesa di approvazione */}
-      {user.role === 'seller' && products.some(p => !p.isApproved) && (
-        <Alert variant="info" className="mb-4">
-          <Alert.Heading>
-            <i className="bi bi-info-circle"></i> Prodotti in attesa di approvazione
-          </Alert.Heading>
-          <p className="mb-0">
-            Hai <strong>{products.filter(p => !p.isApproved).length}</strong> prodotto/i in attesa di approvazione da parte dell'admin. 
-            Una volta approvati, saranno visibili nel catalogo pubblico.
-          </p>
-        </Alert>
-      )}
 
       {/* Statistiche */}
       {stats && (
@@ -535,7 +529,6 @@ const VendorDashboard = () => {
                   <Table striped bordered hover>
                     <thead>
                       <tr>
-                        <th>Immagine</th>
                         <th>Nome</th>
                         <th>Categoria</th>
                         <th>Prezzo</th>
@@ -547,30 +540,12 @@ const VendorDashboard = () => {
                     <tbody>
                       {products.map((product) => (
                         <tr key={product._id}>
-                          <td>
-                            {product.images?.[0] ? (
-                              <img
-                                src={product.images[0]}
-                                alt={product.name}
-                                style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <div
-                                style={{
-                                  width: '50px',
-                                  height: '50px',
-                                  backgroundColor: '#e9ecef',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <small>N/A</small>
-                              </div>
-                            )}
-                          </td>
                           <td>{product.name}</td>
-                          <td>{product.category}</td>
+                          <td>{
+                            typeof product.category === 'object' && product.category !== null
+                              ? product.category.name
+                              : (categories.find(cat => cat._id === product.category)?.name || product.category)
+                          }</td>
                           <td>€{product.price.toFixed(2)}</td>
                           <td>
                             <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
@@ -578,8 +553,8 @@ const VendorDashboard = () => {
                             </Badge>
                           </td>
                           <td>
-                            <Badge bg={product.isApproved ? 'success' : 'warning'}>
-                              {product.isApproved ? 'Approvato' : 'In attesa'}
+                            <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
+                              {product.stock > 10 ? 'Disponibile' : product.stock > 0 ? 'Basso' : 'Esaurito'}
                             </Badge>
                           </td>
                           <td>
@@ -929,7 +904,7 @@ const VendorDashboard = () => {
                   }}
                   style={{ minHeight: '150px' }}
                 >
-                  {products.filter(p => p.isApproved).map(product => (
+                  {products.map(product => (
                     <option key={product._id} value={product._id}>
                       {product.name} - €{product.price.toFixed(2)}
                     </option>
