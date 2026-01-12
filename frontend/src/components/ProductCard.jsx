@@ -2,10 +2,50 @@ import { Card, Badge, Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
+import { wishlistAPI } from '../services/api';
+import { useState, useEffect } from 'react';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Verifica se il prodotto è nella wishlist
+  useEffect(() => {
+    const checkWishlist = async () => {
+      if (user?.token) {
+        try {
+          const wishlistData = await wishlistAPI.getWishlist(user.token);
+          const inWishlist = wishlistData.some(item => item.product?._id === product._id);
+          setIsInWishlist(inWishlist);
+        } catch (error) {
+          console.error('Errore nel controllo wishlist:', error);
+        }
+      }
+    };
+    checkWishlist();
+  }, [user, product._id]);
+
+  const handleWishlistToggle = async (e) => {
+    e.stopPropagation();
+    if (!user?.token) return;
+
+    setLoading(true);
+    try {
+      if (isInWishlist) {
+        await wishlistAPI.removeFromWishlist(product._id, user.token);
+        setIsInWishlist(false);
+      } else {
+        await wishlistAPI.addToWishlist(product._id, user.token);
+        setIsInWishlist(true);
+      }
+    } catch (error) {
+      console.error('Errore gestione wishlist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card
@@ -22,7 +62,7 @@ const ProductCard = ({ product }) => {
             left: 10,
             zIndex: 11,
             fontSize: 24,
-            color: '#e74c3c',
+            color: isInWishlist ? '#e74c3c' : '#ccc',
             background: 'rgba(255,255,255,0.85)',
             borderRadius: '50%',
             width: 36,
@@ -30,23 +70,20 @@ const ProductCard = ({ product }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.07)'
+            boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+            cursor: loading ? 'wait' : 'pointer'
           }}
-          title="Aggiungi ai preferiti"
-          onClick={e => {
-            e.stopPropagation();
-            // Qui in futuro handler wishlist
-          }}
+          title={isInWishlist ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+          onClick={handleWishlistToggle}
           role="button"
           tabIndex={0}
           onKeyDown={e => {
             if (e.key === 'Enter' || e.key === ' ') {
-              e.stopPropagation();
-              // Qui in futuro handler wishlist
+              handleWishlistToggle(e);
             }
           }}
         >
-          <i className="bi bi-heart"></i>
+          <i className={`bi bi-heart${isInWishlist ? '-fill' : ''}`}></i>
         </span>
       )}
 

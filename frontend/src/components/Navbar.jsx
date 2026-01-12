@@ -65,19 +65,23 @@ const Navbar = () => {
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/products">
-              <span><i className="bi bi-journal-arrow-up">  Catalogo</i></span>
-            </Nav.Link>
+            {/* altri link seller/admin qui sotto */}
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
                 <Nav.Link as={Link} to="/vendor/dashboard">
-                  <span><i className="bi bi-graph-up"></i> Dashboard Venditore</span>
+                  <span>
+                    <i className="bi bi-graph-up"></i> Dashboard Venditore
+                  </span>
                 </Nav.Link>
                 <Nav.Link as={Link} to="/my-products">
-                  I miei prodotti
+                  <span>
+                    <i className="bi bi-bag-check"></i> I miei prodotti
+                  </span>
                 </Nav.Link>
                 <Nav.Link as={Link} to="/products/new">
-                  Nuovo prodotto
+                  <span>
+                    <i className="bi bi-bag-plus"></i> Nuovo prodotto
+                  </span>
                 </Nav.Link>
               </>
             )}
@@ -107,7 +111,10 @@ const Navbar = () => {
             )}
           </Nav>
 
-          <Nav>
+          <Nav className="ms-auto align-items-center">
+            <Nav.Link as={Link} to="/products" className="me-2">
+              <span><i className="bi bi-journal-arrow-up"></i> Catalogo</span>
+            </Nav.Link>
             <Nav.Link as={Link} to="/cart">
               <span><i className="bi bi-cart"></i></span>
               {cartCount > 0 && (
@@ -134,10 +141,14 @@ const Navbar = () => {
                     <NavDropdown.Divider />
                   </>
                 )}
-                <NavDropdown.Item onClick={() => navigate('/orders')}>
-                  <span><i className="bi bi-list-ul me-2"></i> I Miei Ordini</span>
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
+                  {(user.role === 'buyer' || user.role === 'user' || user.role === 'acquirente') && (
+                    <>
+                      <NavDropdown.Item onClick={() => navigate('/profile')}>
+                        <span><i className="bi bi-person me-2"></i> Il mio Profilo</span>
+                      </NavDropdown.Item>
+                      <NavDropdown.Divider />
+                    </>
+                  )}
                 <NavDropdown.Item onClick={handleLogout}>
                   <span><i className="bi bi-power me-2"></i> Logout</span>
                 </NavDropdown.Item>

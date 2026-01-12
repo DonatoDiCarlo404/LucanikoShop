@@ -274,6 +274,7 @@ const ProductDetail = () => {
         ← Torna al catalogo
       </Button>
 
+
       <Row>
         {/* COLONNA IMMAGINI */}
         <Col md={6}>
@@ -307,6 +308,7 @@ const ProductDetail = () => {
         </Col>
 
         {/* COLONNA DETTAGLI */}
+
         <Col md={6}>
           <div className="mb-3">
             <Badge bg="secondary" className="mb-2">
@@ -314,6 +316,39 @@ const ProductDetail = () => {
             </Badge>
             <h2>{product.name}</h2>
           </div>
+
+          {/* VENDITORE */}
+          {product.seller && (
+            <Card className="mb-3">
+              <Card.Body>
+                <h5>Venduto da</h5>
+                <ListGroup variant="flush">
+                  <ListGroup.Item>
+                    <strong>Azienda:</strong>{' '}
+                    <span 
+                      style={{ 
+                        color: '#0d6efd', 
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                      }}
+                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                    >
+                      {product.seller.businessName || product.seller.name}
+                    </span>
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                    >
+                      Vedi tutti i prodotti di questo venditore →
+                    </Button>
+                  </ListGroup.Item>
+                </ListGroup>
+              </Card.Body>
+            </Card>
+          )}
 
           <Card className="mb-3">
             <Card.Body>
@@ -338,44 +373,6 @@ const ProductDetail = () => {
               <Card.Body>
                 <h5>Descrizione</h5>
                 <p>{product.description}</p>
-              </Card.Body>
-            </Card>
-          )}
-
-          {/* VENDITORE */}
-          {product.seller && (
-            <Card className="mb-3">
-              <Card.Body>
-                <h5>Venduto da</h5>
-                <ListGroup variant="flush">
-                  <ListGroup.Item>
-                    <strong>Azienda:</strong>{' '}
-                    <span 
-                      style={{ 
-                        color: '#0d6efd', 
-                        cursor: 'pointer',
-                        textDecoration: 'underline'
-                      }}
-                      onClick={() => navigate(`/shop/${product.seller._id}`)}
-                    >
-                      {product.seller.businessName || product.seller.name}
-                    </span>
-                  </ListGroup.Item>
-                  {product.seller.email && (
-                    <ListGroup.Item>
-                      <strong>Email:</strong> {product.seller.email}
-                    </ListGroup.Item>
-                  )}
-                  <ListGroup.Item>
-                    <Button 
-                      variant="outline-primary" 
-                      size="sm"
-                      onClick={() => navigate(`/shop/${product.seller._id}`)}
-                    >
-                      Vedi tutti i prodotti di questo venditore →
-                    </Button>
-                  </ListGroup.Item>
-                </ListGroup>
               </Card.Body>
             </Card>
           )}

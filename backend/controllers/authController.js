@@ -1,3 +1,81 @@
+// @desc    Aggiorna profilo acquirente
+// @route   PUT /api/auth/profile
+// @access  Private/Buyer
+export const updateProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'buyer' && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accesso negato. Solo acquirenti possono modificare il profilo personale.' });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+      return res.status(404).json({ message: 'Utente non trovato' });
+    }
+
+    // Aggiorna indirizzo
+    if (req.body.address) {
+      user.address = {
+        street: req.body.address.street || user.address?.street,
+        city: req.body.address.city || user.address?.city,
+        state: req.body.address.state || user.address?.state,
+        zipCode: req.body.address.zipCode || user.address?.zipCode,
+        country: req.body.address.country || user.address?.country,
+        taxCode: req.body.address.taxCode || user.address?.taxCode
+      };
+    }
+
+    // Aggiorna indirizzo di fatturazione
+    if (req.body.billingAddress) {
+      user.billingAddress = {
+        street: req.body.billingAddress.street || user.billingAddress?.street,
+        city: req.body.billingAddress.city || user.billingAddress?.city,
+        state: req.body.billingAddress.state || user.billingAddress?.state,
+        zipCode: req.body.billingAddress.zipCode || user.billingAddress?.zipCode,
+        country: req.body.billingAddress.country || user.billingAddress?.country,
+        taxCode: req.body.billingAddress.taxCode || user.billingAddress?.taxCode
+      };
+    }
+
+    // Aggiorna password se fornita
+    if (req.body.password && req.body.password.length >= 8) {
+      user.password = req.body.password;
+    }
+
+    // Aggiorna metodo di pagamento preferito
+    if (typeof req.body.paymentMethod === 'string') {
+      user.paymentMethod = req.body.paymentMethod;
+    }
+
+    // Aggiorna dati carta se forniti
+    if (req.body.cardDetails) {
+      user.cardDetails = {
+        cardHolder: req.body.cardDetails.cardHolder || user.cardDetails?.cardHolder,
+        cardNumber: req.body.cardDetails.cardNumber || user.cardDetails?.cardNumber,
+        expiryDate: req.body.cardDetails.expiryDate || user.cardDetails?.expiryDate,
+        cardType: req.body.cardDetails.cardType || user.cardDetails?.cardType
+      };
+    }
+
+    await user.save();
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isApproved: user.isApproved,
+      phone: user.phone,
+      address: user.address,
+      billingAddress: user.billingAddress,
+      paymentMethod: user.paymentMethod,
+      cardDetails: user.cardDetails,
+      avatar: user.avatar,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { sendWelcomeEmail } from '../utils/emailTemplates.js';
@@ -91,7 +169,11 @@ export const getProfile = async (req, res) => {
         isApproved: user.isApproved,
         phone: user.phone,
         address: user.address,
-        avatar: user.avatar
+        billingAddress: user.billingAddress,
+        paymentMethod: user.paymentMethod,
+        cardDetails: user.cardDetails,
+        avatar: user.avatar,
+        createdAt: user.createdAt
       });
     } else {
       res.status(404).json({ message: 'Utente non trovato' });

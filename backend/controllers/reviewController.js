@@ -38,6 +38,23 @@ export const deleteReview = async (req, res) => {
     res.status(500).json({ message: 'Errore server' });
   }
 };
+
+// @desc    Ottieni tutte le recensioni dell'utente loggato
+// @route   GET /api/reviews/my-reviews
+// @access  Private
+export const getMyReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ user: req.user._id })
+      .populate('product', 'name images')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    console.error('[getMyReviews] Errore:', error);
+    res.status(500).json({ message: 'Errore nel recupero delle recensioni' });
+  }
+};
+
 import Review from '../models/Review.js';
 import Product from '../models/Product.js';
 

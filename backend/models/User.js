@@ -44,11 +44,34 @@ const userSchema = new mongoose.Schema(
       city: String,
       state: String,
       zipCode: String,
-      country: String
+      country: String,
+      taxCode: String // Codice fiscale
+    },
+    billingAddress: {
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+      taxCode: String
     },
     avatar: {
       type: String,
       default: 'https://via.placeholder.com/150'
+    },
+
+    // Metodo di pagamento preferito (acquirente)
+    paymentMethod: {
+      type: String,
+      enum: ['carta', ''],
+      default: ''
+    },
+    // Dati carta di credito (salvati in modo sicuro, criptati)
+    cardDetails: {
+      cardHolder: String,
+      cardNumber: String, // Salvare solo ultime 4 cifre in produzione
+      expiryDate: String,
+      cardType: String // Visa, Mastercard, etc.
     },
     // Campi specifici per i seller (aziende)
     businessName: {

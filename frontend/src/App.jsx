@@ -25,6 +25,7 @@ import Footer from './components/Footer';
 import Error from './pages/Error';
 import SplashScreen from './components/SplashScreen';
 import { useState, useEffect } from 'react';
+import BuyerProfile from './pages/BuyerProfile';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -65,6 +66,9 @@ function App() {
             {/* Vendor Dashboard */}
             <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />
             <Route path="/vendor/profile" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorProfile /> </ProtectedRoute>} />
+
+            {/* Buyer Profile */}
+            <Route path="/profile" element={<ProtectedRoute allowedRoles={['buyer','user','acquirente']}> <BuyerProfile /> </ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />

@@ -46,6 +46,18 @@ export const authAPI = {
     });
     return handleResponse(response);
   },
+
+  updateProfile: async (data, token) => {
+    const response = await fetch(`${API_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
 };
 
 // Products API
@@ -249,4 +261,95 @@ export const categoriesAPI = {
     if (!response.ok) throw new Error('Errore nel recupero delle categorie');
     return response.json();
   }
+};
+
+// Wishlist API
+export const wishlistAPI = {
+  // Ottieni wishlist dell'utente
+  getWishlist: async (token) => {
+    const response = await fetch(`${API_URL}/wishlist`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Aggiungi prodotto alla wishlist
+  addToWishlist: async (productId, token) => {
+    const response = await fetch(`${API_URL}/wishlist/${productId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Rimuovi prodotto dalla wishlist
+  removeFromWishlist: async (productId, token) => {
+    const response = await fetch(`${API_URL}/wishlist/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};
+
+// Review API
+export const reviewAPI = {
+  // Ottieni recensioni dell'utente
+  getMyReviews: async (token) => {
+    const response = await fetch(`${API_URL}/reviews/my-reviews`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Ottieni recensioni di un prodotto
+  getReviewsByProduct: async (productId) => {
+    const response = await fetch(`${API_URL}/reviews/${productId}`);
+    return handleResponse(response);
+  },
+
+  // Crea recensione
+  createReview: async (productId, reviewData, token) => {
+    const response = await fetch(`${API_URL}/reviews/${productId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(reviewData),
+    });
+    return handleResponse(response);
+  },
+
+  // Modifica recensione
+  updateReview: async (reviewId, reviewData, token) => {
+    const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(reviewData),
+    });
+    return handleResponse(response);
+  },
+
+  // Elimina recensione
+  deleteReview: async (reviewId, token) => {
+    const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
 };

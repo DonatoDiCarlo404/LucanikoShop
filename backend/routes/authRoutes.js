@@ -1,6 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { register, login, getProfile, googleCallback, getVendorProfile, updateVendorProfile } from '../controllers/authController.js';
+import { register, login, getProfile, googleCallback, getVendorProfile, updateVendorProfile, updateProfile } from '../controllers/authController.js';
 import { protect } from '../middlewares/auth.js';
 import passport from '../config/passport.js';
 
@@ -37,7 +37,11 @@ router.get(
 
 // Rotte protette
 router.get('/profile', protect, getProfile);
+
 router.get('/vendor-profile', protect, getVendorProfile);
 router.put('/vendor-profile', protect, updateVendorProfile);
+
+// Aggiorna profilo acquirente (buyer)
+router.put('/profile', protect, updateProfile);
 
 export default router;
