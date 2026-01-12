@@ -388,9 +388,10 @@ const VendorProfile = () => {
         throw new Error(data.message || 'Errore nel salvataggio del profilo');
       }
 
+
       setSuccess(successMessage);
       setProfileData(data);
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 1000);
       return true;
 
     } catch (err) {
@@ -421,40 +422,27 @@ const VendorProfile = () => {
       {/* --- SEZIONE PUBBLICA: LOGO, CONTATTI, PRODOTTI --- */}
       <Card className="mb-4 shadow-sm">
         <Card.Body>
-          <Row className="align-items-center">
-            <Col md={2} className="text-center mb-3 mb-md-0">
-              {profileData?.logo?.url ? (
-                <img src={profileData.logo.url} alt="Logo" style={{ maxWidth: 90, maxHeight: 90, borderRadius: 12, border: '1px solid #eee', background: '#fff' }} />
-              ) : (
-                <div style={{ width: 90, height: 90, borderRadius: 12, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #eee' }}>
-                  <span className="text-muted">Nessun logo</span>
-                </div>
-              )}
-            </Col>
-            <Col md={5}>
-              <h4 className="mb-1">{profileData?.businessName || 'Negozio'}</h4>
-              {profileData?.ragioneSociale && (
-                <div className="text-muted" style={{ fontSize: 14 }}><strong>Ragione sociale:</strong> {profileData.ragioneSociale}</div>
-              )}
-              <div className="text-muted mb-2" style={{ fontSize: 15 }}>{profileData?.businessDescription}</div>
-              <div>
-                {profileData?.vatNumber && <div><strong>P.IVA:</strong> {profileData.vatNumber}</div>}
-                {profileData?.codiceSDI && <div><strong>Codice SDI:</strong> {profileData.codiceSDI}</div>}
-                {profileData?.businessEmail && <div><strong>Email:</strong> <a href={`mailto:${profileData.businessEmail}`}>{profileData.businessEmail}</a></div>}
-                {profileData?.businessPhone && <div><strong>Telefono:</strong> <a href={`tel:${profileData.businessPhone}`}>{profileData.businessPhone}</a></div>}
-                {profileData?.businessAddress && (
-                  <div><strong>Indirizzo:</strong> {[
-                    profileData.businessAddress.street,
-                    profileData.businessAddress.city,
-                    profileData.businessAddress.state,
-                    profileData.businessAddress.zipCode,
-                    profileData.businessAddress.country
-                  ].filter(Boolean).join(', ')}</div>
+          <Row className="align-items-start">
+            <Col md={5} className="text-md-start mt-4 mt-md-0">
+              {/* Logo */}
+              <div className="mb-3">
+                {profileData?.logo?.url ? (
+                  <img src={profileData.logo.url} alt="Logo" style={{ width: 140, height: 140, borderRadius: 18, border: '2.5px solid #eee', background: '#fff', objectFit: 'contain'  }} />
+                ) : (
+                  <div style={{ width: 90, height: 90, borderRadius: 12, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #eee', marginLeft: 'auto' }} >
+                    <span className="text-muted">Nessun logo</span>
+                  </div>
                 )}
-                {profileData?.bankAccount?.iban && (
-                  <div><strong>IBAN:</strong> {profileData.bankAccount.iban}</div>
-                )}
-                {profileData?.socialLinks && (
+              </div>
+              {/* Descrizione attività */}
+              {profileData?.businessDescription && (
+                <div className="text-muted mb-2" style={{ fontSize: 15 }}>{profileData.businessDescription}</div>
+              )}
+              {/* Contatti */}
+              {profileData?.businessPhone && <div><strong>Telefono:</strong> <a href={`tel:${profileData.businessPhone}`}>{profileData.businessPhone}</a></div>}
+              {/* Social */}
+              {profileData?.socialLinks && (
+                <>
                   <div className="mt-1">
                     {profileData.socialLinks?.facebook && <a href={profileData.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="me-2" title="Facebook"><i className="bi bi-facebook" style={{ fontSize: 22 }}></i></a>}
                     {profileData.socialLinks?.instagram && <a href={profileData.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="me-2" title="Instagram"><i className="bi bi-instagram" style={{ fontSize: 22 }}></i></a>}
@@ -462,10 +450,55 @@ const VendorProfile = () => {
                     {profileData.businessWhatsapp && <a href={`https://wa.me/${profileData.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="me-2" title="WhatsApp"><i className="bi bi-whatsapp" style={{ fontSize: 22 }}></i></a>}
                     {profileData.website && <a href={profileData.website} target="_blank" rel="noopener noreferrer" className="me-2" title="Sito Web"><i className="bi bi-globe" style={{ fontSize: 22 }}></i></a>}
                   </div>
+                  <div className="d-block d-md-none w-100" style={{ borderBottom: '1px solid #eee', margin: '12px 0' }}></div>
+                </>
+              )}
+            </Col>
+            <Col md={7}>
+              <h4 className="mb-1">{profileData?.businessName || 'Negozio'}</h4>
+              {profileData?.ragioneSociale && (
+                <div className="text-muted" style={{ fontSize: 14 }}><strong>Ragione sociale:</strong> {profileData.ragioneSociale}</div>
+              )}
+              <div>
+                {profileData?.vatNumber && <div><strong>P.IVA:</strong> {profileData.vatNumber}</div>}
+                {profileData?.codiceSDI && <div><strong>Codice SDI:</strong> {profileData.codiceSDI}</div>}
+                {profileData?.businessEmail && <div><strong>Email:</strong> <a href={`mailto:${profileData.businessEmail}`}>{profileData.businessEmail}</a></div>}
+                {profileData?.businessAddress && (
+                  <div><strong>Indirizzo sede legale:</strong> {[
+                    profileData.businessAddress.street,
+                    profileData.businessAddress.city,
+                    profileData.businessAddress.state,
+                    profileData.businessAddress.zipCode,
+                    profileData.businessAddress.country
+                  ].filter(Boolean).join(', ')}</div>
+                )}
+                {/* Indirizzo punto vendita (opzionale, privato) */}
+                {profileData?.storeAddress &&
+                  Object.values(profileData.storeAddress).some(v => typeof v === 'string' ? v.trim() : v && typeof v === 'object' && Object.values(v).some(x => x)) && (
+                    <div><strong>Indirizzo punto vendita:</strong> {[
+                      profileData.storeAddress.street,
+                      profileData.storeAddress.city,
+                      profileData.storeAddress.state,
+                      profileData.storeAddress.zipCode,
+                      profileData.storeAddress.country
+                    ].filter(Boolean).join(', ')}</div>
+                )}
+                {/* Data di registrazione */}
+                {(profileData?.memberSince || profileData?.createdAt) && (
+                  <div><strong>Registrato su LucanikoShop:</strong> {new Date(profileData.memberSince || profileData.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                )}
+                {/* Rateo recensioni ricevute */}
+                <div className="mt-4 text-end" style={{ fontSize: 15 }}>
+                  <span style={{ color: '#f5b50a', fontWeight: 600 }}>
+                    <i className="bi bi-star-fill"></i> {profileData?.reviewStats?.avg?.toFixed(1) || stats?.reviewAvg?.toFixed(1) || '0.0'} / 5
+                  </span>
+                  <span className="text-muted ms-2">su {profileData?.reviewStats?.count || stats?.reviewCount || 0} recensioni</span>
+                </div>
+                {profileData?.bankAccount?.iban && (
+                  <div><strong>IBAN:</strong> {profileData.bankAccount.iban}</div>
                 )}
               </div>
             </Col>
-            {/* Sezione prodotti caricati rimossa: ora visibili solo nella vetrina pubblica */}
           </Row>
         </Card.Body>
       </Card>
@@ -488,7 +521,16 @@ const VendorProfile = () => {
       </div>
 
       {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
-      {success && <Alert variant="success" dismissible onClose={() => setSuccess('')}>{success}</Alert>}
+      {/* MODAL SUCCESSO PROFILO */}
+      <Modal show={!!success} onHide={() => setSuccess('')} centered backdrop="static" keyboard={false}>
+        <Modal.Body className="text-center py-4">
+          <div style={{ fontSize: 40, color: '#28a745' }}>
+            <i className="bi bi-check-circle-fill"></i>
+          </div>
+          <h5 className="mt-3">Profilo aggiornato con successo!</h5>
+        </Modal.Body>
+      </Modal>
+      {/* FINE MODAL SUCCESSO */}
 
       <Tabs defaultActiveKey="info" className="mb-4">
         {/* TAB INFORMAZIONI AZIENDA */}
@@ -537,6 +579,17 @@ const VendorProfile = () => {
                         value={formData.businessName}
                         onChange={handleChange}
                         required
+                      />
+                    </Form.Group>
+                    {/* CAMPO RAGIONE SOCIALE */}
+                    <Form.Group className="mb-3">
+                      <Form.Label>Ragione Sociale</Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="ragioneSociale"
+                        value={formData.ragioneSociale || ''}
+                        onChange={handleChange}
+                        placeholder="Es: Lucaniko S.r.l."
                       />
                     </Form.Group>
                   </Col>
@@ -822,7 +875,7 @@ const VendorProfile = () => {
 
                 <h5 className="mb-3">Indirizzo Punto Vendita (opzionale)</h5>
                 <Alert variant="info" className="mb-3">
-                  Se hai un negozio fisico, inserisci qui l'indirizzo per farlo vedere ai clienti
+                  Se l'indirizzo del tuo negozio è diverso dalla sede legale, inseriscilo qui. 
                 </Alert>
                 <Row>
                   <Col md={12}>

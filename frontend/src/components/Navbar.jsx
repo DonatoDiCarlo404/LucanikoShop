@@ -68,14 +68,6 @@ const Navbar = () => {
             <Nav.Link as={Link} to="/products">
               <span><i className="bi bi-journal-arrow-up">  Catalogo</i></span>
             </Nav.Link>
-            <Nav.Link as={Link} to="/cart">
-              <span><i className="bi bi-cart"> Carrello</i></span>
-              {cartCount > 0 && (
-                <Badge bg="danger" className="ms-2">
-                  {cartCount}
-                </Badge>
-              )}
-            </Nav.Link>
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
                 <Nav.Link as={Link} to="/vendor/dashboard">
@@ -116,6 +108,14 @@ const Navbar = () => {
           </Nav>
 
           <Nav>
+            <Nav.Link as={Link} to="/cart">
+              <span><i className="bi bi-cart"></i></span>
+              {cartCount > 0 && (
+                <Badge bg="danger" className="ms-2">
+                  {cartCount}
+                </Badge>
+              )}
+            </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
                 title={

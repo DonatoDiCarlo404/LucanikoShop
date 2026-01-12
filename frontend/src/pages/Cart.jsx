@@ -11,6 +11,10 @@ const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
 
+  // State per gestione guest checkout
+  const [guestEmail, setGuestEmail] = useState('');
+  const [showGuestForm, setShowGuestForm] = useState(false);
+
   // State per gestione coupon
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -25,16 +29,20 @@ const Cart = () => {
 
   // Calcola costo spedizione
   const calculateShipping = async () => {
-    if (cartCount === 0 || !user) return;
+    if (cartCount === 0) return;
 
     setLoadingShipping(true);
     try {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (user) {
+        headers.Authorization = `Bearer ${user.token}`;
+      }
+
       const res = await fetch('http://localhost:5000/api/orders/calculate-shipping', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`
-        },
+        headers,
         body: JSON.stringify({
           items: cartItems.map(item => ({
             product: item._id,
@@ -74,9 +82,19 @@ const Cart = () => {
   const handleCheckout = async () => {
     if (cartCount === 0) return;
 
+    // Se l'utente non è loggato e non ha fornito email, mostra il form
+    if (!user && !guestEmail) {
+      setShowGuestForm(true);
+      return;
+    }
+
     setIsCheckingOut(true);
     try {
-      const { sessionId, url } = await checkoutAPI.createSession(cartItems, user.token);
+      const { sessionId, url } = await checkoutAPI.createSession(
+        cartItems, 
+        user ? user.token : null,
+        guestEmail
+      );
 
       // Salva esplicitamente il carrello prima del redirect
       localStorage.setItem('cart', JSON.stringify(cartItems));
@@ -210,7 +228,7 @@ const Cart = () => {
 
                   <Col md={4}>
                     <h5 className="mb-1">{item.name}</h5>
-                    <Badge bg="secondary">{item.category}</Badge>
+                    <Badge bg="secondary">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
                   </Col>
 
                   <Col md={2}>
@@ -324,6 +342,43 @@ const Cart = () => {
                     )}
                   </Form.Group>
                 </div>
+              )}
+
+              {/* Form Email Guest se non loggato */}
+              {!user && showGuestForm && (
+                <Alert variant="info" className="mt-3">
+                  <h6>Procedi come ospite</h6>
+                  <p className="small mb-2">Inserisci la tua email per ricevere la conferma d'ordine. Non è necessario registrarsi!</p>
+                  <Form.Group>
+                    <Form.Control
+                      type="email"
+                      placeholder="La tua email"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      required
+                    />
+                  </Form.Group>
+                  <div className="d-flex gap-2 mt-2">
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={handleCheckout}
+                      disabled={!guestEmail || !/\S+@\S+\.\S+/.test(guestEmail)}
+                    >
+                      Conferma e procedi
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => setShowGuestForm(false)}
+                    >
+                      Annulla
+                    </Button>
+                  </div>
+                  <div className="text-center mt-2">
+                    <small>Oppure <Button variant="link" size="sm" className="p-0" onClick={() => navigate('/login')}>accedi</Button> / <Button variant="link" size="sm" className="p-0" onClick={() => navigate('/register')}>registrati</Button></small>
+                  </div>
+                </Alert>
               )}
 
               <div className="d-grid gap-2 mt-3">

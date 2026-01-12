@@ -108,9 +108,6 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <Form.Text className="text-muted">
-                  La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo.
-                </Form.Text>
                 <Button
                   variant="outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
@@ -118,6 +115,9 @@ const Register = () => {
                   {showPassword ? <i className="bi bi-eye-slash-fill"></i> : <i className="bi bi-eye-fill"></i>}
                 </Button>
               </InputGroup>
+              <Form.Text className="text-muted">
+                La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo.
+              </Form.Text>
             </Form.Group>
 
             <Form.Group className="mb-3" controlId="confirmPassword">

@@ -1,16 +1,55 @@
 import { Card, Badge, Carousel } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { useAuth } from '../context/authContext';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <Card
-      style={{ cursor: 'pointer', height: '100%' }}
+      style={{ cursor: 'pointer', height: '100%', position: 'relative' }}
       onClick={() => navigate(`/products/${product._id}`)}
       className="h-100 shadow-sm hover-shadow"
     >
+      {/* Cuore wishlist in alto a sinistra, solo se utente autenticato */}
+      {user && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 10,
+            left: 10,
+            zIndex: 11,
+            fontSize: 24,
+            color: '#e74c3c',
+            background: 'rgba(255,255,255,0.85)',
+            borderRadius: '50%',
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.07)'
+          }}
+          title="Aggiungi ai preferiti"
+          onClick={e => {
+            e.stopPropagation();
+            // Qui in futuro handler wishlist
+          }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.stopPropagation();
+              // Qui in futuro handler wishlist
+            }
+          }}
+        >
+          <i className="bi bi-heart"></i>
+        </span>
+      )}
+
       {/* Badge sconto in alto a destra */}
       {product.hasActiveDiscount && product.discountPercentage && (
         <Badge 
@@ -32,14 +71,13 @@ const ProductCard = ({ product }) => {
         <Carousel interval={2500}
           indicators={product.images.length > 1}
           controls={product.images.length > 1}
-          onClick={e => e.stopPropagation()}
         >
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
               <img
                 src={img.url}
                 alt={product.name}
-                style={{ height: '200px', width: '100%', objectFit: 'cover' }}
+                style={{ height: '280px', width: '100%', objectFit: 'cover' }}
               />
             </Carousel.Item>
           ))}
@@ -47,7 +85,7 @@ const ProductCard = ({ product }) => {
       ) : (
         <div
           style={{
-            height: '200px',
+            height: '280px',
             backgroundColor: '#f0f0f0',
             display: 'flex',
             alignItems: 'center',
@@ -59,16 +97,23 @@ const ProductCard = ({ product }) => {
       )}
 
       <Card.Body className="d-flex flex-column">
+
         <Card.Title
           style={{
             fontSize: '1rem',
             height: '20px',
             overflow: 'hidden',
-            marginBottom: '12px'
+            marginBottom: 4
           }}
         >
           {product.name}
         </Card.Title>
+        {/* Nome azienda creatrice */}
+        {product.seller && (
+          <div className="text-muted small mb-2" style={{ minHeight: 18 }}>
+            {product.seller.businessName || product.seller.name}
+          </div>
+        )}
 
         <div className="d-flex align-items-center mb-2 justify-content-between">
           <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
@@ -80,21 +125,8 @@ const ProductCard = ({ product }) => {
         </div>
 
         <Badge bg="secondary" className="mb-2 align-self-start">
-          {product.category}
+          {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
         </Badge>
-
-        {product.description && (
-          <Card.Text
-            className="text-muted small"
-            style={{
-              height: '40px',
-              overflow: 'hidden',
-              marginBottom: '12px'
-            }}
-          >
-            {product.description}
-          </Card.Text>
-        )}
 
         <div className="mt-auto">
           <div className="d-flex justify-content-between align-items-center">
@@ -131,12 +163,6 @@ const ProductCard = ({ product }) => {
               </Badge>
             )}
           </div>
-
-          {product.stock > 0 && (
-            <small className="text-muted d-block mt-1">
-              {product.stock} {product.unit} disponibili
-            </small>
-          )}
         </div>
       </Card.Body>
     </Card>

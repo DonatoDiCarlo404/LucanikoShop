@@ -70,9 +70,9 @@ const ShopPage = () => {
           <Row className="align-items-center">
             <Col md={2} className="text-center mb-3 mb-md-0">
               {vendor.logo?.url ? (
-                <img src={vendor.logo.url} alt="Logo" style={{ width: 100, height: 100, borderRadius: 12, border: '2px solid #eee', background: '#fff', objectFit: 'contain' }} />
+                <img src={vendor.logo.url} alt="Logo" style={{ width: 140, height: 140, borderRadius: 18, border: '2.5px solid #eee', background: '#fff', objectFit: 'contain' }} />
               ) : (
-                <div style={{ width: 100, height: 100, borderRadius: 12, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #eee' }}>
+                <div style={{ width: 140, height: 140, borderRadius: 18, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2.5px solid #eee' }}>
                   <span className="text-muted">Nessun logo</span>
                 </div>
               )}
@@ -80,12 +80,12 @@ const ShopPage = () => {
             <Col md={5}>
               <h2 className="mb-1">{vendor.businessName || vendor.name}</h2>
               {vendor.isApproved && (
-                <Badge bg="success" style={{ fontSize: '0.9rem' }}>
+                <Badge className='mt-2' bg="success" style={{ fontSize: '0.9rem' }}>
                   ✓ Verificato
                 </Badge>
               )}
               {vendor.businessDescription && (
-                <div className="text-muted mb-2" style={{ fontSize: 15 }}>{vendor.businessDescription}</div>
+                <div className="text-muted mb-2 mt-2" style={{ fontSize: 15 }}>{vendor.businessDescription}</div>
               )}
               <div className="mb-2">
                 <small className="text-muted">
@@ -96,13 +96,34 @@ const ShopPage = () => {
               <div style={{ fontSize: 15 }}>
                 {vendor.businessEmail && <div><strong>Email:</strong> <a href={`mailto:${vendor.businessEmail}`}>{vendor.businessEmail}</a></div>}
                 {vendor.businessPhone && <div><strong>Telefono:</strong> <a href={`tel:${vendor.businessPhone}`}>{vendor.businessPhone}</a></div>}
-                {vendor.businessWhatsapp && <div><strong>WhatsApp:</strong> <a href={`https://wa.me/${vendor.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">{vendor.businessWhatsapp}</a></div>}
-                {vendor.website && <div><strong>Sito:</strong> <a href={vendor.website} target="_blank" rel="noopener noreferrer">{vendor.website}</a></div>}
-                {vendor.socialLinks && (
+                {/* SOCIAL ICONS: Facebook, Instagram, WhatsApp, Sito Web */}
+                {(vendor.socialLinks || vendor.businessWhatsapp || vendor.website) && (
                   <div className="mt-1">
-                    {vendor.socialLinks.facebook && <a href={vendor.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="me-2"><i className="bi bi-facebook"></i></a>}
-                    {vendor.socialLinks.instagram && <a href={vendor.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="me-2"><i className="bi bi-instagram"></i></a>}
-                    {vendor.socialLinks.tiktok && <a href={vendor.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="me-2"><i className="bi bi-tiktok"></i></a>}
+                    {vendor.socialLinks?.facebook && (
+                      <a href={vendor.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="me-2" title="Facebook">
+                        <i className="bi bi-facebook"></i>
+                      </a>
+                    )}
+                    {vendor.socialLinks?.instagram && (
+                      <a href={vendor.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="me-2" title="Instagram">
+                        <i className="bi bi-instagram"></i>
+                      </a>
+                    )}
+                    {vendor.businessWhatsapp && (
+                      <a href={`https://wa.me/${vendor.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="me-2" title="WhatsApp">
+                        <i className="bi bi-whatsapp"></i>
+                      </a>
+                    )}
+                    {vendor.website && (
+                      <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="me-2" title="Sito Web">
+                        <i className="bi bi-globe"></i>
+                      </a>
+                    )}
+                    {vendor.socialLinks?.tiktok && (
+                      <a href={vendor.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="me-2" title="TikTok">
+                        <i className="bi bi-tiktok"></i>
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
@@ -117,7 +138,7 @@ const ShopPage = () => {
               )}
             </Col>
             <Col md={5}>
-              <Card className="border-0 bg-light mb-2">
+              <Card className="border-0 bg-white mb-2">
                 <Card.Body className="text-center">
                   <div className="mb-2">
                     <span style={{ color: '#FFD700', fontSize: '1.5em' }}>
@@ -129,7 +150,7 @@ const ShopPage = () => {
                   <small className="text-muted">{stats.totalReviews} recensioni</small>
                 </Card.Body>
               </Card>
-              <Card className="border-0 bg-light">
+              <Card className="border-0 bg-white">
                 <Card.Body className="text-center">
                   <h3 className="text-primary mb-0">{stats.totalProducts}</h3>
                   <p className="text-muted mb-0">Prodotti Disponibili</p>

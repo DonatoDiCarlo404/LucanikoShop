@@ -48,9 +48,19 @@ body {
   width: 100vw;
 }
 
+
 .logo-anim {
   width: 500px;
+  max-width: 90vw;
+  height: auto;
   animation: fadeInScale 2s ease;
+}
+
+@media (max-width: 600px) {
+  .logo-anim {
+    width: 80vw;
+    max-width: 95vw;
+  }
 }
 
 @keyframes fadeInScale {

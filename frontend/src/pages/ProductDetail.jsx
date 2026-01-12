@@ -310,7 +310,7 @@ const ProductDetail = () => {
         <Col md={6}>
           <div className="mb-3">
             <Badge bg="secondary" className="mb-2">
-              {product.category}
+              {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
             </Badge>
             <h2>{product.name}</h2>
           </div>
