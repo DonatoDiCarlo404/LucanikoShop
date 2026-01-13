@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Button, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { productsAPI } from '../services/api';
+import ProductCard from '../components/ProductCard';
 
 const MyProducts = () => {
   const [products, setProducts] = useState([]);
@@ -68,50 +69,24 @@ const MyProducts = () => {
       ) : (
         <Row>
           {products.map((product) => (
-            <Col key={product._id} md={4} className="mb-4">
-              <Card>
-                {product.images.length > 0 && (
-                  <Card.Img
-                    variant="top"
-                    src={product.images[product.images.length - 1].url}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                  />
-                )}
-                <Card.Body>
-                  <Card.Title>{product.name}</Card.Title>
-                  <Card.Text className="text-muted" style={{ height: '60px', overflow: 'hidden' }}>
-                    {product.description}
-                  </Card.Text>
-                  
-                  <div className="mb-2">
-                    <Badge bg="secondary" className="me-2">
-                      {product.category}
-                    </Badge>
-                    <Badge bg={product.stock > 0 ? 'success' : 'danger'}>
-                      Stock: {product.stock} {product.unit}
-                    </Badge>
-                  </div>
-
-                  <h4 className="text-primary">€{product.price}</h4>
-
-                  <div className="d-flex gap-2 mt-3">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => navigate(`/products/edit/${product._id}`)}
-                    >
-                      <span><i className="bi bi-pencil-square"> Modifica</i></span>
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDelete(product._id)}
-                    >
-                      <span><i className="bi bi-trash3"> Elimina</i></span>
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
+            <Col key={product._id} md={4} className="mb-4 d-flex flex-column">
+              <ProductCard product={product} />
+              <div className="d-flex gap-2 mt-2 justify-content-center">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => navigate(`/products/edit/${product._id}`)}
+                >
+                  <span><i className="bi bi-pencil-square"> Modifica</i></span>
+                </Button>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => handleDelete(product._id)}
+                >
+                  <span><i className="bi bi-trash3"> Elimina</i></span>
+                </Button>
+              </div>
             </Col>
           ))}
         </Row>

@@ -1,5 +1,25 @@
 import mongoose from 'mongoose';
 
+// Schema per le opzioni degli attributi personalizzati
+const customAttributeOptionSchema = new mongoose.Schema({
+  label: String,
+  value: String,
+  color: String
+}, { _id: false });
+
+// Schema per gli attributi personalizzati
+const customAttributeSchema = new mongoose.Schema({
+  name: String,
+  key: String,
+  type: String,
+  required: Boolean,
+  allowVariants: Boolean,
+  order: Number,
+  options: [customAttributeOptionSchema],
+  placeholder: String,
+  validation: mongoose.Schema.Types.Mixed
+}, { _id: false });
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -15,7 +35,7 @@ const productSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      required: [true, 'Il prezzo è obbligatorio'],
+      required: false,
       min: [0, 'Il prezzo non può essere negativo']
     },
     // Gestione prezzi e sconti
@@ -59,7 +79,7 @@ const productSchema = new mongoose.Schema(
     },
     stock: {
       type: Number,
-      required: [true, 'Lo stock è obbligatorio'],
+      required: false,
       min: [0, 'Lo stock non può essere negativo'],
       default: 0
     },
@@ -92,6 +112,48 @@ const productSchema = new mongoose.Schema(
     tags: [{
       type: String,
       trim: true
+    }],
+    // NUOVO: Attributi dinamici per categoria
+    attributes: [{
+      key: {
+        type: String,
+        required: true
+      },
+      value: {
+        type: String,
+        required: false
+      }
+    }],
+    // NUOVO: Attributi personalizzati definiti dal venditore
+    customAttributes: [customAttributeSchema],
+    // NUOVO: Chiavi degli attributi selezionati per le varianti
+    selectedVariantAttributes: [String],
+    // NUOVO: Gestione varianti
+    hasVariants: {
+      type: Boolean,
+      default: false
+    },
+    variants: [{
+      sku: {
+        type: String,
+        unique: true,
+        sparse: true
+      },
+      attributes: [{
+        key: String,
+        value: String
+      }],
+      price: Number,  // Se null, usa il prezzo base del prodotto
+      stock: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      images: [String],  // URL immagini specifiche per variante
+      active: {
+        type: Boolean,
+        default: true
+      }
     }]
   },
   {

@@ -52,7 +52,6 @@ const Products = () => {
       if (sortBy) params.sortBy = sortBy;
 
       const data = await productsAPI.getAll(params);
-      console.log('Prodotti dal backend:', data.products);
       setProducts(data.products);
       setPages(data.pages || 1);
       setTotal(data.total || 0);
@@ -91,6 +90,11 @@ const Products = () => {
 
   return (
     <Container className="py-5">
+      <div className="text-center mb-4">
+        <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#7c4d1e', letterSpacing: 1 }}>
+          La Basilicata, tutta qui.
+        </span>
+      </div>
       <h2 className="mb-4">Catalogo Prodotti</h2>
 
       {/* Filtri */}
@@ -116,7 +120,7 @@ const Products = () => {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">Tutte le categorie</option>
-            {categories.map((cat) => (
+            {[...categories].sort((a, b) => a.localeCompare(b)).map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
               </option>

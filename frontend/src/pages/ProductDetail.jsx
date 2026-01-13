@@ -17,6 +17,7 @@ import { productsAPI } from '../services/api';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 
+
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,27 +28,50 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [reviewError, setReviewError] = useState('');
-
   const [myRating, setMyRating] = useState(5);
   const [myComment, setMyComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [deleteSuccess, setDeleteSuccess] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
-
-  // Stato per modifica recensione
   const [editingReview, setEditingReview] = useState(null);
   const [editRating, setEditRating] = useState(5);
   const [editComment, setEditComment] = useState('');
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
-
-  // Controllo acquisto
   const [hasPurchased, setHasPurchased] = useState(false);
+
+  // Se il prodotto ha varianti, seleziona la prima combinazione valida all'apertura
+  useEffect(() => {
+    if (!product || !Array.isArray(product.variants) || product.variants.length === 0) return;
+    if (Object.keys(selectedOptions).length > 0) return;
+    const firstVariant = product.variants.find(v => v.active !== false) || product.variants[0];
+    if (!firstVariant) return;
+    const initialOptions = {};
+    for (const attr of firstVariant.attributes) {
+      initialOptions[attr.key] = attr.value;
+    }
+    setSelectedOptions(initialOptions);
+  }, [product]);
+
+
+  // Aggiorna selectedVariant quando cambia prodotto o selezione
+  useEffect(() => {
+    if (!product || !Array.isArray(product.variants) || product.variants.length === 0) {
+      setSelectedVariant(null);
+      return;
+    }
+    // Trova la variante che corrisponde alla selezione
+    const found = product.variants.find(variant =>
+      variant.attributes.every(attr => selectedOptions[attr.key] === attr.value)
+    );
+    setSelectedVariant(found || null);
+  }, [product, selectedOptions]);
 
   // LOAD PRODUCT
   const loadProduct = async () => {
@@ -350,20 +374,60 @@ const ProductDetail = () => {
             </Card>
           )}
 
+          {/* VARIANTI: Selezione e prezzo dinamico */}
           <Card className="mb-3">
             <Card.Body>
-              <div className="d-flex justify-content-between">
-                <h3 className="text-primary mb-0">
-                  €{Number(product.price).toFixed(2)}
-                  <small className="text-muted">/{product.unit}</small>
-                </h3>
-
-                {product.stock > 0 ? (
-                  <Badge bg="success">✓ Disponibile</Badge>
-                ) : (
-                  <Badge bg="danger">✗ Esaurito</Badge>
-                )}
-              </div>
+              {Array.isArray(product.variants) && product.variants.length > 0 && product.customAttributes ? (
+                <>
+                  {/* Selettori per ogni attributo variante */}
+                  {product.customAttributes.filter(a => a.allowVariants && a.options?.length > 0).map(attr => (
+                    <div key={attr.key} className="mb-2">
+                      <strong>{attr.name}:</strong>{' '}
+                      <select
+                        value={selectedOptions[attr.key] || ''}
+                        onChange={e => setSelectedOptions(opts => ({ ...opts, [attr.key]: e.target.value }))}
+                        style={{ minWidth: 120, padding: '4px 8px' }}
+                      >
+                        <option value="">Seleziona...</option>
+                        {attr.options.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                  {/* Prezzo e disponibilità variante selezionata */}
+                  {selectedVariant ? (
+                    <div className="d-flex justify-content-between align-items-center mt-3">
+                      <h3 className="text-primary mb-0">
+                        €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
+                        <small className="text-muted">/{product.unit}</small>
+                      </h3>
+                      {selectedVariant.stock > 0 ? (
+                        <Badge bg="success">✓ Disponibile ({selectedVariant.stock})</Badge>
+                      ) : (
+                        <Badge bg="danger">✗ Esaurito</Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="d-flex justify-content-between align-items-center mt-3">
+                      <h5 className="text-muted mb-0">Seleziona una variante per vedere prezzo e disponibilità</h5>
+                      <Badge bg="secondary">—</Badge>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="d-flex justify-content-between">
+                  <h3 className="text-primary mb-0">
+                    €{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
+                    <small className="text-muted">/{product.unit}</small>
+                  </h3>
+                  {product.stock > 0 ? (
+                    <Badge bg="success">✓ Disponibile</Badge>
+                  ) : (
+                    <Badge bg="danger">✗ Esaurito</Badge>
+                  )}
+                </div>
+              )}
             </Card.Body>
           </Card>
 
@@ -463,34 +527,62 @@ const ProductDetail = () => {
                       {/* FORM modifica */}
                       {editingReview && editingReview._id === r._id && (
                         <form onSubmit={handleEditSubmit} className="mt-2">
-                          <div className="mb-2">
-                            <label>Rating:</label>
-                            <select
-                              className="ms-2"
-                              value={editRating}
-                              onChange={(e) => setEditRating(Number(e.target.value))}
-                            >
-                              {[5, 4, 3, 2, 1].map((n) => (
-                                <option key={n} value={n}>
-                                  {n}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <textarea
-                            className="form-control mb-2"
-                            rows={2}
-                            value={editComment}
-                            onChange={(e) => setEditComment(e.target.value)}
-                            required
-                          />
-                          {editError && <Alert variant="danger">{editError}</Alert>}
-                          <Button type="submit" disabled={editSubmitting} size="sm" className="me-2">
-                            {editSubmitting ? 'Salvataggio...' : 'Salva'}
-                          </Button>
-                          <Button variant="secondary" size="sm" onClick={handleCancelEdit}>
-                            Annulla
-                          </Button>
+                          {/* VARIANTI: Selezione e prezzo dinamico */}
+                          <Card className="mb-3">
+                            <Card.Body>
+                              {Array.isArray(product.variants) && product.variants.length > 0 && product.customAttributes ? (
+                                <>
+                                  {/* Selettori per ogni attributo variante */}
+                                  {product.customAttributes.filter(a => a.allowVariants && a.options?.length > 0).map(attr => (
+                                    <div key={attr.key} className="mb-2">
+                                      <strong>{attr.name}:</strong>{' '}
+                                      <select
+                                        value={selectedOptions[attr.key] || ''}
+                                        onChange={e => setSelectedOptions(opts => ({ ...opts, [attr.key]: e.target.value }))}
+                                        style={{ minWidth: 120 }}
+                                      >
+                                        <option value="">Seleziona...</option>
+                                        {attr.options.map(opt => (
+                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  ))}
+                                  {/* Prezzo e disponibilità variante selezionata */}
+                                  {selectedVariant ? (
+                                    <div className="d-flex justify-content-between align-items-center mt-3">
+                                      <h3 className="text-primary mb-0">
+                                        €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
+                                        <small className="text-muted">/{product.unit}</small>
+                                      </h3>
+                                      {selectedVariant.stock > 0 ? (
+                                        <Badge bg="success">✓ Disponibile</Badge>
+                                      ) : (
+                                        <Badge bg="danger">✗ Esaurito</Badge>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="d-flex justify-content-between align-items-center mt-3">
+                                      <h5 className="text-muted mb-0">Seleziona una variante</h5>
+                                      <Badge bg="secondary">—</Badge>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="d-flex justify-content-between">
+                                  <h3 className="text-primary mb-0">
+                                    €{Number(product.price).toFixed(2)}
+                                    <small className="text-muted">/{product.unit}</small>
+                                  </h3>
+                                  {product.stock > 0 ? (
+                                    <Badge bg="success">✓ Disponibile</Badge>
+                                  ) : (
+                                    <Badge bg="danger">✗ Esaurito</Badge>
+                                  )}
+                                </div>
+                              )}
+                            </Card.Body>
+                          </Card>
                         </form>
                       )}
                     </ListGroup.Item>
@@ -552,10 +644,18 @@ const ProductDetail = () => {
             <Button
               variant="primary"
               size="lg"
-              disabled={product.stock === 0}
+              disabled={
+                (Array.isArray(product.variants) && product.variants.length > 0)
+                  ? !(selectedVariant && selectedVariant.stock > 0)
+                  : product.stock === 0
+              }
               onClick={handleAddToCart}
             >
-              {product.stock > 0 ? '🛒 Aggiungi al carrello' : 'Non disponibile'}
+              {(Array.isArray(product.variants) && product.variants.length > 0)
+                ? (selectedVariant && selectedVariant.stock > 0
+                    ? '🛒 Aggiungi al carrello'
+                    : 'Non disponibile')
+                : (product.stock > 0 ? '🛒 Aggiungi al carrello' : 'Non disponibile')}
             </Button>
           </div>
         </Col>

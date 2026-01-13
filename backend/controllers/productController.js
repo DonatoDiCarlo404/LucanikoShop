@@ -1,5 +1,16 @@
 import { Product, Category } from '../models/index.js';
+import CategoryAttribute from '../models/CategoryAttribute.js';
 import cloudinary from '../config/cloudinary.js';
+
+// Utility: genera SKU automatico per varianti
+const generateSKU = (productName, attributes) => {
+  const prefix = productName.substring(0, 3).toUpperCase();
+  const attrCode = attributes
+    .map(a => (a.value || '').substring(0, 2).toUpperCase())
+    .join('-');
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${prefix}-${attrCode}-${random}`;
+};
 
 // @desc    Ottieni tutti i prodotti (con filtri e ricerca)
 // @route   GET /api/products
@@ -100,10 +111,80 @@ export const getProductById = async (req, res) => {
 // @route   POST /api/products
 // @access  Private (seller/admin)
 export const createProduct = async (req, res) => {
-  try {
-    const { name, description, price, category, stock, unit, expiryDate, tags } = req.body;
 
-    const product = await Product.create({
+  try {
+    // DEBUG: logga tutto il body ricevuto
+    console.log('--- [DEBUG] Richiesta creazione prodotto ---');
+    console.log('req.body:', JSON.stringify(req.body, null, 2));
+
+    if (req.body.customAttributes) {
+      console.log('typeof customAttributes:', typeof req.body.customAttributes);
+      console.log('customAttributes:', req.body.customAttributes);
+      if (Array.isArray(req.body.customAttributes)) {
+        console.log('customAttributes è un array, length:', req.body.customAttributes.length);
+      } else {
+        console.log('customAttributes NON è un array');
+        // Se è una stringa, prova a fare il parse
+        if (typeof req.body.customAttributes === 'string') {
+          try {
+            req.body.customAttributes = JSON.parse(req.body.customAttributes);
+            console.log('customAttributes dopo parse:', req.body.customAttributes);
+          } catch (e) {
+            console.error('Errore parsing customAttributes:', e);
+          }
+        }
+      }
+    }
+
+    const { 
+      name, description, price, category, stock, unit, expiryDate, tags,
+      attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
+    } = req.body;
+
+    // Validazione attributi obbligatori per categoria (escludi quelli per varianti)
+    const categoryAttrs = await CategoryAttribute.find({ 
+      category,
+      required: true,
+      allowVariants: false  // Solo attributi obbligatori NON per varianti
+    });
+    
+    // Verifica che tutti gli attributi obbligatori siano forniti
+    for (const attr of categoryAttrs) {
+      const provided = attributes?.find(a => a.key === attr.key);
+      if (!provided || !provided.value) {
+        return res.status(400).json({ 
+          message: `Attributo obbligatorio mancante: ${attr.name}` 
+        });
+      }
+    }
+    
+    // Se ha varianti, valida che ogni variante abbia attributi completi
+    let processedVariants = [];
+    if (hasVariants && variants?.length > 0) {
+      const variantAttrs = categoryAttrs.filter(a => a.allowVariants);
+      
+      for (const variant of variants) {
+        // Verifica che la variante abbia tutti gli attributi necessari
+        for (const attr of variantAttrs) {
+          const hasAttr = variant.attributes?.find(a => a.key === attr.key);
+          if (!hasAttr) {
+            return res.status(400).json({
+              message: `Variante incompleta: manca ${attr.name}`
+            });
+          }
+        }
+        
+        // Auto-genera SKU se mancante
+        if (!variant.sku) {
+          variant.sku = generateSKU(name, variant.attributes);
+        }
+        
+        processedVariants.push(variant);
+      }
+    }
+
+    // DEBUG: Log dei dati che stiamo per passare a Product.create
+    const productData = {
       name,
       description,
       price,
@@ -114,10 +195,27 @@ export const createProduct = async (req, res) => {
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       seller: req.user._id,
       images: [], // Le immagini vengono aggiunte dopo
-    });
+      attributes: attributes ? attributes.filter(a => a.value && a.value.trim()) : [],
+      customAttributes: customAttributes || [],
+      selectedVariantAttributes: selectedVariantAttributes || [],
+      hasVariants: hasVariants || false,
+      variants: processedVariants
+    };
+    
+    console.log('--- [DEBUG] Dati per Product.create ---');
+    console.log('productData.customAttributes:', JSON.stringify(productData.customAttributes, null, 2));
+    console.log('typeof productData.customAttributes:', typeof productData.customAttributes);
+    console.log('Array.isArray(productData.customAttributes):', Array.isArray(productData.customAttributes));
+    
+    const product = await Product.create(productData);
 
     res.status(201).json(product);
   } catch (error) {
+    console.error('--- [DEBUG] Errore durante createProduct ---');
+    console.error('error.name:', error.name);
+    console.error('error.message:', error.message);
+    console.error('error.errors:', error.errors);
+    console.error('Full error:', error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -138,7 +236,28 @@ export const updateProduct = async (req, res) => {
       return res.status(403).json({ message: 'Non autorizzato a modificare questo prodotto' });
     }
 
-    const { name, description, price, category, stock, unit, expiryDate, tags, isActive } = req.body;
+    const { 
+      name, description, price, category, stock, unit, expiryDate, tags, isActive, images,
+      attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
+    } = req.body;
+
+    // Se la categoria cambia, validazione attributi (escludi quelli per varianti)
+    if (category && category !== product.category.toString()) {
+      const categoryAttrs = await CategoryAttribute.find({ 
+        category,
+        required: true,
+        allowVariants: false  // Solo attributi obbligatori NON per varianti
+      });
+      
+      for (const attr of categoryAttrs) {
+        const provided = attributes?.find(a => a.key === attr.key);
+        if (!provided || !provided.value) {
+          return res.status(400).json({ 
+            message: `Attributo obbligatorio mancante: ${attr.name}` 
+          });
+        }
+      }
+    }
 
     // Aggiorna solo i campi forniti
     if (name) product.name = name;
@@ -150,6 +269,20 @@ export const updateProduct = async (req, res) => {
     if (expiryDate) product.expiryDate = expiryDate;
     if (tags) product.tags = tags.split(',').map(tag => tag.trim());
     if (isActive !== undefined) product.isActive = isActive;
+    if (Array.isArray(images)) product.images = images;
+    
+    // NUOVO: aggiorna attributi e varianti
+    if (attributes) product.attributes = attributes.filter(a => a.value && a.value.trim());
+    if (customAttributes) product.customAttributes = customAttributes;
+    if (selectedVariantAttributes) product.selectedVariantAttributes = selectedVariantAttributes;
+    if (hasVariants !== undefined) product.hasVariants = hasVariants;
+    if (variants) {
+      // Genera SKU per varianti che ne sono prive
+      product.variants = variants.map(v => ({
+        ...v,
+        sku: v.sku || generateSKU(product.name, v.attributes)
+      }));
+    }
 
     const updatedProduct = await product.save();
 
@@ -222,7 +355,10 @@ export const addProductImage = async (req, res) => {
 // @access  Private (seller)
 export const getMyProducts = async (req, res) => {
   try {
-    const products = await Product.find({ seller: req.user._id }).sort({ createdAt: -1 });
+    const products = await Product.find({ seller: req.user._id })
+      .populate('category', 'name')
+      .populate('seller', 'businessName name')
+      .sort({ createdAt: -1 });
 
     res.json(products);
   } catch (error) {

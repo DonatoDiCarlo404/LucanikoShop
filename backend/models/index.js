@@ -4,5 +4,6 @@ import Order from './Order.js';
 import Review from './Review.js';
 import Discount from './Discount.js';
 import Category from './Category.js';
+import CategoryAttribute from './CategoryAttribute.js';
 
-export { User, Product, Order, Review, Discount, Category };
+export { User, Product, Order, Review, Discount, Category, CategoryAttribute };

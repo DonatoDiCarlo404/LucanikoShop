@@ -503,6 +503,8 @@ const VendorProfile = () => {
         </Card.Body>
       </Card>
       {/* --- FINE SEZIONE PUBBLICA --- */}
+
+      {/* --- SEZIONE PRODOTTI DEL VENDITORE RIMOSSA SU RICHIESTA --- */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2>👤 Profilo Aziendale</h2>

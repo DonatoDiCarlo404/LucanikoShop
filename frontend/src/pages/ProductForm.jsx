@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Container, Form, Button, Card, Alert, Row, Col } from 'react-bootstrap';
+import { Container, Form, Button, Card, Alert, Row, Col, Modal } from 'react-bootstrap';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { productsAPI, uploadAPI, categoriesAPI } from '../services/api';
+import VariantManager from '../components/VariantManager';
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -17,14 +18,21 @@ const ProductForm = () => {
     unit: 'pz',
     expiryDate: '',
     tags: '',
+    attributes: [],      // NUOVO
+    hasVariants: false,  // NUOVO
+    variants: []         // NUOVO
   });
 
-  const [images, setImages] = useState([]); // array di File
-  const [imagePreviews, setImagePreviews] = useState([]); // array di url
+  // Array unificato: ogni elemento è { file: File|null, url: string, isMain: boolean }
+  const [imageItems, setImageItems] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [categoryAttributes, setCategoryAttributes] = useState([]); // NUOVO
+  const [customAttributes, setCustomAttributes] = useState([]); // Attributi personalizzati
+  const [selectedVariantAttributes, setSelectedVariantAttributes] = useState([]); // Chiavi attributi per varianti
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -41,6 +49,16 @@ const ProductForm = () => {
     loadCategories();
   }, []);
 
+  // NUOVO: Carica attributi quando cambia categoria
+  useEffect(() => {
+    if (formData.category) {
+      loadCategoryAttributes(formData.category);
+    } else {
+      setCategoryAttributes([]);
+      setFormData(prev => ({ ...prev, attributes: [], hasVariants: false, variants: [] }));
+    }
+  }, [formData.category]);
+
   const loadCategories = async () => {
     try {
       const data = await categoriesAPI.getAll();
@@ -51,6 +69,29 @@ const ProductForm = () => {
     }
   };
 
+  // NUOVO: Carica attributi dinamici per categoria
+  const loadCategoryAttributes = async (categoryId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/attributes`);
+      const attrs = await response.json();
+      setCategoryAttributes(attrs);
+      
+      // Inizializza attributi vuoti nel formData
+      if (!isEditMode || formData.attributes.length === 0) {
+        setFormData(prev => ({
+          ...prev,
+          attributes: attrs.map(attr => ({
+            key: attr.key,
+            value: ''
+          }))
+        }));
+      }
+    } catch (err) {
+      console.error('❌ Errore caricamento attributi categoria:', err);
+      setCategoryAttributes([]);
+    }
+  };
+
   const loadProduct = async () => {
     try {
       const product = await productsAPI.getById(id);
@@ -58,15 +99,33 @@ const ProductForm = () => {
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category._id || product.category, // Usa _id se è un oggetto popolato
+        category: product.category._id || product.category,
         stock: product.stock,
         unit: product.unit,
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
         tags: product.tags.join(', '),
+        attributes: product.attributes || [],         // NUOVO
+        hasVariants: product.hasVariants || false,    // NUOVO
+        variants: product.variants || []              // NUOVO
       });
-      // Mostra l'ultima immagine caricata (non la prima)
+      
+      // Carica attributi personalizzati se presenti
+      if (product.customAttributes) {
+        setCustomAttributes(product.customAttributes);
+      }
+      
+      // Carica selezione attributi per varianti
+      if (product.selectedVariantAttributes) {
+        setSelectedVariantAttributes(product.selectedVariantAttributes);
+      }
+      
+      // Carica le immagini del prodotto esistente
       if (product.images.length > 0) {
-        setImagePreviews(product.images.map(img => img.url));
+        setImageItems(product.images.map((img, idx) => ({
+          file: null,
+          url: img.url,
+          isMain: idx === 0
+        })));
       }
     } catch (err) {
       setError(err.message);
@@ -80,10 +139,103 @@ const ProductForm = () => {
     });
   };
 
+  // NUOVO: Gestione attributi dinamici
+  const handleAttributeChange = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      attributes: prev.attributes.map(attr =>
+        attr.key === key ? { ...attr, value } : attr
+      )
+    }));
+  };
+
+  // Aggiungere attributo personalizzato
+  const addCustomAttribute = () => {
+    const newAttr = {
+      name: `Nuova Opzione`,
+      key: `custom_${Date.now()}`,
+      type: 'select',
+      required: false,
+      allowVariants: true,
+      order: customAttributes.length + 1,
+      options: [],
+      placeholder: ''
+    };
+    setCustomAttributes([...customAttributes, newAttr]);
+    
+    // Inizializza valore nel formData
+    setFormData(prev => ({
+      ...prev,
+      attributes: [...prev.attributes, { key: newAttr.key, value: '' }]
+    }));
+  };
+
+  // Rimuovere attributo personalizzato
+  const removeCustomAttribute = (key) => {
+    setCustomAttributes(customAttributes.filter(attr => attr.key !== key));
+    setSelectedVariantAttributes(selectedVariantAttributes.filter(k => k !== key));
+    setFormData(prev => ({
+      ...prev,
+      attributes: prev.attributes.filter(attr => attr.key !== key)
+    }));
+  };
+
+  // Aggiornare attributo personalizzato
+  const updateCustomAttribute = (key, field, value) => {
+    setCustomAttributes(customAttributes.map(attr => 
+      attr.key === key ? { ...attr, [field]: value } : attr
+    ));
+  };
+
+  // Aggiungere opzione a un attributo personalizzato
+  const addOptionToCustomAttribute = (attrKey) => {
+    setCustomAttributes(customAttributes.map(attr => {
+      if (attr.key === attrKey) {
+        const newOption = { label: 'Nuova Opzione', value: `opt_${Date.now()}` };
+        return { ...attr, options: [...attr.options, newOption] };
+      }
+      return attr;
+    }));
+  };
+
+  // Rimuovere opzione da attributo personalizzato
+  const removeOptionFromCustomAttribute = (attrKey, optValue) => {
+    setCustomAttributes(customAttributes.map(attr => {
+      if (attr.key === attrKey) {
+        return { ...attr, options: attr.options.filter(opt => opt.value !== optValue) };
+      }
+      return attr;
+    }));
+  };
+
+  // Toggle selezione attributo per varianti
+  const toggleVariantAttribute = (key) => {
+    setSelectedVariantAttributes(prev => 
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setImages(files);
-    setImagePreviews(files.map(file => URL.createObjectURL(file)));
+    if (files.length === 0) return;
+
+    setImageItems(prev => {
+      const newItems = files.map(file => ({
+        file: file,
+        url: URL.createObjectURL(file),
+        isMain: false
+      }));
+      
+      const combined = [...prev, ...newItems];
+      // Se non c'è nessuna immagine principale, imposta la prima come principale
+      if (!combined.some(item => item.isMain) && combined.length > 0) {
+        combined[0].isMain = true;
+      }
+      return combined;
+    });
+    
+    // Reset input per permettere di caricare lo stesso file
+    e.target.value = '';
   };
 
   const handleSubmit = async (e) => {
@@ -94,55 +246,117 @@ const ProductForm = () => {
     try {
       let productId = id;
       let currentProduct = null;
+      let updatedImages = [];
 
-      // 1. Crea o aggiorna il prodotto
       if (isEditMode) {
-        // Se in edit mode, carica prima i dati del prodotto per avere le vecchie immagini
+        // Carica il prodotto per avere le immagini attuali
         currentProduct = await productsAPI.getById(id);
-        await productsAPI.update(id, formData, user.token);
-      } else {
-        const newProduct = await productsAPI.create(formData, user.token);
-        productId = newProduct._id;
-      }
 
-      // 2. Se ci sono nuove immagini
-      if (images.length > 0) {
-        setUploading(true);
-
-        // 2a. Se in edit mode, elimina le vecchie immagini da Cloudinary
-        if (isEditMode && currentProduct && currentProduct.images.length > 0) {
-          for (const img of currentProduct.images) {
-            if (img.public_id) {
-              try {
-                const encodedPublicId = encodeURIComponent(img.public_id);
-                await fetch(`http://localhost:5000/api/upload/${encodedPublicId}`, {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${user.token}`,
-                  },
-                });
-              } catch (err) {
-                console.error('Errore eliminazione immagine:', err);
+        // Se ci sono nuove immagini selezionate (file presente), gestisci upload
+        const newImages = imageItems.filter(item => item.file !== null);
+        if (newImages.length > 0) {
+          setUploading(true);
+          // Elimina tutte le vecchie immagini da Cloudinary
+          if (currentProduct && currentProduct.images.length > 0) {
+            for (const img of currentProduct.images) {
+              if (img.public_id) {
+                try {
+                  const encodedPublicId = encodeURIComponent(img.public_id);
+                  await fetch(`http://localhost:5000/api/upload/${encodedPublicId}`, {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${user.token}`,
+                    },
+                  });
+                } catch (err) {
+                  console.error('Errore eliminazione immagine:', err);
+                }
               }
             }
           }
+          // Carica tutte le nuove immagini
+          for (const item of newImages) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (!uploadResponse || !uploadResponse.url) {
+                setError('Errore upload immagine: risposta non valida dal server.');
+                console.error('Risposta upload non valida:', uploadResponse);
+                continue;
+              }
+              updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+            } catch (uploadErr) {
+              setError('Errore upload immagine: ' + (uploadErr.message || uploadErr));
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
+        } else {
+          // Nessuna nuova immagine: mantieni quelle esistenti
+          updatedImages = imageItems
+            .filter(item => item.file === null)
+            .map(item => {
+              const found = currentProduct.images.find(img => img.url === item.url);
+              return found ? { url: found.url, public_id: found.public_id } : null;
+            })
+            .filter(Boolean);
         }
-
-        // 2b. Upload tutte le nuove immagini
-        for (const imgFile of images) {
-          const uploadResponse = await uploadAPI.uploadProductImage(imgFile, user.token);
-          await productsAPI.addImage(
-            productId,
-            {
-              url: uploadResponse.url,
-              public_id: uploadResponse.public_id,
-            },
-            user.token
-          );
+        
+        // Ordina: la principale per prima
+        const mainItem = imageItems.find(item => item.isMain);
+        if (mainItem) {
+          updatedImages = updatedImages.sort((a, b) => {
+            if (a.url === mainItem.url) return -1;
+            if (b.url === mainItem.url) return 1;
+            return 0;
+          });
+        }
+        // Aggiorna il prodotto con le immagini ordinate
+        const updatePayload = { 
+          ...formData,
+          customAttributes,
+          selectedVariantAttributes
+        };
+        if (imageItems.length > 0 || updatedImages.length > 0) {
+          updatePayload.images = updatedImages;
+        }
+        await productsAPI.update(id, updatePayload, user.token);
+      } else {
+        // CREAZIONE NUOVO PRODOTTO
+        const productPayload = {
+          ...formData,
+          customAttributes,
+          selectedVariantAttributes
+        };
+        const newProduct = await productsAPI.create(productPayload, user.token);
+        productId = newProduct._id;
+        // Se ci sono immagini, caricale e aggiungile
+        const newImagesToUpload = imageItems.filter(item => item.file !== null);
+        if (newImagesToUpload.length > 0) {
+          setUploading(true);
+          for (const item of newImagesToUpload) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (uploadResponse && uploadResponse.url) {
+                await productsAPI.addImage(
+                  productId,
+                  {
+                    url: uploadResponse.url,
+                    public_id: uploadResponse.public_id,
+                  },
+                  user.token
+                );
+              }
+            } catch (uploadErr) {
+              setError('Errore upload immagine: ' + (uploadErr.message || uploadErr));
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
         }
       }
-
-      navigate('/my-products');
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        navigate('/my-products');
+      }, 1500);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -152,8 +366,126 @@ const ProductForm = () => {
   };
 
   const handleRemoveImage = (idx) => {
-    setImages(prev => prev.filter((_, i) => i !== idx));
-    setImagePreviews(prev => prev.filter((_, i) => i !== idx));
+    setImageItems(prev => {
+      const newItems = prev.filter((_, i) => i !== idx);
+      // Se rimuovi la principale e ci sono altre immagini, imposta la prima come principale
+      if (newItems.length > 0 && !newItems.some(item => item.isMain)) {
+        newItems[0].isMain = true;
+      }
+      return newItems;
+    });
+  };
+
+  const handleSetAsMain = (idx) => {
+    setImageItems(prev => prev.map((item, i) => ({
+      ...item,
+      isMain: i === idx
+    })));
+  };
+
+  // NUOVO: Rendering dinamico attributi
+  const renderAttributeField = (attribute) => {
+    const currentValue = formData.attributes.find(a => a.key === attribute.key)?.value || '';
+    switch (attribute.type) {
+      case 'select':
+        return (
+          <Form.Group key={attribute.key} className="mb-3">
+            <Form.Label>
+              {attribute.name}
+              {attribute.required && <span className="text-danger"> *</span>}
+            </Form.Label>
+            <div className="d-flex flex-wrap gap-2">
+              {attribute.options.map(opt => (
+                <Form.Check
+                  key={opt.value}
+                  type="checkbox"
+                  label={opt.label}
+                  value={opt.value}
+                  checked={(currentValue || '').split(',').includes(opt.value)}
+                  onChange={(e) => {
+                    const values = (currentValue || '').split(',').filter(Boolean);
+                    if (e.target.checked) {
+                      values.push(opt.value);
+                    } else {
+                      const idx = values.indexOf(opt.value);
+                      if (idx > -1) values.splice(idx, 1);
+                    }
+                    handleAttributeChange(attribute.key, values.join(','));
+                  }}
+                />
+              ))}
+            </div>
+          </Form.Group>
+        );
+      case 'color':
+        return (
+          <Form.Group key={attribute.key} className="mb-3">
+            <Form.Label>
+              {attribute.name}
+              {attribute.required && <span className="text-danger"> *</span>}
+            </Form.Label>
+            <div className="d-flex flex-wrap gap-2">
+              {attribute.options.map(opt => (
+                <div
+                  key={opt.value}
+                  onClick={() => handleAttributeChange(attribute.key, opt.value)}
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    backgroundColor: opt.color || opt.value,
+                    border: currentValue === opt.value ? '3px solid #000' : '1px solid #ddd',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title={opt.label}
+                >
+                  {currentValue === opt.value && (
+                    <span style={{ fontSize: '24px', color: '#fff', textShadow: '0 0 3px #000' }}>✓</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Form.Group>
+        );
+      case 'number':
+        return (
+          <Form.Group key={attribute.key} className="mb-3">
+            <Form.Label>
+              {attribute.name}
+              {attribute.required && <span className="text-danger"> *</span>}
+            </Form.Label>
+            <Form.Control
+              type="number"
+              value={currentValue}
+              onChange={(e) => handleAttributeChange(attribute.key, e.target.value)}
+              min={attribute.validation?.min}
+              max={attribute.validation?.max}
+              required={attribute.required}
+              placeholder={attribute.placeholder}
+            />
+          </Form.Group>
+        );
+      default: // text
+        return (
+          <Form.Group key={attribute.key} className="mb-3">
+            <Form.Label>
+              {attribute.name}
+              {attribute.required && <span className="text-danger"> *</span>}
+            </Form.Label>
+            <Form.Control
+              type="text"
+              value={currentValue}
+              onChange={(e) => handleAttributeChange(attribute.key, e.target.value)}
+              required={attribute.required}
+              placeholder={attribute.placeholder}
+            />
+          </Form.Group>
+        );
+    }
   };
 
 
@@ -196,16 +528,18 @@ const ProductForm = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Prezzo (€) *</Form.Label>
+                      <Form.Label>Prezzo (€)</Form.Label>
                       <Form.Control
                         type="number"
                         step="0.01"
                         name="price"
                         value={formData.price}
                         onChange={handleChange}
-                        required
                         placeholder="0.00"
                       />
+                      <Form.Text className="text-muted">
+                        Se il prodotto ha opzioni, inserisci il prezzo per ogni variante nella sezione sotto.
+                      </Form.Text>
                     </Form.Group>
                   </Col>
                   <Col md={6}>
@@ -231,15 +565,17 @@ const ProductForm = () => {
                 <Row>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Quantità disponibile *</Form.Label>
+                      <Form.Label>Quantità disponibile</Form.Label>
                       <Form.Control
                         type="number"
                         name="stock"
                         value={formData.stock}
                         onChange={handleChange}
-                        required
                         placeholder="0"
                       />
+                      <Form.Text className="text-muted">
+                        Se il prodotto ha opzioni, inserisci la quantità per ogni variante nella sezione sotto.
+                      </Form.Text>
                     </Form.Group>
                   </Col>
                   <Col md={6}>
@@ -303,15 +639,71 @@ const ProductForm = () => {
                     multiple
                     onChange={handleImageChange}
                   />
-                  {imagePreviews.length > 0 && (
+                  <Form.Text className="text-muted">
+                    Clicca sulla stella per impostare la foto principale.
+                  </Form.Text>
+                  {imageItems.length > 0 && (
                     <div className="mt-3 d-flex flex-wrap gap-2">
-                      {imagePreviews.map((src, idx) => (
-                        <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                      {imageItems.map((item, idx) => (
+                        <div 
+                          key={idx}
+                          style={{ 
+                            position: 'relative', 
+                            display: 'inline-block'
+                          }}
+                        >
                           <img
-                            src={src}
+                            src={item.url}
                             alt={`Preview ${idx + 1}`}
-                            style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #ddd' }}
+                            style={{ 
+                              width: '100px', 
+                              height: '100px', 
+                              objectFit: 'cover', 
+                              borderRadius: '8px', 
+                              border: item.isMain ? '3px solid #ffc107' : '1px solid #ddd'
+                            }}
                           />
+                          {item.isMain && (
+                            <span
+                              style={{
+                                position: 'absolute',
+                                bottom: 2,
+                                left: 2,
+                                background: '#ffc107',
+                                color: '#000',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              PRINCIPALE
+                            </span>
+                          )}
+                          {/* Pulsante stella per impostare come principale */}
+                          <button
+                            type="button"
+                            onClick={() => handleSetAsMain(idx)}
+                            style={{
+                              position: 'absolute',
+                              top: 2,
+                              left: 2,
+                              background: item.isMain ? '#ffc107' : 'rgba(255,255,255,0.9)',
+                              border: 'none',
+                              borderRadius: '50%',
+                              width: 24,
+                              height: 24,
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              lineHeight: '24px',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="Imposta come principale"
+                          >★</button>
+                          {/* Pulsante elimina */}
                           <button
                             type="button"
                             onClick={() => handleRemoveImage(idx)}
@@ -319,15 +711,15 @@ const ProductForm = () => {
                               position: 'absolute',
                               top: 2,
                               right: 2,
-                              background: 'rgba(255,255,255,0.8)',
+                              background: 'rgba(255,255,255,0.9)',
                               border: 'none',
                               borderRadius: '50%',
-                              width: 22,
-                              height: 22,
+                              width: 24,
+                              height: 24,
                               cursor: 'pointer',
                               fontWeight: 'bold',
                               color: '#d00',
-                              lineHeight: '18px',
+                              lineHeight: '24px',
                               padding: 0
                             }}
                             title="Elimina immagine"
@@ -339,6 +731,154 @@ const ProductForm = () => {
                 </Form.Group>
               </Col>
             </Row>
+
+            {/* SEZIONE ATTRIBUTI DINAMICI */}
+            {categoryAttributes.filter(attr => !attr.allowVariants).length > 0 && (
+              <Card className="mb-4 border-primary">
+                <Card.Header className="bg-primary text-white">
+                  <h5 className="mb-0">📋 Attributi Specifici Categoria</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    {categoryAttributes
+                      .filter(attr => !attr.allowVariants)
+                      .map(attr => (
+                        <Col md={6} key={attr.key}>
+                          {renderAttributeField(attr)}
+                        </Col>
+                      ))}
+                  </Row>
+                </Card.Body>
+              </Card>
+            )}
+
+            {/* SEZIONE OPZIONI PRODOTTO */}
+            <Card className="mb-4 border-info">
+              <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">🎨 Opzioni Prodotto (Varianti)</h5>
+                <Button size="sm" variant="light" onClick={addCustomAttribute}>
+                  + Aggiungi Opzione
+                </Button>
+              </Card.Header>
+              <Card.Body>
+                <Alert variant="info" className="small mb-3">
+                  <strong>💡 Come funziona:</strong> Crea le tue macrocategorie (es. Taglia, Colore, Capacità) e le relative opzioni (es. S, M, L). Le varianti saranno generate automaticamente.
+                </Alert>
+                {customAttributes.length === 0 ? (
+                  <p className="text-muted mb-0">
+                    Nessuna opzione creata. Clicca "+ Aggiungi Opzione" per iniziare.
+                  </p>
+                ) : (
+                  <>
+                    {customAttributes.map(attr => (
+                      <Card key={attr.key} className="mb-3 border">
+                        <Card.Body>
+                          <Row className="align-items-center mb-2">
+                            <Col md={5}>
+                              <Form.Group>
+                                <Form.Label className="small fw-bold">Nome Macrocategoria</Form.Label>
+                                <Form.Control
+                                  size="sm"
+                                  type="text"
+                                  value={attr.name}
+                                  onChange={(e) => updateCustomAttribute(attr.key, 'name', e.target.value)}
+                                  placeholder="Es. Taglia, Colore, Capacità, Gusto..."
+                                />
+                              </Form.Group>
+                            </Col>
+                            <Col md={3}>
+                              <Form.Group>
+                                <Form.Label className="small fw-bold">Tipo Visualizzazione</Form.Label>
+                                <Form.Select
+                                  size="sm"
+                                  value={attr.type}
+                                  onChange={(e) => updateCustomAttribute(attr.key, 'type', e.target.value)}
+                                >
+                                  <option value="select">Lista (Dropdown)</option>
+                                  <option value="color">Colori</option>
+                                  <option value="text">Testo Libero</option>
+                                  <option value="number">Numero</option>
+                                </Form.Select>
+                              </Form.Group>
+                            </Col>
+                            <Col md={1} className="text-end">
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => removeCustomAttribute(attr.key)}
+                                title="Rimuovi attributo"
+                              >
+                                🗑️
+                              </Button>
+                            </Col>
+                          </Row>
+
+                          {/* Opzioni per select/color */}
+                          {(attr.type === 'select' || attr.type === 'color') && (
+                            <div className="mt-2 p-2 bg-light rounded">
+                              <Form.Label className="small fw-bold">Valori per "{attr.name}":</Form.Label>
+                              {attr.options.map(opt => (
+                                <div key={opt.value} className="d-flex gap-2 mb-1 align-items-center">
+                                  <Form.Control
+                                    size="sm"
+                                    type="text"
+                                    placeholder="Label"
+                                    value={opt.label}
+                                    onChange={(e) => {
+                                      const updated = customAttributes.map(a => {
+                                        if (a.key === attr.key) {
+                                          return {
+                                            ...a,
+                                            options: a.options.map(o =>
+                                              o.value === opt.value ? { ...o, label: e.target.value } : o
+                                            )
+                                          };
+                                        }
+                                        return a;
+                                      });
+                                      setCustomAttributes(updated);
+                                    }}
+                                    style={{ maxWidth: '60px' }}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline-danger"
+                                    onClick={() => removeOptionFromCustomAttribute(attr.key, opt.value)}
+                                  >
+                                    ×
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                size="sm"
+                                variant="outline-primary"
+                                onClick={() => addOptionToCustomAttribute(attr.key)}
+                                className="mt-2"
+                              >
+                                + Aggiungi Valore
+                              </Button>
+                            </div>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    ))}
+                  </>
+                )}
+              </Card.Body>
+            </Card>
+
+            {/* SEZIONE VARIANTI */}
+            {customAttributes.filter(a => a.allowVariants && a.options.length > 0).length > 0 && (
+              <VariantManager
+                attributes={customAttributes.filter(a => a.allowVariants && a.options.length > 0)}
+                variants={formData.variants}
+                onChange={(variants) => setFormData(prev => ({ 
+                  ...prev, 
+                  variants, 
+                  hasVariants: variants.length > 0 
+                }))}
+              />
+            )}
 
             <div className="d-flex gap-2">
               <Button

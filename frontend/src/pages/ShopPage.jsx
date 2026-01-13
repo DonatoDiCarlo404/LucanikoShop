@@ -12,6 +12,7 @@ const ShopPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [shopData, setShopData] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadShopData();
@@ -58,6 +59,10 @@ const ShopPage = () => {
   }
 
   const { vendor, products, stats } = shopData;
+  // Filtra prodotti per nome
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Proprietario autenticato?
   const isOwner = user && user._id === vendor._id;
@@ -166,13 +171,34 @@ const ShopPage = () => {
       {/* Prodotti del Negozio */}
       <div className="mb-4">
         <h3 className="mb-3">Prodotti di {vendor.businessName || vendor.name}</h3>
-        {products.length === 0 ? (
+        <div className="mb-3">
+            <div className="mb-4 d-flex justify-content-center">
+              <div style={{ maxWidth: 400, width: '100%' }}>
+                <div className="input-group shadow" style={{ borderRadius: 10, border: '2px solid #0d6efd', overflow: 'hidden' }}>
+                  <span className="input-group-text bg-primary text-white" id="search-addon">
+                    <i className="bi bi-search"></i>
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Cerca prodotto per nome..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    style={{ fontSize: 18, padding: '0.75rem 1rem', border: 'none', boxShadow: 'none' }}
+                    aria-label="Cerca prodotto per nome"
+                    aria-describedby="search-addon"
+                  />
+                </div>
+              </div>
+            </div>
+        </div>
+        {filteredProducts.length === 0 ? (
           <Alert variant="info">
-            Questo negozio non ha ancora prodotti disponibili.
+            Nessun prodotto trovato.
           </Alert>
         ) : (
           <Row>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Col key={product._id} xs={12} sm={6} md={4} lg={3} className="mb-4">
                 <ProductCard product={product} />
               </Col>

@@ -6,6 +6,18 @@ import { wishlistAPI } from '../services/api';
 import { useState, useEffect } from 'react';
 
 const ProductCard = ({ product }) => {
+    // Calcola prezzo minimo e stock totale se ci sono varianti
+    let minVariantPrice = null;
+    let totalVariantStock = 0;
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      minVariantPrice = product.variants
+        .filter(v => typeof v.price === 'number')
+        .reduce((min, v) => v.price < min ? v.price : min, Infinity);
+      if (!isFinite(minVariantPrice)) minVariantPrice = null;
+      totalVariantStock = product.variants
+        .filter(v => typeof v.stock === 'number')
+        .reduce((sum, v) => sum + v.stock, 0);
+    }
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
@@ -171,26 +183,37 @@ const ProductCard = ({ product }) => {
               {product.hasActiveDiscount && product.originalPrice ? (
                 <>
                   <h5 className="text-primary mb-0">
-                    €{product.discountedPrice.toFixed(2)}
+                    €{product.discountedPrice?.toFixed(2) || '0.00'}
                     <small className="text-muted" style={{ fontSize: '0.75rem' }}>
                       /{product.unit}
                     </small>
                   </h5>
                   <small className="text-muted" style={{ textDecoration: 'line-through' }}>
-                    €{product.originalPrice.toFixed(2)}
+                    €{product.originalPrice?.toFixed(2) || '0.00'}
                   </small>
                 </>
-              ) : (
+              ) : typeof product.price === 'number' ? (
                 <h5 className="text-primary mb-0">
                   €{product.price.toFixed(2)}
                   <small className="text-muted" style={{ fontSize: '0.75rem' }}>
                     /{product.unit}
                   </small>
                 </h5>
+              ) : minVariantPrice !== null ? (
+                <h5 className="text-primary mb-0">
+                  da €{minVariantPrice.toFixed(2)}
+                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                    /{product.unit}
+                  </small>
+                </h5>
+              ) : (
+                <h5 className="text-muted mb-0">
+                  <small>Prezzo su varianti</small>
+                </h5>
               )}
             </div>
 
-            {product.stock > 0 ? (
+            {(typeof product.stock === 'number' && product.stock > 0) || totalVariantStock > 0 ? (
               <Badge bg="success">
                 Disponibile
               </Badge>

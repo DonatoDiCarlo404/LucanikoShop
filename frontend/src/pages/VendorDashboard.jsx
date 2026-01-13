@@ -546,16 +546,44 @@ const VendorDashboard = () => {
                               ? product.category.name
                               : (categories.find(cat => cat._id === product.category)?.name || product.category)
                           }</td>
-                          <td>€{product.price.toFixed(2)}</td>
                           <td>
-                            <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
-                              {product.stock}
-                            </Badge>
+                            {typeof product.price === 'number'
+                              ? `€${product.price.toFixed(2)}`
+                              : (Array.isArray(product.variants) && product.variants.length > 0
+                                  ? `da €${Math.min(...product.variants.map(v => v.price || 0)).toFixed(2)}`
+                                  : <span className="text-muted">N/A</span>
+                                )
+                            }
                           </td>
                           <td>
-                            <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
-                              {product.stock > 10 ? 'Disponibile' : product.stock > 0 ? 'Basso' : 'Esaurito'}
-                            </Badge>
+                            {(() => {
+                              let totalStock = typeof product.stock === 'number' ? product.stock : 0;
+                              if (Array.isArray(product.variants) && product.variants.length > 0) {
+                                totalStock = product.variants
+                                  .filter(v => typeof v.stock === 'number')
+                                  .reduce((sum, v) => sum + v.stock, 0);
+                              }
+                              return (
+                                <Badge bg={totalStock > 10 ? 'success' : totalStock > 0 ? 'warning' : 'danger'}>
+                                  {totalStock}
+                                </Badge>
+                              );
+                            })()}
+                          </td>
+                          <td>
+                            {(() => {
+                              let totalStock = typeof product.stock === 'number' ? product.stock : 0;
+                              if (Array.isArray(product.variants) && product.variants.length > 0) {
+                                totalStock = product.variants
+                                  .filter(v => typeof v.stock === 'number')
+                                  .reduce((sum, v) => sum + v.stock, 0);
+                              }
+                              return (
+                                <Badge bg={totalStock > 10 ? 'success' : totalStock > 0 ? 'warning' : 'danger'}>
+                                  {totalStock > 10 ? 'Disponibile' : totalStock > 0 ? 'Basso' : 'Esaurito'}
+                                </Badge>
+                              );
+                            })()}
                           </td>
                           <td>
                             <Button
