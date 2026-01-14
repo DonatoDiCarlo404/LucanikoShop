@@ -30,17 +30,6 @@ const PendingApproval = () => {
             </p>
           </Alert>
 
-          <Card className="mt-4 bg-light">
-            <Card.Body>
-              <h5>📋 Dati inviati:</h5>
-              <ul className="list-unstyled text-start">
-                <li><strong>Nome:</strong> {user?.name}</li>
-                <li><strong>Email:</strong> {user?.email}</li>
-                {user?.businessName && <li><strong>Azienda:</strong> {user.businessName}</li>}
-                {user?.vatNumber && <li><strong>P.IVA:</strong> {user.vatNumber}</li>}
-              </ul>
-            </Card.Body>
-          </Card>
 
           <div className="mt-4">
             <p className="text-muted">

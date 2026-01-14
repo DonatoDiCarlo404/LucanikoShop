@@ -1,0 +1,137 @@
+import express from 'express';
+import Stripe from 'stripe';
+
+const router = express.Router();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Crea PaymentIntent per abbonamento venditore
+router.post('/create-payment-intent', async (req, res) => {
+  try {
+    const { amount, email, subscriptionType, metadata } = req.body;
+    
+    if (!amount || !email || !subscriptionType) {
+      return res.status(400).json({ error: 'Parametri mancanti' });
+    }
+
+    // Crea il PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Stripe usa centesimi
+      currency: 'eur',
+      description: `Abbonamento ${subscriptionType} - Lucaniko Shop`,
+      receipt_email: email,
+      metadata: {
+        subscriptionType,
+        userEmail: email,
+        ...metadata
+      },
+      // Abilita 3D Secure per sicurezza
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
+    });
+    
+    res.json({ 
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
+  } catch (error) {
+    console.error('Errore creazione PaymentIntent:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verifica stato pagamento
+router.post('/verify-payment', async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: 'PaymentIntent ID mancante' });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    
+    res.json({ 
+      status: paymentIntent.status,
+      paid: paymentIntent.status === 'succeeded',
+      amount: paymentIntent.amount / 100,
+      paymentMethod: paymentIntent.payment_method
+    });
+  } catch (error) {
+    console.error('Errore verifica pagamento:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Webhook endpoint per eventi Stripe
+router.post('/webhook', 
+  express.raw({type: 'application/json'}), 
+  async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    let event;
+    
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    
+    // Gestisci l'evento
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        console.log('✅ PaymentIntent succeeded:', paymentIntent.id);
+        // TODO: Attiva account venditore nel database
+        // TODO: Invia email di conferma
+        break;
+        
+      case 'payment_intent.payment_failed':
+        const failedPayment = event.data.object;
+        console.log('❌ PaymentIntent failed:', failedPayment.id);
+        // TODO: Notifica utente del fallimento
+        break;
+        
+      case 'charge.refunded':
+        const refund = event.data.object;
+        console.log('💸 Charge refunded:', refund.id);
+        // TODO: Gestisci rimborso
+        break;
+        
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    
+    res.json({received: true});
+});
+
+// Crea un rimborso (solo admin)
+router.post('/refund', async (req, res) => {
+  try {
+    const { paymentIntentId, reason } = req.body;
+    
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: 'PaymentIntent ID mancante' });
+    }
+
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reason: reason || 'requested_by_customer'
+    });
+    
+    res.json({ 
+      refundId: refund.id,
+      status: refund.status,
+      amount: refund.amount / 100
+    });
+  } catch (error) {
+    console.error('Errore rimborso:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export default router;

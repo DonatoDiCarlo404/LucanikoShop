@@ -85,7 +85,25 @@ import { sendWelcomeEmail } from '../utils/emailTemplates.js';
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      role,
+      businessName,
+      vatNumber,
+      phoneNumber,
+      address,
+      city,
+      zipCode,
+      uniqueCode,
+      selectedCategories,
+      paymentIntentId,
+      subscriptionType,
+      subscriptionPaid
+    } = req.body;
+
+    console.log('[Backend] Registrazione ricevuta:', { name, email, role, businessName, vatNumber });
 
     // Verifica se l'utente esiste già
     const userExists = await User.findOne({ email });
@@ -94,15 +112,54 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: 'Utente già registrato' });
     }
 
-    // Crea nuovo utente
-    const user = await User.create({
+    // Prepara i dati utente base
+    const userData = {
       name,
       email,
       password,
       role: role || 'buyer'
-    });
+    };
+
+    // Se è un seller, aggiungi i dati aziendali
+    if (role === 'seller') {
+      if (businessName) userData.businessName = businessName;
+      if (vatNumber) userData.vatNumber = vatNumber;
+      if (phoneNumber) userData.phone = phoneNumber;
+      if (uniqueCode) userData.codiceSDI = uniqueCode;
+      
+      // Indirizzo aziendale
+      if (address || city || zipCode) {
+        userData.businessAddress = {
+          street: address || '',
+          city: city || '',
+          zipCode: zipCode || '',
+          country: 'IT'
+        };
+        // Copia anche in storeAddress
+        userData.storeAddress = {
+          street: address || '',
+          city: city || '',
+          zipCode: zipCode || '',
+          country: 'IT'
+        };
+      }
+
+      // Salva info abbonamento nei metadata (opzionale, per tracking)
+      if (paymentIntentId) {
+        userData.subscriptionPaymentId = paymentIntentId;
+        userData.subscriptionType = subscriptionType;
+        userData.subscriptionPaid = subscriptionPaid;
+      }
+    }
+
+    console.log('[Backend] Dati utente preparati:', userData);
+
+    // Crea nuovo utente
+    const user = await User.create(userData);
 
     if (user) {
+      console.log('[Backend] Utente creato con successo:', user._id);
+      
       // Invia email di benvenuto (non blocca la registrazione se fallisce)
       try {
         await sendWelcomeEmail(user.email, user.name);
@@ -116,12 +173,15 @@ export const register = async (req, res) => {
         email: user.email,
         role: user.role,
         isApproved: user.isApproved,
+        businessName: user.businessName,
+        vatNumber: user.vatNumber,
         token: generateToken(user._id)
       });
     } else {
       res.status(400).json({ message: 'Dati utente non validi' });
     }
   } catch (error) {
+    console.error('[Backend] Errore registrazione:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -319,6 +379,18 @@ export const updateVendorProfile = async (req, res) => {
         ...user.shopSettings,
         ...req.body.shopSettings
       };
+    }
+
+
+    // Invio email di approvazione se lo stato passa a true
+    if (!user.isApproved && req.body.isApproved === true) {
+      // Approvazione appena avvenuta
+      try {
+        const { sendApprovalEmail } = await import('../utils/emailTemplates.js');
+        await sendApprovalEmail(user.email, user.name);
+      } catch (emailError) {
+        console.error('Errore invio email di approvazione:', emailError);
+      }
     }
 
     const updatedUser = await user.save();
