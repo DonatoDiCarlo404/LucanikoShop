@@ -57,3 +57,28 @@ export const sendApprovalEmail = async (userEmail, userName) => {
   }
 };
 
+// Email di rinnovo automatico abbonamento venditore
+export const sendSubscriptionRenewalEmail = async (userEmail, userName, newEndDate) => {
+  const formattedDate = new Date(newEndDate).toLocaleDateString('it-IT', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  const msg = {
+    to: userEmail,
+    from: 'donato.dicarlo404@gmail.com',
+    subject: 'Rinnovo Automatico Abbonamento - LucanikoShop',
+    text: `Ciao ${userName}, il tuo abbonamento venditore è stato rinnovato automaticamente. Nuova scadenza: ${formattedDate}.`,
+    html: `<strong>Ciao ${userName}</strong>,<br><br>Il tuo abbonamento venditore su <b>LucanikoShop</b> è stato <span style='color:green'>rinnovato automaticamente</span>.<br><br><strong>Nuova data di scadenza:</strong> ${formattedDate}<br><br>Continua a vendere con noi!`,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('Email rinnovo abbonamento inviata a:', userEmail);
+  } catch (error) {
+    console.error('Errore invio email rinnovo abbonamento:', error);
+    throw error;
+  }
+};
+

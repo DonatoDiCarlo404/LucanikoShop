@@ -22,7 +22,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth() || {};
-  const { addToCart } = useCart() || {};
+  const { addToCart, cartItems } = useCart() || {};
 
   // STATE
   const [product, setProduct] = useState(null);
@@ -257,11 +257,22 @@ const ProductDetail = () => {
     }
   };
 
+
   // ADD TO CART
   const handleAddToCart = () => {
     if (!product) return;
     addToCart(product, 1);
     alert(`✅ ${product.name} aggiunto al carrello!`);
+  };
+
+  // ACQUISTA ORA
+  const handleBuyNow = () => {
+    if (!product) return;
+    addToCart(product, 1);
+    // Attendi che il carrello sia aggiornato, poi vai al checkout
+    setTimeout(() => {
+      navigate('/cart');
+    }, 100);
   };
 
   // RENDER
@@ -398,10 +409,31 @@ const ProductDetail = () => {
                   {/* Prezzo e disponibilità variante selezionata */}
                   {selectedVariant ? (
                     <div className="d-flex justify-content-between align-items-center mt-3">
-                      <h3 className="text-primary mb-0">
-                        €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
-                        <small className="text-muted">/{product.unit}</small>
-                      </h3>
+                      <div>
+                        {product.hasActiveDiscount && product.discountedPrice && product.originalPrice ? (
+                          <>
+                            <div className="d-flex align-items-center gap-2 mb-1">
+                              <h3 className="text-primary mb-0">
+                                €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2)}
+                                <small className="text-muted">/{product.unit}</small>
+                              </h3>
+                              <Badge bg="danger" className="ms-2">
+                                -{product.discountPercentage}%
+                              </Badge>
+                            </div>
+                            <div>
+                              <small className="text-muted" style={{ textDecoration: 'line-through' }}>
+                                €{product.originalPrice.toFixed(2)}
+                              </small>
+                            </div>
+                          </>
+                        ) : (
+                          <h3 className="text-primary mb-0">
+                            €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
+                            <small className="text-muted">/{product.unit}</small>
+                          </h3>
+                        )}
+                      </div>
                       {selectedVariant.stock > 0 ? (
                         <Badge bg="success">✓ Disponibile ({selectedVariant.stock})</Badge>
                       ) : (
@@ -416,11 +448,32 @@ const ProductDetail = () => {
                   )}
                 </>
               ) : (
-                <div className="d-flex justify-content-between">
-                  <h3 className="text-primary mb-0">
-                    €{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
-                    <small className="text-muted">/{product.unit}</small>
-                  </h3>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    {product.hasActiveDiscount && product.discountedPrice && product.originalPrice ? (
+                      <>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <h3 className="text-primary mb-0">
+                            €{product.discountedPrice.toFixed(2)}
+                            <small className="text-muted">/{product.unit}</small>
+                          </h3>
+                          <Badge bg="danger" className="ms-2">
+                            -{product.discountPercentage}%
+                          </Badge>
+                        </div>
+                        <div>
+                          <small className="text-muted" style={{ textDecoration: 'line-through' }}>
+                            €{product.originalPrice.toFixed(2)}
+                          </small>
+                        </div>
+                      </>
+                    ) : (
+                      <h3 className="text-primary mb-0">
+                        €{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
+                        <small className="text-muted">/{product.unit}</small>
+                      </h3>
+                    )}
+                  </div>
                   {product.stock > 0 ? (
                     <Badge bg="success">✓ Disponibile</Badge>
                   ) : (
@@ -656,6 +709,19 @@ const ProductDetail = () => {
                     ? '🛒 Aggiungi al carrello'
                     : 'Non disponibile')
                 : (product.stock > 0 ? '🛒 Aggiungi al carrello' : 'Non disponibile')}
+            </Button>
+            <Button
+              variant="success"
+              size="lg"
+              className="mt-2"
+              disabled={
+                (Array.isArray(product.variants) && product.variants.length > 0)
+                  ? !(selectedVariant && selectedVariant.stock > 0)
+                  : product.stock === 0
+              }
+              onClick={handleBuyNow}
+            >
+              🚀 Acquista Ora
             </Button>
           </div>
         </Col>

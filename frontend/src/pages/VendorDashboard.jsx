@@ -934,7 +934,7 @@ const VendorDashboard = () => {
                 >
                   {products.map(product => (
                     <option key={product._id} value={product._id}>
-                      {product.name} - €{product.price.toFixed(2)}
+                      {product.name} - €{typeof product.price === 'number' ? product.price.toFixed(2) : 'N/A'}
                     </option>
                   ))}
                 </Form.Select>

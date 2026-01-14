@@ -1,9 +1,13 @@
 import express from 'express';
-import { uploadProductImage, uploadAvatarImage, deleteImage } from '../controllers/uploadController.js';
+import { uploadProductImage, uploadAvatarImage, deleteImage, uploadVendorDocument, listVendorDocuments } from '../controllers/uploadController.js';
 import { uploadProduct, uploadAvatar } from '../config/cloudinary.js';
+import multer from 'multer';
 import { protect, seller } from '../middlewares/auth.js';
 
 const router = express.Router();
+
+// Lista PDF venditore
+router.get('/vendor/:vendorId/list', listVendorDocuments);
 
 // Middleware per gestire errori di multer
 const handleMulterError = (err, req, res, next) => {
@@ -16,6 +20,25 @@ const handleMulterError = (err, req, res, next) => {
   }
   next();
 };
+
+
+// Multer per PDF vendor
+const vendorPdfStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/vendor_docs');
+  },
+  filename: function (req, file, cb) {
+    const vendorId = req.params.vendorId;
+    cb(null, `${vendorId}-${Date.now()}-${file.originalname}`);
+  }
+});
+const uploadVendorPdf = multer({ storage: vendorPdfStorage, fileFilter: (req, file, cb) => {
+  if (file.mimetype === 'application/pdf') cb(null, true);
+  else cb(new Error('Solo file PDF sono ammessi'));
+}});
+
+// Upload PDF venditore
+router.post('/vendor/:vendorId', uploadVendorPdf.single('pdf'), handleMulterError, uploadVendorDocument);
 
 // Upload immagine prodotto (solo seller e admin)
 router.post('/product', protect, seller, uploadProduct.single('image'), handleMulterError, uploadProductImage);

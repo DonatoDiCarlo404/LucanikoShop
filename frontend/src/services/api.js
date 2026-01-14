@@ -1,3 +1,13 @@
+// Upload PDF venditore
+export const uploadVendorDocument = async (vendorId, file) => {
+  const formData = new FormData();
+  formData.append('pdf', file);
+  const response = await fetch(`${API_URL}/upload/vendor/${vendorId}`, {
+    method: 'POST',
+    body: formData
+  });
+  return handleResponse(response);
+};
 import { createSession } from "react-router-dom";
 
 const API_URL = 'http://localhost:5000/api';
@@ -156,6 +166,15 @@ export const uploadAPI = {
 
 // Admin API
 export const adminAPI = {
+    // Ottieni lista documenti PDF per venditore
+    getVendorDocuments: async (vendorId, token) => {
+      const response = await fetch(`${API_URL}/upload/vendor/${vendorId}/list`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      return handleResponse(response);
+    },
   // Get statistiche
   getStats: async (token) => {
     const response = await fetch(`${API_URL}/admin/stats`, {

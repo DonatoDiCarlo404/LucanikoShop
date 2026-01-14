@@ -19,9 +19,9 @@ const SUBSCRIPTION_PRICES = {
 
 const Register = () => {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('registerRememberedEmail') || '');
+  const [password, setPassword] = useState(() => localStorage.getItem('registerRememberedPassword') || '');
+  const [confirmPassword, setConfirmPassword] = useState(() => localStorage.getItem('registerRememberedPassword') || '');
   const [role, setRole] = useState('buyer');
   const [businessName, setBusinessName] = useState('');
   const [vatNumber, setVatNumber] = useState('');
@@ -43,6 +43,10 @@ const Register = () => {
   const [paymentMethodId, setPaymentMethodId] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUserData, setRegisteredUserData] = useState(null);
+  const [rememberMe, setRememberMe] = useState(() => {
+    const saved = localStorage.getItem('registerRememberMe');
+    return saved === 'true';
+  });
 
   // Carica categorie all'avvio
   useEffect(() => {
@@ -95,6 +99,15 @@ const Register = () => {
   };
 
   const handleSubmit = async (e) => {
+    if (rememberMe) {
+      localStorage.setItem('registerRememberMe', 'true');
+      localStorage.setItem('registerRememberedEmail', email);
+      localStorage.setItem('registerRememberedPassword', password);
+    } else {
+      localStorage.removeItem('registerRememberMe');
+      localStorage.removeItem('registerRememberedEmail');
+      localStorage.removeItem('registerRememberedPassword');
+    }
     e.preventDefault();
 
     setError('');
@@ -210,6 +223,16 @@ const Register = () => {
                     {showConfirmPassword ? <i className="bi bi-eye-slash-fill"></i> : <i className="bi bi-eye-fill"></i>}
                   </Button>
                 </InputGroup>
+
+              {/* Ricorda credenziali */}
+              <Form.Group className="mb-3" controlId="rememberMe">
+                <Form.Check
+                  type="checkbox"
+                  label="Ricorda credenziali"
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                />
+              </Form.Group>
               </Form.Group>
 
               <Form.Group className="mb-3" controlId="role">

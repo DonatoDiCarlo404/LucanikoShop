@@ -5,6 +5,9 @@ import {
   approveSeller,
   rejectSeller,
   getAdminStats,
+  toggleSubscriptionStatus,
+  getSellerProfile,
+  updateSellerProfile,
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middlewares/auth.js';
 
@@ -19,9 +22,14 @@ router.get('/stats', getAdminStats);
 // Get venditori
 router.get('/pending-sellers', getPendingSellers);
 router.get('/sellers', getAllSellers);
+router.get('/sellers/:id', getSellerProfile);
+router.put('/sellers/:id/profile', updateSellerProfile);
 
 // Approva/Rifiuta venditore
 router.put('/approve-seller/:id', approveSeller);
 router.delete('/reject-seller/:id', rejectSeller);
+
+// Sospendi/Riattiva abbonamento venditore
+router.put('/sellers/:id/subscription', toggleSubscriptionStatus);
 
 export default router;

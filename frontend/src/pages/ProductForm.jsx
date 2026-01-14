@@ -552,11 +552,17 @@ const ProductForm = () => {
                         required
                       >
                         <option value="">Seleziona una categoria</option>
-                        {categories.map((cat) => (
-                          <option key={cat._id} value={cat._id}>
-                            {cat.name}
-                          </option>
-                        ))}
+                        <option value="abbigliamento-accessori">Abbigliamento e Accessori</option>
+                        <option value="benessere-salute">Benessere e Salute</option>
+                        <option value="calzature">Calzature</option>
+                        <option value="casa-arredi-ufficio">Casa, Arredi e Ufficio</option>
+                        <option value="cibi-bevande">Cibi e Bevande</option>
+                        <option value="elettronica-informatica">Elettronica e Informatica</option>
+                        <option value="industria-ferramenta-artigianato">Industria, Ferramenta e Artigianato</option>
+                        <option value="libri-media-giocattoli">Libri, Media e Giocattoli</option>
+                        <option value="orologi-gioielli">Orologi e Gioielli</option>
+                        <option value="ricambi-accessori-auto-moto">Ricambi e accessori per auto e moto</option>
+                        <option value="sport-hobby-viaggi">Sport, Hobby e Viaggi</option>
                       </Form.Select>
                     </Form.Group>
                   </Col>

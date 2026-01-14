@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab } from 'react-bootstrap';
-import { adminAPI } from '../services/api';
+import { adminAPI, uploadVendorDocument } from '../services/api';
+// Espone la funzione uploadVendorDocument su window per uso inline
+window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
 import RegisterCompanyForm from '../components/RegisterCompanyForm';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [pendingSellers, setPendingSellers] = useState([]);
   const [allSellers, setAllSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState('');
+  // Stato per i documenti allegati
+  const [vendorDocs, setVendorDocs] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     loadData();
@@ -31,6 +38,18 @@ const AdminDashboard = () => {
       setStats(statsData);
       setPendingSellers(pendingData.sellers);
       setAllSellers(allData.sellers);
+      // Carica la lista dei documenti per ogni venditore
+      const docs = {};
+      for (const seller of allData.sellers) {
+        try {
+          // Chiamata API per ottenere lista file PDF per venditore
+          const res = await adminAPI.getVendorDocuments(seller._id, user.token);
+          docs[seller._id] = res.files || [];
+        } catch {
+          docs[seller._id] = [];
+        }
+      }
+      setVendorDocs(docs);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -67,6 +86,42 @@ const AdminDashboard = () => {
       setActionLoading(null);
     }
   };
+
+  const handleToggleRenewal = async (sellerId, currentStatus) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/sellers/${sellerId}/subscription`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Errore toggle rinnovo');
+      }
+
+      // Aggiorna localmente lo stato
+      setAllSellers(prev => prev.map(seller => 
+        seller._id === sellerId 
+          ? { ...seller, subscriptionSuspended: !currentStatus }
+          : seller
+      ));
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  // Filtro venditori per nome o nome azienda
+  const filteredSellers = allSellers.filter(seller => {
+    const name = seller.name?.toLowerCase() || "";
+    const business = seller.businessName?.toLowerCase() || "";
+    return (
+      name.includes(searchTerm.toLowerCase()) ||
+      business.includes(searchTerm.toLowerCase())
+    );
+  });
 
   if (loading) {
     return (
@@ -211,8 +266,21 @@ const AdminDashboard = () => {
         <Tab eventKey="all" title={<span><i className="bi bi-person-lines-fill text-success"></i> Tutti i Venditori</span>}>
           <Card>
             <Card.Body>
-              {allSellers.length === 0 ? (
-                <Alert variant="info">Nessun venditore registrato</Alert>
+              <div className="mb-3 d-flex align-items-center justify-content-between flex-wrap">
+                <div className="mb-2 mb-md-0">
+                  <strong>Ricerca per nome o azienda:</strong>
+                  <input
+                    type="text"
+                    className="form-control d-inline-block ms-2"
+                    style={{ width: 260, maxWidth: '100%' }}
+                    placeholder="Cerca venditore..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              {filteredSellers.length === 0 ? (
+                <Alert variant="info">Nessun venditore trovato</Alert>
               ) : (
                 <Table responsive hover>
                   <thead>
@@ -222,11 +290,15 @@ const AdminDashboard = () => {
                       <th>Azienda</th>
                       <th>P.IVA</th>
                       <th>Stato</th>
+                      <th>Stato Abbonamento</th>
+                      <th>Rinnovo Automatico</th>
+                      <th>Documenti Allegati</th>
                       <th>Data Registrazione</th>
+                      <th>Data Scadenza Abbonamento</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {allSellers.map((seller) => (
+                    {filteredSellers.map((seller) => (
                       <tr key={seller._id}>
                         <td>{seller.name}</td>
                         <td>{seller.email}</td>
@@ -238,7 +310,7 @@ const AdminDashboard = () => {
                                 cursor: 'pointer',
                                 textDecoration: 'underline'
                               }}
-                              onClick={() => navigate(`/shop/${seller._id}`)}
+                              onClick={() => navigate(`/vendor/profile?sellerId=${seller._id}`)}
                             >
                               {seller.businessName}
                             </span>
@@ -252,7 +324,82 @@ const AdminDashboard = () => {
                             <Badge bg="warning">⏳ In Attesa</Badge>
                           )}
                         </td>
+                        <td>
+                          {/* Stato Abbonamento: pallino verde se subscriptionPaid true, rosso altrimenti */}
+                          {seller.subscriptionPaid ? (
+                            <span title="Abbonamento attivo" style={{ color: 'green', fontSize: '1.5em' }}>●</span>
+                          ) : (
+                            <span title="Abbonamento non attivo" style={{ color: 'red', fontSize: '1.5em' }}>●</span>
+                          )}
+                        </td>
+                        <td>
+                          {/* Switch Rinnovo Automatico */}
+                          <div className="form-check form-switch" style={{ fontSize: '1.2em' }}>
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              role="switch"
+                              checked={!seller.subscriptionSuspended}
+                              onChange={() => handleToggleRenewal(seller._id, seller.subscriptionSuspended)}
+                              style={{ cursor: 'pointer' }}
+                              title={seller.subscriptionSuspended ? 'Rinnovo sospeso - Clicca per attivare' : 'Rinnovo attivo - Clicca per sospendere'}
+                            />
+                            <label className="form-check-label" style={{ fontSize: '0.85em', marginLeft: '0.3em' }}>
+                              {seller.subscriptionSuspended ? 'OFF' : 'ON'}
+                            </label>
+                          </div>
+                        </td>
+                        <td>
+                          {/* Documenti Allegati: upload PDF + lista file */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5em' }}>
+                            <form
+                              onSubmit={async (e) => {
+                                e.preventDefault();
+                                const files = e.target.elements[`pdf_${seller._id}`].files;
+                                if (!files.length) return alert('Seleziona almeno un file PDF');
+                                try {
+                                  for (let i = 0; i < files.length; i++) {
+                                    await window.uploadVendorDocument(seller._id, files[i]);
+                                  }
+                                  alert('✅ Documenti caricati!');
+                                  // Aggiorna la lista documenti dopo upload
+                                  try {
+                                    const res = await adminAPI.getVendorDocuments(seller._id, user.token);
+                                    setVendorDocs((prev) => ({ ...prev, [seller._id]: res.files || [] }));
+                                  } catch {}
+                                } catch (err) {
+                                  alert('❌ Errore upload: ' + err.message);
+                                }
+                              }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}
+                            >
+                              <input
+                                type="file"
+                                accept="application/pdf"
+                                name={`pdf_${seller._id}`}
+                                style={{ width: '180px' }}
+                                multiple
+                              />
+                              <Button type="submit" size="sm" variant="secondary">Carica</Button>
+                            </form>
+                            {/* Lista file PDF allegati */}
+                            {vendorDocs[seller._id] && vendorDocs[seller._id].length > 0 ? (
+                              <ul style={{ margin: 0, paddingLeft: '1em', fontSize: '0.95em' }}>
+                                {vendorDocs[seller._id].map((file, idx) => (
+                                  <li key={idx}>
+                                    <a href={file.url} target="_blank" rel="noopener noreferrer">
+                                      {file.name || file.url.split('/').pop()}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <span style={{ color: '#888', fontSize: '0.95em' }}>Nessun documento</span>
+                            )}
+                          </div>
+                        </td>
                         <td>{new Date(seller.createdAt).toLocaleDateString('it-IT')}</td>
+                        <td>{seller.subscriptionEndDate ? new Date(seller.subscriptionEndDate).toLocaleDateString('it-IT') : '-'}</td>
                       </tr>
                     ))}
                   </tbody>

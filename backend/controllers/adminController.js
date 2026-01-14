@@ -117,3 +117,168 @@ export const getAdminStats = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Sospendi o riattiva abbonamento venditore
+// @route   PUT /api/admin/sellers/:id/subscription
+// @access  Private/Admin
+export const toggleSubscriptionStatus = async (req, res) => {
+  try {
+    const { suspended } = req.body;
+    const seller = await User.findById(req.params.id);
+
+    if (!seller) {
+      return res.status(404).json({ message: 'Venditore non trovato' });
+    }
+
+    if (seller.role !== 'seller') {
+      return res.status(400).json({ message: 'L\'utente non è un venditore' });
+    }
+
+    seller.subscriptionSuspended = suspended === true;
+    await seller.save();
+
+    res.status(200).json({
+      message: seller.subscriptionSuspended 
+        ? 'Abbonamento sospeso. Il rinnovo automatico è stato disattivato.' 
+        : 'Abbonamento riattivato. Il rinnovo automatico è stato attivato.',
+      seller: {
+        id: seller._id,
+        name: seller.name,
+        businessName: seller.businessName,
+        subscriptionSuspended: seller.subscriptionSuspended,
+        subscriptionEndDate: seller.subscriptionEndDate
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get profilo completo di un venditore specifico
+// @route   GET /api/admin/sellers/:id
+// @access  Private/Admin
+export const getSellerProfile = async (req, res) => {
+  try {
+    const seller = await User.findById(req.params.id).select('-password');
+
+    if (!seller) {
+      return res.status(404).json({ message: 'Venditore non trovato' });
+    }
+
+    if (seller.role !== 'seller') {
+      return res.status(400).json({ message: 'L\'utente non è un venditore' });
+    }
+
+    res.status(200).json(seller);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Aggiorna profilo di un venditore specifico (admin)
+// @route   PUT /api/admin/sellers/:id/profile
+// @access  Private/Admin
+export const updateSellerProfile = async (req, res) => {
+  try {
+    const seller = await User.findById(req.params.id);
+
+    if (!seller) {
+      return res.status(404).json({ message: 'Venditore non trovato' });
+    }
+
+    if (seller.role !== 'seller') {
+      return res.status(400).json({ message: 'L\'utente non è un venditore' });
+    }
+
+    // Aggiorna tutti i campi come nella funzione updateVendorProfile
+    seller.name = req.body.name || seller.name;
+    seller.phone = req.body.phone || seller.phone;
+    seller.avatar = req.body.avatar || seller.avatar;
+
+    if (req.body.address) {
+      seller.address = {
+        street: req.body.address.street || seller.address?.street,
+        city: req.body.address.city || seller.address?.city,
+        state: req.body.address.state || seller.address?.state,
+        zipCode: req.body.address.zipCode || seller.address?.zipCode,
+        country: req.body.address.country || seller.address?.country
+      };
+    }
+
+    seller.businessName = req.body.businessName || seller.businessName;
+    seller.ragioneSociale = req.body.ragioneSociale || seller.ragioneSociale;
+    seller.businessDescription = req.body.businessDescription || seller.businessDescription;
+    seller.vatNumber = req.body.vatNumber || seller.vatNumber;
+    seller.codiceSDI = req.body.codiceSDI || seller.codiceSDI;
+
+    if (req.body.logo) {
+      seller.logo = {
+        url: req.body.logo.url || seller.logo?.url,
+        public_id: req.body.logo.public_id || seller.logo?.public_id
+      };
+    }
+
+    seller.businessEmail = req.body.businessEmail || seller.businessEmail;
+    seller.businessPhone = req.body.businessPhone || seller.businessPhone;
+    seller.businessWhatsapp = req.body.businessWhatsapp || seller.businessWhatsapp;
+    seller.website = req.body.website || seller.website;
+
+    if (req.body.socialLinks) {
+      seller.socialLinks = {
+        facebook: req.body.socialLinks.facebook || seller.socialLinks?.facebook,
+        instagram: req.body.socialLinks.instagram || seller.socialLinks?.instagram,
+        twitter: req.body.socialLinks.twitter || seller.socialLinks?.twitter,
+        linkedin: req.body.socialLinks.linkedin || seller.socialLinks?.linkedin,
+        tiktok: req.body.socialLinks.tiktok || seller.socialLinks?.tiktok
+      };
+    }
+
+    if (req.body.storeAddress) {
+      seller.storeAddress = {
+        street: req.body.storeAddress.street || seller.storeAddress?.street,
+        city: req.body.storeAddress.city || seller.storeAddress?.city,
+        state: req.body.storeAddress.state || seller.storeAddress?.state,
+        zipCode: req.body.storeAddress.zipCode || seller.storeAddress?.zipCode,
+        country: req.body.storeAddress.country || seller.storeAddress?.country,
+        coordinates: {
+          lat: req.body.storeAddress.coordinates?.lat || seller.storeAddress?.coordinates?.lat,
+          lng: req.body.storeAddress.coordinates?.lng || seller.storeAddress?.coordinates?.lng
+        }
+      };
+    }
+
+    if (req.body.businessAddress) {
+      seller.businessAddress = {
+        street: req.body.businessAddress.street || seller.businessAddress?.street,
+        city: req.body.businessAddress.city || seller.businessAddress?.city,
+        state: req.body.businessAddress.state || seller.businessAddress?.state,
+        zipCode: req.body.businessAddress.zipCode || seller.businessAddress?.zipCode,
+        country: req.body.businessAddress.country || seller.businessAddress?.country
+      };
+    }
+
+    if (req.body.bankAccount) {
+      seller.bankAccount = {
+        iban: req.body.bankAccount.iban || seller.bankAccount?.iban,
+        bankName: req.body.bankAccount.bankName || seller.bankAccount?.bankName
+      };
+    }
+
+    if (req.body.shopSettings) {
+      seller.shopSettings = {
+        ...seller.shopSettings,
+        ...req.body.shopSettings
+      };
+    }
+
+    if (req.body.paymentMethod) {
+      seller.paymentMethod = req.body.paymentMethod;
+    }
+
+    await seller.save();
+
+    res.status(200).json(seller);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

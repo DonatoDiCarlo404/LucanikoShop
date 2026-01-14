@@ -120,13 +120,14 @@ export const register = async (req, res) => {
       role: role || 'buyer'
     };
 
+
     // Se è un seller, aggiungi i dati aziendali
     if (role === 'seller') {
       if (businessName) userData.businessName = businessName;
       if (vatNumber) userData.vatNumber = vatNumber;
       if (phoneNumber) userData.phone = phoneNumber;
       if (uniqueCode) userData.codiceSDI = uniqueCode;
-      
+
       // Indirizzo aziendale
       if (address || city || zipCode) {
         userData.businessAddress = {
@@ -142,6 +143,17 @@ export const register = async (req, res) => {
           zipCode: zipCode || '',
           country: 'IT'
         };
+      }
+
+      // Calcola e salva la scadenza abbonamento
+      if (subscriptionType) {
+        // 1, 2 o 3 anni
+        let years = 1;
+        if (String(subscriptionType) === '2') years = 2;
+        if (String(subscriptionType) === '3') years = 3;
+        const now = new Date();
+        const endDate = new Date(now.setFullYear(now.getFullYear() + years));
+        userData.subscriptionEndDate = endDate;
       }
 
       // Salva info abbonamento nei metadata (opzionale, per tracking)

@@ -118,40 +118,23 @@ const Products = () => {
           <Form.Select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            className="my-2 my-md-0"
           >
             <option value="">Tutte le categorie</option>
-            {[...categories].sort((a, b) => a.localeCompare(b)).map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
+            <option value="Abbigliamento e Accessori">Abbigliamento e Accessori</option>
+            <option value="Benessere e Salute">Benessere e Salute</option>
+            <option value="Calzature">Calzature</option>
+            <option value="Casa, Arredi e Ufficio">Casa, Arredi e Ufficio</option>
+            <option value="Cibi e Bevande">Cibi e Bevande</option>
+            <option value="Elettronica e Informatica">Elettronica e Informatica</option>
+            <option value="Industria, Ferramenta e Artigianato">Industria, Ferramenta e Artigianato</option>
+            <option value="Libri, Media e Giocattoli">Libri, Media e Giocattoli</option>
+            <option value="Orologi e Gioielli">Orologi e Gioielli</option>
+            <option value="Ricambi e accessori per auto e moto">Ricambi e accessori per auto e moto</option>
+            <option value="Sport, Hobby e Viaggi">Sport, Hobby e Viaggi</option>
           </Form.Select>
         </Col>
-        <Col md={4}>
-          <InputGroup>
-            <Form.Control
-              type="number"
-              placeholder="Prezzo Min €"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApplyPriceFilter()}
-              min="0"
-              step="0.01"
-            />
-            <Form.Control
-              type="number"
-              placeholder="Max €"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleApplyPriceFilter()}
-              min="0"
-              step="0.01"
-            />
-            <Button variant="primary" onClick={handleApplyPriceFilter}>
-              <span><i className="bi bi-search"> Cerca</i></span>
-            </Button>
-          </InputGroup>
-        </Col>
+        {/* Campo ricerca prezzo min/max rimosso su richiesta */}
       </Row>
 
       {/* Ordinamento e Reset */}
@@ -170,7 +153,7 @@ const Products = () => {
           </Form.Select>
         </Col>
         <Col md={4}>
-          <Button variant="outline-secondary" onClick={handleResetFilters} className="w-100">
+          <Button variant="outline-secondary" onClick={handleResetFilters} className="w-100 mt-2 mt-md-0">
             <span><i className="bi bi-x-octagon"> Reset filtri</i></span>
           </Button>
         </Col>
@@ -188,7 +171,7 @@ const Products = () => {
       ) : (
         <Row>
           {products.map((product) => (
-            <Col key={product._id} md={3} sm={6} className="mb-4">
+            <Col key={product._id} md={3} sm={6} xs={6} className="mb-4">
               <ProductCard product={product} />
             </Col>
           ))}

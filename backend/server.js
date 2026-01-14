@@ -1,3 +1,4 @@
+import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -24,6 +25,9 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
+
+// Serve i PDF vendor caricati
+app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs')));
 const PORT = process.env.PORT || 5000;
 
 // IMPORTANTE: Webhook route PRIMA di express.json()
@@ -32,6 +36,7 @@ app.use('/api/webhook', webhookRoutes);
 
 // Middleware
 app.use(cors());
+import { renewExpiredSubscriptions } from './utils/subscriptionUtils.js';
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
@@ -80,6 +85,16 @@ mongoose.connect(process.env.MONGODB_URI)
     }, 60 * 60 * 1000); // Ogni ora
   })
   .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
+    renewExpiredSubscriptions()
+      .then(result => {
+        console.log(`✅ Rinnovo abbonamenti: ${result.renewed} rinnovati`);
+        if (result.renewedList && result.renewedList.length > 0) {
+          console.log('📧 Venditori rinnovati:', result.renewedList.map(r => `${r.businessName || r.name} (${r.email})`).join(', '));
+        }
+      })
+      .catch(error => {
+        console.error('❌ Errore rinnovo abbonamenti:', error);
+      });
 
 app.get('/', (req, res) => {
   res.json({ message: 'Benvenuto in LucanikoShop API' });
@@ -90,6 +105,16 @@ app.get('/api/health', (req, res) => {
 });
 
 // Rotta NOT FOUND
+      renewExpiredSubscriptions()
+        .then(result => {
+          console.log(`🔄 Rinnovo abbonamenti orario: ${result.renewed} rinnovati`);
+          if (result.renewedList && result.renewedList.length > 0) {
+            console.log('📧 Venditori rinnovati:', result.renewedList.map(r => `${r.businessName || r.name} (${r.email})`).join(', '));
+          }
+        })
+        .catch(error => {
+          console.error('❌ Errore rinnovo abbonamenti orario:', error);
+        });
 app.use(notFound);
 
 // Middleware gestione errori

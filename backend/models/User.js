@@ -284,6 +284,15 @@ const userSchema = new mongoose.Schema(
     approvedAt: {
       type: Date
     },
+    // Data di scadenza abbonamento venditore
+    subscriptionEndDate: {
+      type: Date
+    },
+    // Flag per sospendere rinnovo automatico abbonamento (solo admin)
+    subscriptionSuspended: {
+      type: Boolean,
+      default: false
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date
   },

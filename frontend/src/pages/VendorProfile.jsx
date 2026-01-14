@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -21,6 +21,8 @@ import DefaultShippingRateInput from './DefaultShippingRateInput';
 const VendorProfile = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sellerId = searchParams.get('sellerId'); // ID del venditore da visualizzare (solo admin)
 
   // State per profilo
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,16 @@ const VendorProfile = () => {
     ratePerUnit: 0,
     estimatedDays: '',
     zones: []
+  });
+
+  // State per Abbonamento
+  const [vendorDocs, setVendorDocs] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    cardHolder: '',
+    cardNumber: '',
+    expiryDate: '',
+    cvv: ''
   });
 
   // State per form
@@ -156,9 +168,30 @@ const VendorProfile = () => {
       navigate('/');
     } else {
       loadProfile();
-      loadStats();
+      // Non caricare stats e documenti se admin sta visualizzando profilo altrui
+      if (!(user.role === 'admin' && sellerId)) {
+        loadStats();
+        loadVendorDocuments();
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, sellerId]);
+
+  // Carica documenti PDF del venditore
+  const loadVendorDocuments = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/upload/vendor/${user._id}/list`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVendorDocs(data.files || []);
+      }
+    } catch (err) {
+      console.error('Errore caricamento documenti:', err);
+    }
+  };
 
   // Carica profilo venditore
   const loadProfile = async () => {
@@ -166,7 +199,12 @@ const VendorProfile = () => {
       setLoading(true);
       setError('');
 
-      const res = await fetch('http://localhost:5000/api/auth/vendor-profile', {
+      // Se admin e sellerId presente, carica profilo del venditore specifico
+      const url = (user.role === 'admin' && sellerId) 
+        ? `http://localhost:5000/api/admin/sellers/${sellerId}`
+        : 'http://localhost:5000/api/auth/vendor-profile';
+
+      const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -373,7 +411,12 @@ const VendorProfile = () => {
       setError('');
       setSuccess('');
 
-      const res = await fetch('http://localhost:5000/api/auth/vendor-profile', {
+      // Se admin sta modificando profilo di un altro venditore, usa endpoint specifico
+      const url = (user.role === 'admin' && sellerId)
+        ? `http://localhost:5000/api/admin/sellers/${sellerId}/profile`
+        : 'http://localhost:5000/api/auth/vendor-profile';
+
+      const res = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1330,6 +1373,141 @@ const VendorProfile = () => {
           </Card>
         </Tab>
 
+        {/* TAB ABBONAMENTO */}
+        <Tab eventKey="subscription" title="💳 Abbonamento">
+          <Card>
+            <Card.Body>
+              <h5 className="mb-4">Gestione Abbonamento</h5>
+
+              {/* Stato Abbonamento */}
+              <Card className="mb-3">
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h6 className="mb-1">Stato Abbonamento</h6>
+                      <p className="text-muted mb-0 small">Il tuo abbonamento è attualmente:</p>
+                    </div>
+                    <div className="text-center">
+                      {profileData?.subscriptionPaid ? (
+                        <>
+                          <span title="Abbonamento attivo" style={{ color: 'green', fontSize: '2.5em' }}>●</span>
+                          <div className="small text-success fw-bold">Attivo</div>
+                        </>
+                      ) : (
+                        <>
+                          <span title="Abbonamento non attivo" style={{ color: 'red', fontSize: '2.5em' }}>●</span>
+                          <div className="small text-danger fw-bold">Non Attivo</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+
+              {/* Data Pagamento */}
+              <Card className="mb-3">
+                <Card.Body>
+                  <h6 className="mb-3">Pagamento Effettuato</h6>
+                  {profileData?.subscriptionPaidAt ? (
+                    <Alert variant="success">
+                      <strong>Data ultimo pagamento:</strong> {new Date(profileData.subscriptionPaidAt).toLocaleDateString('it-IT', { 
+                        day: '2-digit', 
+                        month: 'long', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Alert>
+                  ) : (
+                    <Alert variant="warning">
+                      Nessun pagamento registrato
+                    </Alert>
+                  )}
+                </Card.Body>
+              </Card>
+
+              {/* Documenti Allegati */}
+              <Card className="mb-3">
+                <Card.Body>
+                  <h6 className="mb-3">Documenti Allegati</h6>
+                  {vendorDocs && vendorDocs.length > 0 ? (
+                    <ul className="list-group">
+                      {vendorDocs.map((doc, idx) => (
+                        <li key={idx} className="list-group-item d-flex justify-content-between align-items-center">
+                          <span>
+                            <i className="bi bi-file-pdf-fill text-danger me-2"></i>
+                            {doc.name || doc.url.split('/').pop()}
+                          </span>
+                          <div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => window.open(doc.url, '_blank')}
+                            >
+                              <i className="bi bi-eye"></i> Visualizza
+                            </Button>
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              as="a"
+                              href={doc.url}
+                              download
+                            >
+                              <i className="bi bi-download"></i> Scarica
+                            </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <Alert variant="info">
+                      Nessun documento disponibile
+                    </Alert>
+                  )}
+                </Card.Body>
+              </Card>
+
+              {/* Metodo di Pagamento */}
+              <Card>
+                <Card.Body>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Metodo di Pagamento</h6>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => setShowPaymentModal(true)}
+                    >
+                      <i className="bi bi-pencil"></i> Modifica
+                    </Button>
+                  </div>
+                  
+                  {profileData?.paymentMethod ? (
+                    <div className="border rounded p-3 bg-light">
+                      <div className="mb-2">
+                        <strong>Intestatario:</strong> {profileData.paymentMethod.cardHolder || 'Non disponibile'}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Numero Carta:</strong> •••• •••• •••• {profileData.paymentMethod.last4 || '****'}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Scadenza:</strong> {profileData.paymentMethod.expiryDate || 'Non disponibile'}
+                      </div>
+                      <div>
+                        <Badge bg="success">Metodo salvato</Badge>
+                      </div>
+                    </div>
+                  ) : (
+                    <Alert variant="warning">
+                      Nessun metodo di pagamento salvato
+                    </Alert>
+                  )}
+                </Card.Body>
+              </Card>
+            </Card.Body>
+          </Card>
+        </Tab>
+
         {/* TAB STATISTICHE */}
         <Tab eventKey="stats" title="📊 Statistiche">
           <Row>
@@ -1779,6 +1957,147 @@ const VendorProfile = () => {
             {editingShippingRate !== null ? 'Aggiorna Tariffa' : 'Aggiungi Tariffa'}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* MODAL MODIFICA METODO DI PAGAMENTO */}
+      <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Modifica Metodo di Pagamento</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={async (e) => {
+            e.preventDefault();
+            try {
+              setSaving(true);
+              const res = await fetch('http://localhost:5000/api/auth/vendor-profile', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${user.token}`
+                },
+                body: JSON.stringify({
+                  paymentMethod: {
+                    cardHolder: paymentForm.cardHolder,
+                    last4: paymentForm.cardNumber.slice(-4),
+                    expiryDate: paymentForm.expiryDate
+                  }
+                })
+              });
+
+              if (!res.ok) throw new Error('Errore aggiornamento metodo pagamento');
+
+              await loadProfile();
+              setShowPaymentModal(false);
+              setSuccess('Metodo di pagamento aggiornato con successo!');
+              setTimeout(() => setSuccess(''), 3000);
+              
+              // Reset form
+              setPaymentForm({
+                cardHolder: '',
+                cardNumber: '',
+                expiryDate: '',
+                cvv: ''
+              });
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setSaving(false);
+            }
+          }}>
+            <Form.Group className="mb-3">
+              <Form.Label>Intestatario Carta *</Form.Label>
+              <Form.Control
+                type="text"
+                value={paymentForm.cardHolder}
+                onChange={(e) => setPaymentForm({ ...paymentForm, cardHolder: e.target.value })}
+                placeholder="Nome e Cognome"
+                required
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Numero Carta *</Form.Label>
+              <Form.Control
+                type="text"
+                value={paymentForm.cardNumber}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\s/g, '');
+                  if (/^\d{0,16}$/.test(value)) {
+                    setPaymentForm({ ...paymentForm, cardNumber: value });
+                  }
+                }}
+                placeholder="1234 5678 9012 3456"
+                maxLength="16"
+                required
+              />
+              <Form.Text className="text-muted">
+                Inserisci 16 cifre senza spazi
+              </Form.Text>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Data Scadenza *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={paymentForm.expiryDate}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, '');
+                      if (value.length >= 2) {
+                        value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                      }
+                      if (value.length <= 5) {
+                        setPaymentForm({ ...paymentForm, expiryDate: value });
+                      }
+                    }}
+                    placeholder="MM/AA"
+                    maxLength="5"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>CVV *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={paymentForm.cvv}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 3) {
+                        setPaymentForm({ ...paymentForm, cvv: value });
+                      }
+                    }}
+                    placeholder="123"
+                    maxLength="3"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Alert variant="info" className="small">
+              <strong>Nota:</strong> I dati della carta vengono salvati in modo sicuro e criptato.
+            </Alert>
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="secondary" onClick={() => setShowPaymentModal(false)}>
+                Annulla
+              </Button>
+              <Button variant="primary" type="submit" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  'Salva Metodo'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
       </Modal>
     </Container>
   );

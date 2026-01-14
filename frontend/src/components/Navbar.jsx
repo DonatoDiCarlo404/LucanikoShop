@@ -57,41 +57,72 @@ const Navbar = () => {
   };
 
   return (
-    <BSNavbar bg="light" variant="light" expand="lg" sticky="top">
+    <BSNavbar bg="light" variant="light" expand="lg" sticky="top" style={{ zIndex: 1030 }}>
       <Container>
         <BSNavbar.Brand as={Link} to="/">
           <img src="/lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
         </BSNavbar.Brand>
+        {/* Icona user e carrello sempre visibili, anche su mobile, PRIMA del menu hamburger */}
+        <div className="d-lg-none ms-auto d-flex align-items-center">
+          {!isAuthenticated && (
+            <Nav.Link as={Link} to="/login" className="d-inline-flex align-items-center me-3">
+              <span>
+                <i className="bi bi-person-circle"></i>
+              </span>
+            </Nav.Link>
+          )}
+          <Nav.Link as={Link} to="/cart" className="d-inline-flex align-items-center me-2">
+            <span><i className="bi bi-cart"></i></span>
+            {cartCount > 0 && (
+              <Badge bg="danger" className="ms-2">
+                {cartCount}
+              </Badge>
+            )}
+          </Nav.Link>
+        </div>
         <BSNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BSNavbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
+          <Nav className="me-auto w-100 justify-content-lg-start justify-content-end">
             {/* altri link seller/admin qui sotto */}
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
-                <Nav.Link as={Link} to="/vendor/dashboard">
+                <Nav.Link as={Link} to="/vendor/dashboard" className="text-start">
                   <span>
                     <i className="bi bi-graph-up"></i> Dashboard Venditore
                   </span>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/my-products">
+                <Nav.Link as={Link} to="/my-products" className="text-start">
                   <span>
                     <i className="bi bi-bag-check"></i> I miei prodotti
                   </span>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/products/new">
+                <Nav.Link as={Link} to="/products/new" className="text-start">
                   <span>
                     <i className="bi bi-bag-plus"></i> Nuovo prodotto
                   </span>
+                </Nav.Link>
+                {/* Voci aggiuntive solo mobile hamburger per venditore */}
+                <Nav.Link as={Link} to="/vendor/profile" className="d-lg-none text-end w-100">
+                  Profilo Aziendale
+                </Nav.Link>
+                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                  Catalogo
+                </Nav.Link>
+                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100 my-2">
+                  Categorie
+                </Nav.Link>
+                <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
+                  Esci
                 </Nav.Link>
               </>
             )}
 
             {isAuthenticated && user.role === 'admin' && (
               <>
-                <Nav.Link as={Link} to="/vendor/dashboard">
+                <Nav.Link as={Link} to="/vendor/dashboard" className="text-start">
                   <span><i className="bi bi-graph-up"></i> Dashboard Venditore</span>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/my-products">
+                <Nav.Link as={Link} to="/my-products" className="text-start">
                   <span><i className="bi bi-kanban"></i> Gestione prodotti</span>
                   {pendingProductsCount > 0 && (
                     <Badge bg="info" className="ms-2">
@@ -99,7 +130,7 @@ const Navbar = () => {
                     </Badge>
                   )}
                 </Nav.Link>
-                <Nav.Link as={Link} to="/admin/dashboard">
+                <Nav.Link as={Link} to="/admin/dashboard" className="text-start">
                   <span><i className="bi bi-shield-lock"></i> Dashboard Admin</span>
                   {pendingCount > 0 && (
                     <Badge bg="warning" className="ms-2">
@@ -112,10 +143,9 @@ const Navbar = () => {
           </Nav>
 
           <Nav className="ms-auto align-items-center">
-            <Nav.Link as={Link} to="/products" className="me-2">
-              <span><i className="bi bi-journal-arrow-up"></i> Catalogo</span>
-            </Nav.Link>
-            <Nav.Link as={Link} to="/cart">
+            {/* Carrello solo desktop */}
+            {/* Carrello - Catalogo - Categorie - Dropdown user/login (desktop) */}
+            <Nav.Link as={Link} to="/cart" className="d-none d-lg-inline-flex align-items-center me-3">
               <span><i className="bi bi-cart"></i></span>
               {cartCount > 0 && (
                 <Badge bg="danger" className="ms-2">
@@ -123,17 +153,24 @@ const Navbar = () => {
                 </Badge>
               )}
             </Nav.Link>
+            <Nav.Link as={Link} to="/products" className="me-2 d-none d-lg-inline">
+              Catalogo
+            </Nav.Link>
+            <Nav.Link as={Link} to="/categories" className="me-2 d-none d-lg-inline">
+              Categorie
+            </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
                 title={
-                  <>
-                    Ciao, {user.name} <Badge bg="secondary">{user.role}</Badge>
-                  </>
+                  <span className="d-none d-lg-inline">
+                    Ciao, {user.role === 'buyer' && user.name ? user.name.split(' ')[0] : user.name} <Badge bg="secondary">{user.role}</Badge>
+                  </span>
                 }
                 id="user-dropdown"
                 align="end"
+                className="d-none d-lg-inline"
               >
-                {(user.role === 'seller' || user.role === 'admin') && (
+                {(user.role === 'seller') && (
                   <>
                     <NavDropdown.Item onClick={() => navigate('/vendor/profile')}>
                       <span><i className="bi bi-person-badge me-2"></i> Profilo Aziendale</span>
@@ -141,28 +178,26 @@ const Navbar = () => {
                     <NavDropdown.Divider />
                   </>
                 )}
-                  {(user.role === 'buyer' || user.role === 'user' || user.role === 'acquirente') && (
-                    <>
-                      <NavDropdown.Item onClick={() => navigate('/profile')}>
-                        <span><i className="bi bi-person me-2"></i> Il mio Profilo</span>
-                      </NavDropdown.Item>
-                      <NavDropdown.Divider />
-                    </>
-                  )}
+                {(user.role === 'buyer' || user.role === 'user' || user.role === 'acquirente') && (
+                  <>
+                    <NavDropdown.Item onClick={() => navigate('/profile')}>
+                      <span><i className="bi bi-person me-2"></i> Profilo</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Divider />
+                  </>
+                )}
                 <NavDropdown.Item onClick={handleLogout}>
-                  <span><i className="bi bi-power me-2"></i> Logout</span>
+                  <span><i className="bi bi-power me-2"></i> Esci</span>
                 </NavDropdown.Item>
               </NavDropdown>
             ) : (
-              <>
-                <Nav.Link as={Link} to="/login">
-                  Login
-                </Nav.Link>
-                <Nav.Link as={Link} to="/register">
-                  Registrati
-                </Nav.Link>
-              </>
+              <Nav.Link as={Link} to="/login" className="text-end w-100 d-none d-lg-block">
+                <span>
+                  <i className="bi bi-person-circle"></i>
+                </span>
+              </Nav.Link>
             )}
+            {/* Mobile hamburger: Catalogo e Categorie già presenti, ordine invariato */}
         </Nav>
       </BSNavbar.Collapse>
     </Container>

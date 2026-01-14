@@ -232,8 +232,25 @@ const Cart = () => {
                   </Col>
 
                   <Col md={2}>
-                    <strong>€{item.price.toFixed(2)}</strong>
-                    <small className="text-muted d-block">/{item.unit}</small>
+                    {item.hasActiveDiscount && item.discountedPrice && item.originalPrice ? (
+                      <>
+                        <div className="d-flex align-items-center gap-1">
+                          <strong className="text-primary">€{item.discountedPrice.toFixed(2)}</strong>
+                          <Badge bg="danger" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                            -{item.discountPercentage}%
+                          </Badge>
+                        </div>
+                        <small className="text-muted d-block" style={{ textDecoration: 'line-through' }}>
+                          €{item.originalPrice.toFixed(2)}
+                        </small>
+                        <small className="text-muted d-block">/{item.unit}</small>
+                      </>
+                    ) : (
+                      <>
+                        <strong>€{typeof item.price === 'number' && !isNaN(item.price) ? item.price.toFixed(2) : '0.00'}</strong>
+                        <small className="text-muted d-block">/{item.unit}</small>
+                      </>
+                    )}
                   </Col>
 
                   <Col md={2}>
@@ -251,7 +268,16 @@ const Cart = () => {
 
                   <Col md={2} className="text-end">
                     <div className="mb-2">
-                      <strong>€{(item.price * item.quantity).toFixed(2)}</strong>
+                      {item.hasActiveDiscount && item.discountedPrice ? (
+                        <>
+                          <strong className="text-primary">€{(item.discountedPrice * item.quantity).toFixed(2)}</strong>
+                          <small className="d-block text-muted" style={{ textDecoration: 'line-through', fontSize: '0.8rem' }}>
+                            €{(item.originalPrice * item.quantity).toFixed(2)}
+                          </small>
+                        </>
+                      ) : (
+                        <strong>€{(typeof item.price === 'number' && typeof item.quantity === 'number' && !isNaN(item.price * item.quantity)) ? (item.price * item.quantity).toFixed(2) : '0.00'}</strong>
+                      )}
                     </div>
                     <Button
                       variant="outline-danger"
@@ -388,7 +414,7 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={isCheckingOut}
                 >
-                  {isCheckingOut ? 'Caricamento...' : 'Procedi al Checkout'}
+                  {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto'}
                 </Button>
                 <Button variant="outline-secondary" onClick={() => navigate('/products')}>
                   ← Continua lo shopping
