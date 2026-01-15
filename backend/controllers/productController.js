@@ -17,7 +17,7 @@ const generateSKU = (productName, attributes) => {
 // @access  Public
 export const getProducts = async (req, res) => {
   try {
-    const { search, category, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
+    const { search, category, subcategory, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
 
     // Costruisci query - solo prodotti attivi per catalogo pubblico
     let query = { isActive: true };
@@ -40,6 +40,14 @@ export const getProducts = async (req, res) => {
           pages: 0,
           total: 0,
         });
+      }
+    }
+
+    // Filtro sottocategoria
+    if (subcategory) {
+      const subcategoryDoc = await Category.findOne({ name: subcategory });
+      if (subcategoryDoc) {
+        query.subcategory = subcategoryDoc._id;
       }
     }
 
@@ -71,6 +79,7 @@ export const getProducts = async (req, res) => {
     const products = await Product.find(query)
       .populate('seller', 'name businessName email')
       .populate('category', 'name')
+      .populate('subcategory', 'name')
       .limit(Number(limit))
       .skip(skip)
       .sort(sortOptions);
@@ -95,7 +104,8 @@ export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
       .populate('seller', 'name businessName email avatar')
-      .populate('category', 'name');
+      .populate('category', 'name')
+      .populate('subcategory', 'name');
 
     if (!product) {
       return res.status(404).json({ message: 'Prodotto non trovato' });
@@ -137,9 +147,15 @@ export const createProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, category, stock, unit, expiryDate, tags,
-      attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
+      name, description, price, category, subcategory, stock, unit, expiryDate, tags,
+      attributes, hasVariants, variants, customAttributes, selectedVariantAttributes, sellerId 
     } = req.body;
+
+    // Determina il seller: se admin e sellerId fornito, usa quello, altrimenti l'utente loggato
+    let actualSellerId = req.user._id;
+    if (req.user.role === 'admin' && sellerId) {
+      actualSellerId = sellerId;
+    }
 
     // Validazione attributi obbligatori per categoria (escludi quelli per varianti)
     const categoryAttrs = await CategoryAttribute.find({ 
@@ -189,11 +205,12 @@ export const createProduct = async (req, res) => {
       description,
       price,
       category,
+      subcategory: subcategory || null,
       stock,
       unit,
       expiryDate,
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-      seller: req.user._id,
+      seller: actualSellerId,
       images: [], // Le immagini vengono aggiunte dopo
       attributes: attributes ? attributes.filter(a => a.value && a.value.trim()) : [],
       customAttributes: customAttributes || [],
@@ -237,7 +254,7 @@ export const updateProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, category, stock, unit, expiryDate, tags, isActive, images,
+      name, description, price, category, subcategory, stock, unit, expiryDate, tags, isActive, images,
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
     } = req.body;
 
@@ -264,6 +281,7 @@ export const updateProduct = async (req, res) => {
     if (description) product.description = description;
     if (price) product.price = price;
     if (category) product.category = category;
+    if (subcategory !== undefined) product.subcategory = subcategory || null;
     if (stock !== undefined) product.stock = stock;
     if (unit) product.unit = unit;
     if (expiryDate) product.expiryDate = expiryDate;
@@ -357,6 +375,7 @@ export const getMyProducts = async (req, res) => {
   try {
     const products = await Product.find({ seller: req.user._id })
       .populate('category', 'name')
+      .populate('subcategory', 'name')
       .populate('seller', 'businessName name')
       .sort({ createdAt: -1 });
 

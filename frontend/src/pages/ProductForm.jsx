@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Container, Form, Button, Card, Alert, Row, Col, Modal } from 'react-bootstrap';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { productsAPI, uploadAPI, categoriesAPI } from '../services/api';
 import VariantManager from '../components/VariantManager';
 
 const ProductForm = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const sellerId = searchParams.get('sellerId'); // Se presente, admin sta creando/modificando per questo venditore
   const isEditMode = !!id;
 
   const [formData, setFormData] = useState({
@@ -14,6 +16,7 @@ const ProductForm = () => {
     description: '',
     price: '',
     category: '',
+    subcategory: '',
     stock: '',
     unit: 'pz',
     expiryDate: '',
@@ -29,13 +32,43 @@ const ProductForm = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [categoryAttributes, setCategoryAttributes] = useState([]); // NUOVO
   const [customAttributes, setCustomAttributes] = useState([]); // Attributi personalizzati
   const [selectedVariantAttributes, setSelectedVariantAttributes] = useState([]); // Chiavi attributi per varianti
   const [showSuccess, setShowSuccess] = useState(false);
+  const [vendorInfo, setVendorInfo] = useState(null); // Info venditore se admin sta operando per lui
 
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Se admin e sellerId presente, carica info venditore
+  useEffect(() => {
+    if (user?.role === 'admin' && sellerId) {
+      loadVendorInfo();
+    }
+  }, [user, sellerId]);
+
+  const loadVendorInfo = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/admin/sellers/${sellerId}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVendorInfo(data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento info venditore:', err);
+    }
+  };
+
+  // Carica categorie (eseguito una sola volta all'avvio)
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   // Carica prodotto se in modalità edit
   useEffect(() => {
@@ -44,28 +77,47 @@ const ProductForm = () => {
     }
   }, [id]);
 
-  // Carica categorie
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
   // NUOVO: Carica attributi quando cambia categoria
   useEffect(() => {
     if (formData.category) {
       loadCategoryAttributes(formData.category);
+      loadSubcategories(formData.category);
     } else {
       setCategoryAttributes([]);
-      setFormData(prev => ({ ...prev, attributes: [], hasVariants: false, variants: [] }));
+      setSubcategories([]);
+      setFormData(prev => ({ ...prev, attributes: [], hasVariants: false, variants: [], subcategory: '' }));
     }
   }, [formData.category]);
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesAPI.getAll();
-      setCategories(data); // Mantieni l'oggetto completo con _id e name
+      const response = await fetch('http://localhost:5000/api/categories/main');
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle categorie');
+      }
+      const data = await response.json();
+      console.log('📁 Categorie caricate:', data);
+      setCategories(data);
     } catch (err) {
-      console.error('Errore caricamento categorie:', err);
+      console.error('❌ Errore caricamento categorie:', err);
+      setError('Impossibile caricare le categorie. Riprova più tardi.');
       setCategories([]);
+    }
+  };
+
+  // NUOVO: Carica sottocategorie per la categoria selezionata
+  const loadSubcategories = async (categoryId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle sottocategorie');
+      }
+      const data = await response.json();
+      console.log('📂 Sottocategorie caricate per categoria', categoryId, ':', data);
+      setSubcategories(data);
+    } catch (err) {
+      console.error('❌ Errore caricamento sottocategorie:', err);
+      setSubcategories([]);
     }
   };
 
@@ -95,24 +147,50 @@ const ProductForm = () => {
   const loadProduct = async () => {
     try {
       const product = await productsAPI.getById(id);
+      
+      // Carica attributi personalizzati per primi (servono per ricostruire i label)
+      const customAttrs = product.customAttributes || [];
+      if (customAttrs.length > 0) {
+        setCustomAttributes(customAttrs);
+      }
+      
+      // Ricostruisci i label nelle varianti dai customAttributes
+      let reconstructedVariants = product.variants || [];
+      if (reconstructedVariants.length > 0 && customAttrs.length > 0) {
+        reconstructedVariants = reconstructedVariants.map(variant => ({
+          ...variant,
+          attributes: variant.attributes.map(attr => {
+            // Trova l'attributo personalizzato corrispondente
+            const customAttr = customAttrs.find(ca => ca.key === attr.key);
+            if (customAttr && customAttr.options) {
+              // Trova l'opzione corrispondente per ottenere il label
+              const option = customAttr.options.find(opt => opt.value === attr.value);
+              if (option) {
+                return {
+                  ...attr,
+                  label: option.label
+                };
+              }
+            }
+            return attr;
+          })
+        }));
+      }
+      
       setFormData({
         name: product.name,
         description: product.description,
         price: product.price,
         category: product.category._id || product.category,
+        subcategory: product.subcategory?._id || product.subcategory || '',
         stock: product.stock,
         unit: product.unit,
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
         tags: product.tags.join(', '),
-        attributes: product.attributes || [],         // NUOVO
-        hasVariants: product.hasVariants || false,    // NUOVO
-        variants: product.variants || []              // NUOVO
+        attributes: product.attributes || [],
+        hasVariants: product.hasVariants || false,
+        variants: reconstructedVariants
       });
-      
-      // Carica attributi personalizzati se presenti
-      if (product.customAttributes) {
-        setCustomAttributes(product.customAttributes);
-      }
       
       // Carica selezione attributi per varianti
       if (product.selectedVariantAttributes) {
@@ -326,6 +404,12 @@ const ProductForm = () => {
           customAttributes,
           selectedVariantAttributes
         };
+        
+        // Se admin sta creando per un venditore specifico, aggiungi sellerId
+        if (user.role === 'admin' && sellerId) {
+          productPayload.sellerId = sellerId;
+        }
+        
         const newProduct = await productsAPI.create(productPayload, user.token);
         productId = newProduct._id;
         // Se ci sono immagini, caricale e aggiungile
@@ -355,7 +439,12 @@ const ProductForm = () => {
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        navigate('/my-products');
+        // Reindirizza in base al contesto
+        if (user.role === 'admin' && sellerId) {
+          navigate(`/vendor-profile?sellerId=${sellerId}&tab=products`);
+        } else {
+          navigate('/my-products');
+        }
       }, 1500);
     } catch (err) {
       setError(err.message);
@@ -491,9 +580,37 @@ const ProductForm = () => {
 
   return (
     <Container className="py-5">
+      <Modal
+        show={showSuccess}
+        centered
+        backdrop="static"
+        keyboard={false}
+        contentClassName="border-0 shadow rounded"
+      >
+        <Modal.Body className="text-center py-5">
+          <div style={{ fontSize: 48, color: '#28a745' }}>
+            <i className="bi bi-check-circle-fill"></i>
+          </div>
+          <h4 className="mt-3 mb-1">
+            {isEditMode ? 'Prodotto aggiornato' : 'Prodotto creato'} con successo
+          </h4>
+          <div className="text-muted mb-2" style={{ fontSize: 16 }}>
+            Verrai reindirizzato alla lista prodotti
+          </div>
+        </Modal.Body>
+      </Modal>
       <Card>
         <Card.Body>
           <h2 className="mb-4">{isEditMode ? 'Modifica Prodotto' : 'Nuovo Prodotto'}</h2>
+
+          {user?.role === 'admin' && sellerId && vendorInfo && (
+            <Alert variant="info" className="d-flex align-items-center mb-4">
+              <i className="bi bi-info-circle fs-4 me-3"></i>
+              <div>
+                <strong>Modalità Admin:</strong> Stai {isEditMode ? 'modificando un prodotto' : 'creando un nuovo prodotto'} per <strong>{vendorInfo.businessName}</strong>
+              </div>
+            </Alert>
+          )}
 
           {error && <Alert variant="danger">{error}</Alert>}
 
@@ -552,18 +669,47 @@ const ProductForm = () => {
                         required
                       >
                         <option value="">Seleziona una categoria</option>
-                        <option value="abbigliamento-accessori">Abbigliamento e Accessori</option>
-                        <option value="benessere-salute">Benessere e Salute</option>
-                        <option value="calzature">Calzature</option>
-                        <option value="casa-arredi-ufficio">Casa, Arredi e Ufficio</option>
-                        <option value="cibi-bevande">Cibi e Bevande</option>
-                        <option value="elettronica-informatica">Elettronica e Informatica</option>
-                        <option value="industria-ferramenta-artigianato">Industria, Ferramenta e Artigianato</option>
-                        <option value="libri-media-giocattoli">Libri, Media e Giocattoli</option>
-                        <option value="orologi-gioielli">Orologi e Gioielli</option>
-                        <option value="ricambi-accessori-auto-moto">Ricambi e accessori per auto e moto</option>
-                        <option value="sport-hobby-viaggi">Sport, Hobby e Viaggi</option>
+                        {Array.isArray(categories) && categories.map(cat => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
                       </Form.Select>
+                      {categories.length === 0 && (
+                        <Form.Text className="text-danger">
+                          Nessuna categoria disponibile. Contatta l'amministratore.
+                        </Form.Text>
+                      )}
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Sottocategoria {subcategories.length > 0 && '*'}</Form.Label>
+                      <Form.Select
+                        name="subcategory"
+                        value={formData.subcategory}
+                        onChange={handleChange}
+                        required={subcategories.length > 0}
+                        disabled={!formData.category || subcategories.length === 0}
+                      >
+                        <option value="">
+                          {!formData.category 
+                            ? 'Seleziona prima una categoria' 
+                            : subcategories.length === 0 
+                            ? 'Nessuna sottocategoria disponibile'
+                            : 'Seleziona una sottocategoria'}
+                        </option>
+                        {subcategories.map(subcat => (
+                          <option key={subcat._id} value={subcat._id}>
+                            {subcat.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                      {subcategories.length > 0 && (
+                        <Form.Text className="text-muted">
+                          Seleziona la sottocategoria più specifica per il tuo prodotto
+                        </Form.Text>
+                      )}
                     </Form.Group>
                   </Col>
                 </Row>

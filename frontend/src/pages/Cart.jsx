@@ -414,7 +414,7 @@ const Cart = () => {
                   onClick={handleCheckout}
                   disabled={isCheckingOut}
                 >
-                  {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto'}
+                  {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}
                 </Button>
                 <Button variant="outline-secondary" onClick={() => navigate('/products')}>
                   ← Continua lo shopping

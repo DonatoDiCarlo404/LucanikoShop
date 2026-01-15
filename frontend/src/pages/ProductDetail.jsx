@@ -706,7 +706,7 @@ const ProductDetail = () => {
             >
               {(Array.isArray(product.variants) && product.variants.length > 0)
                 ? (selectedVariant && selectedVariant.stock > 0
-                    ? '🛒 Aggiungi al carrello'
+                    ? '🛒 Aggiungi al carrello (Jamm bell!)'
                     : 'Non disponibile')
                 : (product.stock > 0 ? '🛒 Aggiungi al carrello' : 'Non disponibile')}
             </Button>
@@ -721,7 +721,7 @@ const ProductDetail = () => {
               }
               onClick={handleBuyNow}
             >
-              🚀 Acquista Ora
+              🚀 Acquista Ora (Mò Stess!)
             </Button>
           </div>
         </Col>

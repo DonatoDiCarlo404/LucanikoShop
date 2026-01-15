@@ -9,6 +9,7 @@ const Products = () => {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [subcategory, setSubcategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sortBy, setSortBy] = useState('');
@@ -17,10 +18,11 @@ const Products = () => {
   const [total, setTotal] = useState(0);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
   useEffect(() => {
     loadProducts();
-  }, [category, sortBy, page, resetTrigger]);
+  }, [category, subcategory, sortBy, page, resetTrigger]);
 
   useEffect(() => {
     loadCategories();
@@ -28,13 +30,43 @@ const Products = () => {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesAPI.getAll();
-      setCategories(data.map(cat => cat.name));
+      const response = await fetch('http://localhost:5000/api/categories/main');
+      const data = await response.json();
+      setCategories(data);
     } catch (err) {
       console.error('Errore caricamento categorie:', err);
-      setCategories(['Altro']); // fallback
+      setCategories([]);
     }
   };
+
+  // Carica sottocategorie quando cambia la categoria
+  const loadSubcategories = async (categoryId) => {
+    if (!categoryId) {
+      setSubcategories([]);
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+      const data = await response.json();
+      setSubcategories(data);
+    } catch (err) {
+      console.error('Errore caricamento sottocategorie:', err);
+      setSubcategories([]);
+    }
+  };
+
+  // Effect per caricare sottocategorie quando cambia la categoria
+  useEffect(() => {
+    if (category) {
+      const categoryObj = categories.find(cat => cat.name === category);
+      if (categoryObj) {
+        loadSubcategories(categoryObj._id);
+      }
+    } else {
+      setSubcategories([]);
+      setSubcategory('');
+    }
+  }, [category, categories]);
 
   const handleApplyPriceFilter = () => {
     setPage(1); // Reset alla pagina 1
@@ -47,6 +79,7 @@ const Products = () => {
       const params = { page };
       if (search) params.search = search;
       if (category) params.category = category;
+      if (subcategory) params.subcategory = subcategory;
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (sortBy) params.sortBy = sortBy;
@@ -70,6 +103,7 @@ const Products = () => {
   const handleResetFilters = () => {
     setSearch('');
     setCategory('');
+    setSubcategory('');
     setMinPrice('');
     setMaxPrice('');
     setSortBy('');
@@ -117,21 +151,39 @@ const Products = () => {
         <Col md={3}>
           <Form.Select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setSubcategory(''); // Reset subcategory quando cambia categoria
+            }}
             className="my-2 my-md-0"
           >
             <option value="">Tutte le categorie</option>
-            <option value="Abbigliamento e Accessori">Abbigliamento e Accessori</option>
-            <option value="Benessere e Salute">Benessere e Salute</option>
-            <option value="Calzature">Calzature</option>
-            <option value="Casa, Arredi e Ufficio">Casa, Arredi e Ufficio</option>
-            <option value="Cibi e Bevande">Cibi e Bevande</option>
-            <option value="Elettronica e Informatica">Elettronica e Informatica</option>
-            <option value="Industria, Ferramenta e Artigianato">Industria, Ferramenta e Artigianato</option>
-            <option value="Libri, Media e Giocattoli">Libri, Media e Giocattoli</option>
-            <option value="Orologi e Gioielli">Orologi e Gioielli</option>
-            <option value="Ricambi e accessori per auto e moto">Ricambi e accessori per auto e moto</option>
-            <option value="Sport, Hobby e Viaggi">Sport, Hobby e Viaggi</option>
+            {categories.map(cat => (
+              <option key={cat._id} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
+          </Form.Select>
+        </Col>
+        <Col md={4}>
+          <Form.Select
+            value={subcategory}
+            onChange={(e) => setSubcategory(e.target.value)}
+            className="my-2 my-md-0"
+            disabled={!category || subcategories.length === 0}
+          >
+            <option value="">
+              {!category 
+                ? 'Seleziona prima una categoria' 
+                : subcategories.length === 0 
+                ? 'Nessuna sottocategoria'
+                : 'Tutte le sottocategorie'}
+            </option>
+            {subcategories.map(subcat => (
+              <option key={subcat._id} value={subcat.name}>
+                {subcat.name}
+              </option>
+            ))}
           </Form.Select>
         </Col>
         {/* Campo ricerca prezzo min/max rimosso su richiesta */}

@@ -8,6 +8,7 @@ import {
   toggleSubscriptionStatus,
   getSellerProfile,
   updateSellerProfile,
+  getAllProducts,
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middlewares/auth.js';
 
@@ -24,6 +25,9 @@ router.get('/pending-sellers', getPendingSellers);
 router.get('/sellers', getAllSellers);
 router.get('/sellers/:id', getSellerProfile);
 router.put('/sellers/:id/profile', updateSellerProfile);
+
+// Get prodotti
+router.get('/products', getAllProducts);
 
 // Approva/Rifiuta venditore
 router.put('/approve-seller/:id', approveSeller);

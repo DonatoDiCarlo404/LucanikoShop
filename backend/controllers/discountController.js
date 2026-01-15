@@ -18,10 +18,11 @@ export const createDiscount = async (req, res) => {
       endDate,
       usageLimit,
       minPurchaseAmount,
-      maxDiscountAmount
+      maxDiscountAmount,
+      sellerId // Admin può specificare il venditore
     } = req.body;
 
-    // Verifica che l'utente sia un seller
+    // Verifica che l'utente sia un seller o admin
     if (req.user.role !== 'seller' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -29,17 +30,20 @@ export const createDiscount = async (req, res) => {
       });
     }
 
+    // Determina il venditore: se admin e sellerId è fornito, usa quello; altrimenti usa req.user._id
+    const targetSellerId = (req.user.role === 'admin' && sellerId) ? sellerId : req.user._id;
+
     // Verifica che i prodotti appartengano al venditore (se applicationType = 'product')
     if (applicationType === 'product' && products && products.length > 0) {
       const sellerProducts = await Product.find({
         _id: { $in: products },
-        seller: req.user._id
+        seller: targetSellerId
       });
 
       if (sellerProducts.length !== products.length) {
         return res.status(403).json({
           success: false,
-          message: 'Puoi applicare sconti solo ai tuoi prodotti'
+          message: 'Puoi applicare sconti solo ai prodotti del venditore'
         });
       }
     }
@@ -48,7 +52,7 @@ export const createDiscount = async (req, res) => {
     const discount = await Discount.create({
       name,
       description,
-      seller: req.user._id,
+      seller: targetSellerId,
       discountType,
       discountValue,
       applicationType,
@@ -85,11 +89,16 @@ export const createDiscount = async (req, res) => {
 };
 
 // @desc    Ottieni tutti gli sconti del seller
-// @route   GET /api/discounts
+// @route   GET /api/discounts?sellerId=xxx (admin può specificare sellerId)
 // @access  Private/Seller
 export const getMyDiscounts = async (req, res) => {
   try {
-    const discounts = await Discount.find({ seller: req.user._id })
+    // Se admin, può richiedere gli sconti di un venditore specifico tramite query param
+    const targetSellerId = (req.user.role === 'admin' && req.query.sellerId) 
+      ? req.query.sellerId 
+      : req.user._id;
+
+    const discounts = await Discount.find({ seller: targetSellerId })
       .populate('products', 'name price')
       .sort('-createdAt');
 

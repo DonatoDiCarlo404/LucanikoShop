@@ -65,6 +65,11 @@ const productSchema = new mongoose.Schema(
       ref: 'Category',
       required: [true, 'La categoria è obbligatoria']
     },
+    subcategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: false
+    },
     images: [{
       url: {
         type: String,
