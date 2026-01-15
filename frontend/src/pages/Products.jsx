@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import SplashScreen from '../components/SplashScreen';
 import { Container, Row, Col, Spinner, Alert, Form, InputGroup, Button } from 'react-bootstrap';
+import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 
 const Products = () => {
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -19,14 +22,28 @@ const Products = () => {
   const [resetTrigger, setResetTrigger] = useState(0);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
 
+  // Inizializzazione: carica categorie e leggi parametri URL
   useEffect(() => {
-    loadProducts();
-  }, [category, subcategory, sortBy, page, resetTrigger]);
+    const init = async () => {
+      await loadCategories();
+      const categoryParam = searchParams.get('category');
+      if (categoryParam) {
+        setCategory(decodeURIComponent(categoryParam));
+      }
+      setIsInitialized(true);
+    };
+    init();
+  }, [searchParams]);
 
+  // Carica prodotti solo dopo l'inizializzazione
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (isInitialized) {
+      loadProducts();
+    }
+  }, [category, subcategory, sortBy, page, resetTrigger, isInitialized]);
 
   const loadCategories = async () => {
     try {
@@ -108,12 +125,21 @@ const Products = () => {
     setMaxPrice('');
     setSortBy('');
     setPage(1);
-    // Incrementa il trigger per forzare il reload
     setResetTrigger(prev => prev + 1);
   };
 
 
-  if (loading) {
+  // Splash per Cibi e Bevande
+  if (showSplash) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <SplashScreen phrase="Non avevi fame? E mò la tin!" />
+      </div>
+    );
+  }
+
+  // Mostra loading solo se non ancora inizializzato
+  if (!isInitialized || loading) {
     return (
       <Container className="text-center py-5">
         <Spinner animation="border" />
@@ -152,17 +178,37 @@ const Products = () => {
           <Form.Select
             value={category}
             onChange={(e) => {
-              setCategory(e.target.value);
-              setSubcategory(''); // Reset subcategory quando cambia categoria
+              const selected = e.target.value;
+              if (selected === 'Cibi e Bevande') {
+                setShowSplash(true);
+                setTimeout(() => {
+                  setShowSplash(false);
+                  setCategory(selected);
+                  setSubcategory('');
+                }, 2000);
+              } else {
+                setCategory(selected);
+                setSubcategory('');
+              }
             }}
             className="my-2 my-md-0"
           >
             <option value="">Tutte le categorie</option>
-            {categories.map(cat => (
-              <option key={cat._id} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
+            {/* Cibi e Bevande sempre prima */}
+            {categories
+              .filter(cat => cat.name === 'Cibi e Bevande')
+              .map(cat => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            {categories
+              .filter(cat => cat.name !== 'Cibi e Bevande')
+              .map(cat => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
           </Form.Select>
         </Col>
         <Col md={4}>

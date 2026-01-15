@@ -39,6 +39,8 @@ const VendorProfile = () => {
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [discounts, setDiscounts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
   // State per modal tariffe spedizione
   const [showShippingModal, setShowShippingModal] = useState(false);
@@ -70,7 +72,7 @@ const VendorProfile = () => {
     description: '',
     discountType: 'percentage',
     discountValue: 0,
-    applicationType: 'all',
+    applicationType: 'product',
     products: [],
     categories: [],
     couponCode: '',
@@ -194,6 +196,8 @@ const VendorProfile = () => {
       loadStats();
       // Carica sconti
       loadDiscounts();
+      // Carica categorie
+      loadCategories();
       // Non caricare documenti se admin sta visualizzando profilo altrui
       if (!(user.role === 'admin' && sellerId)) {
         loadVendorDocuments();
@@ -377,6 +381,19 @@ const VendorProfile = () => {
       }
     } catch (err) {
       console.error('Errore caricamento sconti:', err);
+    }
+  };
+
+  // Carica categorie e sottocategorie
+  const loadCategories = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento categorie:', err);
     }
   };
 
@@ -564,7 +581,7 @@ const VendorProfile = () => {
         description: '',
         discountType: 'percentage',
         discountValue: 0,
-        applicationType: 'all',
+        applicationType: 'product',
         products: [],
         categories: [],
         couponCode: '',
@@ -1405,7 +1422,6 @@ const VendorProfile = () => {
                             </strong>
                           </td>
                           <td>
-                            {discount.applicationType === 'all' && 'Tutti i prodotti'}
                             {discount.applicationType === 'product' && `${discount.products?.length || 0} prodotti`}
                             {discount.applicationType === 'category' && `${discount.categories?.length || 0} categorie`}
                             {discount.applicationType === 'coupon' && 'Codice coupon'}
@@ -2619,7 +2635,6 @@ const VendorProfile = () => {
                     value={discountForm.applicationType}
                     onChange={(e) => setDiscountForm({ ...discountForm, applicationType: e.target.value })}
                   >
-                    <option value="all">Tutti i prodotti</option>
                     <option value="product">Prodotti specifici</option>
                     <option value="category">Per categoria</option>
                     <option value="coupon">Codice coupon</option>
@@ -2653,6 +2668,18 @@ const VendorProfile = () => {
                     onChange={(e) => setDiscountForm({ ...discountForm, startDate: e.target.value })}
                     required
                   />
+                  <Button 
+                    size="sm" 
+                    variant="outline-primary" 
+                    className="mt-1"
+                    onClick={() => {
+                      const now = new Date();
+                      const formatted = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                      setDiscountForm({ ...discountForm, startDate: formatted });
+                    }}
+                  >
+                    Inizia ora
+                  </Button>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -2664,6 +2691,19 @@ const VendorProfile = () => {
                     onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
                     required
                   />
+                  <Button 
+                    size="sm" 
+                    variant="outline-primary" 
+                    className="mt-1"
+                    onClick={() => {
+                      const future = new Date();
+                      future.setDate(future.getDate() + 30);
+                      const formatted = new Date(future.getTime() - future.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                      setDiscountForm({ ...discountForm, endDate: formatted });
+                    }}
+                  >
+                    +30 giorni
+                  </Button>
                 </Form.Group>
               </Col>
             </Row>
@@ -2716,9 +2756,94 @@ const VendorProfile = () => {
             </Row>
 
             {discountForm.applicationType === 'product' && (
-              <Alert variant="info">
-                <strong>Nota:</strong> Dopo aver creato lo sconto, potrai selezionare i prodotti specifici dalla dashboard venditori.
-              </Alert>
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Seleziona Prodotti *</Form.Label>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px' }}>
+                      {products.length === 0 ? (
+                        <Alert variant="warning" className="mb-0">Nessun prodotto disponibile</Alert>
+                      ) : (
+                        products.map(product => (
+                          <Form.Check
+                            key={product._id}
+                            type="checkbox"
+                            id={`product-${product._id}`}
+                            label={`${product.name} - €${typeof product.price === 'number' ? product.price.toFixed(2) : 'N/A'}`}
+                            checked={discountForm.products.includes(product._id)}
+                            onChange={(e) => {
+                              const newProducts = e.target.checked
+                                ? [...discountForm.products, product._id]
+                                : discountForm.products.filter(id => id !== product._id);
+                              setDiscountForm({ ...discountForm, products: newProducts });
+                            }}
+                            className="mb-2"
+                          />
+                        ))
+                      )}
+                    </div>
+                    <Form.Text className="text-muted">
+                      Seleziona almeno un prodotto per questo sconto
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              </Row>
+            )}
+
+            {discountForm.applicationType === 'category' && (
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Seleziona Categorie e/o Sottocategorie *</Form.Label>
+                    <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px' }}>
+                      {categories.length === 0 ? (
+                        <Alert variant="warning" className="mb-0">Nessuna categoria disponibile</Alert>
+                      ) : (
+                        categories.map(category => (
+                          <div key={category._id} className="mb-3">
+                            <Form.Check
+                              type="checkbox"
+                              id={`category-${category._id}`}
+                              label={<strong>{category.name}</strong>}
+                              checked={discountForm.categories.includes(category._id)}
+                              onChange={(e) => {
+                                const newCategories = e.target.checked
+                                  ? [...discountForm.categories, category._id]
+                                  : discountForm.categories.filter(id => id !== category._id);
+                                setDiscountForm({ ...discountForm, categories: newCategories });
+                              }}
+                              className="mb-2"
+                            />
+                            {category.subcategories && category.subcategories.length > 0 && (
+                              <div style={{ marginLeft: '25px' }}>
+                                {category.subcategories.map(sub => (
+                                  <Form.Check
+                                    key={sub._id}
+                                    type="checkbox"
+                                    id={`subcategory-${sub._id}`}
+                                    label={sub.name}
+                                    checked={discountForm.categories.includes(sub._id)}
+                                    onChange={(e) => {
+                                      const newCategories = e.target.checked
+                                        ? [...discountForm.categories, sub._id]
+                                        : discountForm.categories.filter(id => id !== sub._id);
+                                      setDiscountForm({ ...discountForm, categories: newCategories });
+                                    }}
+                                    className="mb-1"
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <Form.Text className="text-muted">
+                      Seleziona almeno una categoria o sottocategoria per questo sconto
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              </Row>
             )}
 
             <div className="d-flex justify-content-end gap-2 mt-3">

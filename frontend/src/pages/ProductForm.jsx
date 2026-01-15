@@ -669,11 +669,21 @@ const ProductForm = () => {
                         required
                       >
                         <option value="">Seleziona una categoria</option>
-                        {Array.isArray(categories) && categories.map(cat => (
-                          <option key={cat._id} value={cat._id}>
-                            {cat.name}
-                          </option>
-                        ))}
+                        {/* Cibi e Bevande sempre prima */}
+                        {categories
+                          .filter(cat => cat.name === 'Cibi e Bevande')
+                          .map(cat => (
+                            <option key={cat._id} value={cat._id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        {categories
+                          .filter(cat => cat.name !== 'Cibi e Bevande')
+                          .map(cat => (
+                            <option key={cat._id} value={cat._id}>
+                              {cat.name}
+                            </option>
+                          ))}
                       </Form.Select>
                       {categories.length === 0 && (
                         <Form.Text className="text-danger">

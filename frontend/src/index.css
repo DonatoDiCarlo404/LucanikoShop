@@ -12,7 +12,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
+  background-color: #ffffff;
 }
 
 .logonavbar {
@@ -67,4 +67,19 @@ body {
   0% { opacity: 0; transform: scale(0.7);}
   60% { opacity: 1; transform: scale(1.1);}
   100% { opacity: 1; transform: scale(1);}
+}
+
+/* Sfondo bianco per navbar, carosello categorie e footer */
+.navbar, .navbar * {
+  background: #fff !important;
+}
+.categories-carousel-container {
+  background: #fff !important;
+}
+footer, .footer, .footer * {
+  background: #fff !important;
+}
+
+.bg-light {
+  background-color: rgb(255 255 255)!important;
 }

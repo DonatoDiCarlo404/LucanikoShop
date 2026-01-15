@@ -76,9 +76,14 @@ export const createDiscount = async (req, res) => {
       await applyDiscountToCategories(discount);
     }
 
+    // Ricarica il discount con tutte le sue relazioni
+    const populatedDiscount = await Discount.findById(discount._id)
+      .populate('products', 'name price hasActiveDiscount discountedPrice')
+      .populate('categories', 'name');
+
     res.status(201).json({
       success: true,
-      discount
+      discount: populatedDiscount
     });
   } catch (error) {
     res.status(400).json({
@@ -332,6 +337,8 @@ export const getActiveDiscountedProducts = async (req, res) => {
     })
       .populate('seller', 'name businessName')
       .populate('activeDiscount', 'name discountType discountValue endDate')
+      .populate('category', 'name')
+      .populate('subcategory', 'name')
       .sort('-discountPercentage');
 
     res.status(200).json({

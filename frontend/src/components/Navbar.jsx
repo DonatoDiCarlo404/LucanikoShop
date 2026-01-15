@@ -108,9 +108,13 @@ const Navbar = () => {
                 <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
                   Catalogo
                 </Nav.Link>
+                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                  Offerte e Sconti
+                </Nav.Link>
                 <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100 my-2">
                   Categorie
                 </Nav.Link>
+                {/* Esci sempre ultimo */}
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci
                 </Nav.Link>
@@ -156,6 +160,9 @@ const Navbar = () => {
             <Nav.Link as={Link} to="/products" className="me-2 d-none d-lg-inline">
               Catalogo
             </Nav.Link>
+            <Nav.Link as={Link} to="/offers" className="me-2 d-none d-lg-inline">
+              Offerte
+            </Nav.Link>
             <Nav.Link as={Link} to="/categories" className="me-2 d-none d-lg-inline">
               Categorie
             </Nav.Link>
@@ -197,7 +204,40 @@ const Navbar = () => {
                 </span>
               </Nav.Link>
             )}
-            {/* Mobile hamburger: Catalogo e Categorie già presenti, ordine invariato */}
+            {/* Mobile hamburger: solo link pubblici per utenti non autenticati */}
+            {!isAuthenticated && (
+              <Nav className="d-lg-none w-100 text-center">
+                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                  Catalogo
+                </Nav.Link>
+                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                  Offerte e Sconti
+                </Nav.Link>
+                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
+                  Categorie
+                </Nav.Link>
+                <Nav.Link as={Link} to="/login" className="d-lg-none text-end w-100">
+                  Accedi / Registrati
+                </Nav.Link>
+              </Nav>
+            )}
+            {/* Mobile hamburger: link per acquirente loggato */}
+            {isAuthenticated && (user.role === 'buyer' || user.role === 'user' || user.role === 'acquirente') && (
+              <Nav className="d-lg-none w-100 text-center">
+                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                  Catalogo
+                </Nav.Link>
+                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                  Offerte e Sconti
+                </Nav.Link>
+                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
+                  Categorie
+                </Nav.Link>
+                <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
+                  Esci
+                </Nav.Link>
+              </Nav>
+            )}
         </Nav>
       </BSNavbar.Collapse>
     </Container>

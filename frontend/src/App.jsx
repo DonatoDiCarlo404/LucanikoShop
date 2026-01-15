@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/authContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -26,6 +26,62 @@ import Error from './pages/Error';
 import SplashScreen from './components/SplashScreen';
 import { useState, useEffect } from 'react';
 import BuyerProfile from './pages/BuyerProfile';
+import OffersAndDiscounts from './pages/OffersAndDiscounts';
+import Categories from './pages/Categories';
+import CategoriesCarouselArrows from './components/CategoriesCarouselArrows';
+
+function AppContent() {
+  const location = useLocation();
+  
+  // Pagine dove NON mostrare il carosello
+  const hideCarouselPaths = ['/login', '/register', '/cart', '/categories', '/products/new'];
+  const shouldShowCarousel = !hideCarouselPaths.includes(location.pathname) && !location.pathname.startsWith('/products/edit/');
+
+  return (
+    <>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Products />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/auth/success" element={<AuthSuccess />} />
+        <Route path="/pending-approval" element={<PendingApproval />} />
+
+        {/* Prodotti pubblici */}
+        <Route path="/products" element={<Products />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
+        <Route path="/shop/:sellerId" element={<ShopPage />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+        <Route path="/offers" element={<OffersAndDiscounts />} />
+        <Route path="/categories" element={<Categories />} />
+
+        {/* Prodotti protetti (solo seller/admin) */}
+        <Route path="/my-products" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <MyProducts /> </ProtectedRoute>} />
+        <Route path="/products/new" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
+        <Route path="/products/edit/:id" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+        <Route path="/orders/:id" element={<ProtectedRoute> <OrderDetail /> </ProtectedRoute>} />
+        <Route path="/orders/:id/tracking" element={<ProtectedRoute> <OrderTracking /> </ProtectedRoute>} />
+
+        {/* Vendor Dashboard */}
+        <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />
+        <Route path="/vendor/profile" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorProfile /> </ProtectedRoute>} />
+
+        {/* Buyer Profile */}
+        <Route path="/profile" element={<ProtectedRoute allowedRoles={['buyer','user','acquirente']}> <BuyerProfile /> </ProtectedRoute>} />
+
+        {/* Admin routes */}
+        <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
+
+        <Route path="*" element={<Error />} />
+      </Routes>
+      {shouldShowCarousel && <CategoriesCarouselArrows />}
+      <Footer />
+    </>
+  );
+}
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -38,45 +94,7 @@ function App() {
   return showSplash ? <SplashScreen /> : (
     <AuthProvider>
       <CartProvider>
-        <Router>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Products />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/auth/success" element={<AuthSuccess />} />
-            <Route path="/pending-approval" element={<PendingApproval />} />
-
-            {/* Prodotti pubblici */}
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
-            <Route path="/shop/:sellerId" element={<ShopPage />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
-            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-
-            {/* Prodotti protetti (solo seller/admin) */}
-            <Route path="/my-products" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <MyProducts /> </ProtectedRoute>} />
-            <Route path="/products/new" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
-            <Route path="/products/edit/:id" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <ProductForm /> </ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
-            <Route path="/orders/:id" element={<ProtectedRoute> <OrderDetail /> </ProtectedRoute>} />
-            <Route path="/orders/:id/tracking" element={<ProtectedRoute> <OrderTracking /> </ProtectedRoute>} />
-
-            {/* Vendor Dashboard */}
-            <Route path="/vendor/dashboard" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorDashboard /> </ProtectedRoute>} />
-            <Route path="/vendor/profile" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <VendorProfile /> </ProtectedRoute>} />
-
-            {/* Buyer Profile */}
-            <Route path="/profile" element={<ProtectedRoute allowedRoles={['buyer','user','acquirente']}> <BuyerProfile /> </ProtectedRoute>} />
-
-            {/* Admin routes */}
-            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
-
-            <Route path="*" element={<Error />} />
-          </Routes>
-          <Footer />
-        </Router>
+        <AppContent />
       </CartProvider>
     </AuthProvider>
   );
