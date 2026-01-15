@@ -149,7 +149,7 @@ const Products = () => {
   }
 
   return (
-    <Container className="py-5">
+    <Container className="pt-2 pb-5">
       <div className="text-center mb-4">
         <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#7c4d1e', letterSpacing: 1 }}>
           La Basilicata, tutta qui.

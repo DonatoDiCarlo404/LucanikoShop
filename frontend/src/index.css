@@ -1,3 +1,6 @@
+footer .row.gy-4 {
+  --bs-gutter-x: 0.5rem;
+}
 /* Reset e base styles */
 * {
   margin: 0;
@@ -61,6 +64,25 @@ body {
     width: 80vw;
     max-width: 95vw;
   }
+  /* Logo footer ancora più piccolo */
+  footer .mt-4 img,
+  footer .mt-4 .logo-anim {
+    max-width: 70px !important;
+    width: 35vw !important;
+    margin-bottom: 10px !important;
+  }
+  /* Testi footer più piccoli */
+  footer .list-unstyled li,
+  footer .list-unstyled a,
+  footer .fw-bold,
+  footer h6 {
+    font-size: 0.92rem !important;
+  }
+  /* Maggiori margini laterali */
+  footer .container {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
 }
 
 @keyframes fadeInScale {
@@ -82,4 +104,37 @@ footer, .footer, .footer * {
 
 .bg-light {
   background-color: rgb(255 255 255)!important;
+}
+
+/* Animazione icone social footer */
+.footer-social-icon {
+  display: inline-block;
+  transition: transform 0.3s ease, color 0.3s ease;
+  color: #2785d7;
+}
+
+.footer-social-icon:hover {
+  transform: scale(1.2);
+  color: #0003a3;
+}
+
+/* Riduci spazio sopra copyright footer */
+footer .border-top.py-3.text-center {
+  padding-top: 0.3rem !important;
+  padding-bottom: 1rem !important;
+}
+
+/* Barrette menu hamburger nere */
+.navbar-toggler-icon,
+.navbar-toggler-icon:after,
+.navbar-toggler-icon:before {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+/* Bootstrap override per icona hamburger SVG: tre strisce nere su sfondo bianco */
+.navbar-light .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(20,20,20,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+  background-color: #fff !important;
+  border: none !important;
 }

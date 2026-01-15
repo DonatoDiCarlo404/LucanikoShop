@@ -29,6 +29,15 @@ import BuyerProfile from './pages/BuyerProfile';
 import OffersAndDiscounts from './pages/OffersAndDiscounts';
 import Categories from './pages/Categories';
 import CategoriesCarouselArrows from './components/CategoriesCarouselArrows';
+import TermsVendors from './pages/TermsVendors';
+import TermsBuyers from './pages/TermsBuyers';
+import CookiePolicy from './pages/CookiePolicy';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import CookieBanner from './components/CookieBanner';
+import HelpCenterBuyer from './pages/HelpCenterBuyer';
+import ShippingAndPayments from './pages/ShippingAndPayments';
+import SpazioVenditoriLucani from './pages/SpazioVenditoriLucani';
+import HelpCenterVendor from './pages/HelpCenterVendor';
 
 function AppContent() {
   const location = useLocation();
@@ -40,6 +49,7 @@ function AppContent() {
   return (
     <>
       <Navbar />
+      <CookieBanner />
       <Routes>
         <Route path="/" element={<Products />} />
         <Route path="/login" element={<Login />} />
@@ -74,6 +84,20 @@ function AppContent() {
 
         {/* Admin routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
+        <Route path="/terms-vendors" element={<TermsVendors />} />
+        <Route path="/terms-buyers" element={<TermsBuyers />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+
+
+        {/* Centro Assistenza Acquirenti */}
+        <Route path="/help-center-buyers" element={<HelpCenterBuyer />} />
+        <Route path="/help-center-vendors" element={<HelpCenterVendor />} />
+        <Route path="/spazio-venditori-lucani" element={<SpazioVenditoriLucani />} />
+
+        {/* Spedizioni e Metodi di Pagamento */}
+        <Route path="/cancellation-policy" element={<ShippingAndPayments />} />
 
         <Route path="*" element={<Error />} />
       </Routes>
