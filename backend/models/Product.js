@@ -38,6 +38,13 @@ const productSchema = new mongoose.Schema(
       required: false,
       min: [0, 'Il prezzo non può essere negativo']
     },
+    ivaPercent: {
+      type: Number,
+      required: [true, 'La percentuale IVA è obbligatoria'],
+      min: [0, 'La percentuale IVA non può essere negativa'],
+      max: [100, 'La percentuale IVA non può superare 100'],
+      default: 22
+    },
     // Gestione prezzi e sconti
     originalPrice: {
       type: Number,
@@ -154,7 +161,7 @@ const productSchema = new mongoose.Schema(
         default: 0,
         min: 0
       },
-      images: [String],  // URL immagini specifiche per variante
+      image: String,  // URL o base64 dell'immagine specifica per variante
       active: {
         type: Boolean,
         default: true

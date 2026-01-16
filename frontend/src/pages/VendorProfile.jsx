@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -649,6 +649,35 @@ const VendorProfile = () => {
     }
   };
 
+  // Toggle disponibilità prodotto
+  const handleToggleProductAvailability = async (productId, currentIsActive) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ isActive: !currentIsActive })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Errore nell\'aggiornamento della disponibilità');
+      }
+
+      // Aggiorna lo stato locale
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p._id === productId ? { ...p, isActive: !currentIsActive } : p
+        )
+      );
+    } catch (err) {
+      setError(err.message);
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   if (loading) {
     return (
       <Container className="text-center mt-5">
@@ -1252,6 +1281,7 @@ const VendorProfile = () => {
                         <th>Sottocategoria</th>
                         <th style={{ width: '100px' }}>Prezzo</th>
                         <th style={{ width: '80px' }}>Stock</th>
+                        <th style={{ width: '100px' }}>Disponibile</th>
                         <th style={{ width: '100px' }}>Stato</th>
                         <th style={{ width: '120px' }}>Azioni</th>
                       </tr>
@@ -1312,9 +1342,39 @@ const VendorProfile = () => {
                             )}
                           </td>
                           <td>
-                            <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
-                              {product.stock}
-                            </Badge>
+                            {product.hasVariants ? (
+                              <Badge bg={(() => {
+                                const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+                                return totalStock > 10 ? 'success' : totalStock > 0 ? 'warning' : 'danger';
+                              })()}>
+                                {product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0}
+                              </Badge>
+                            ) : (
+                              <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
+                                {product.stock}
+                              </Badge>
+                            )}
+                          </td>
+                          <td>
+                            {(() => {
+                              const totalStock = product.hasVariants
+                                ? (product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0)
+                                : product.stock;
+                              const hasStock = totalStock > 0;
+                              const isAvailable = hasStock && product.isActive;
+
+                              return (
+                                <Form.Check
+                                  type="switch"
+                                  id={`disponibile-switch-${product._id}`}
+                                  checked={isAvailable}
+                                  disabled={!hasStock}
+                                  onChange={() => handleToggleProductAvailability(product._id, product.isActive)}
+                                  label={isAvailable ? 'Disponibile' : 'Non disponibile'}
+                                  style={{ minWidth: 120 }}
+                                />
+                              );
+                            })()}
                           </td>
                           <td>
                             <Badge bg={product.isActive ? 'success' : 'secondary'}>
@@ -1323,21 +1383,15 @@ const VendorProfile = () => {
                           </td>
                           <td>
                             <div className="d-flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline-primary"
-                                onClick={() => {
-                                  if (user.role === 'admin' && sellerId) {
-                                    // Admin modifica prodotto del venditore
-                                    navigate(`/products/${product._id}/edit?sellerId=${sellerId}`);
-                                  } else {
-                                    navigate(`/products/${product._id}/edit`);
-                                  }
-                                }}
+                              <Link
+                                to={user.role === 'admin' && sellerId 
+                                  ? `/products/edit/${product._id}?sellerId=${sellerId}`
+                                  : `/products/edit/${product._id}`}
+                                className="btn btn-sm btn-outline-primary"
                                 title="Modifica"
                               >
                                 <i className="bi bi-pencil"></i>
-                              </Button>
+                              </Link>
                               <Button
                                 size="sm"
                                 variant="outline-info"

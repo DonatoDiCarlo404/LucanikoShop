@@ -26,8 +26,8 @@ export const sendPurchaseConfirmationEmail = async (userEmail, userName, orderDe
     to: userEmail,
     from: 'donato.dicarlo404@gmail.com',
     subject: 'Conferma Acquisto - LucanikoShop',
-    text: `Ciao ${userName}, il tuo ordine #${orderDetails.orderId} è stato confermato!`,
-    html: `<strong>Ciao ${userName}</strong>,<br><br>Il tuo ordine #${orderDetails.orderId} è stato confermato!<br>Totale: €${orderDetails.total}<br><br>Grazie per il tuo acquisto!`,
+    text: `Ciao ${userName}, il tuo ordine #${orderDetails.orderId} è stato confermato!\nTotale: €${orderDetails.total}\nIVA inclusa: €${orderDetails.iva}`,
+    html: `<strong>Ciao ${userName}</strong>,<br><br>Il tuo ordine #${orderDetails.orderId} è stato confermato!<br>Totale: <b>€${orderDetails.total}</b><br>IVA inclusa: <b>€${orderDetails.iva}</b><br><br>Grazie per il tuo acquisto!`,
   };
 
   try {

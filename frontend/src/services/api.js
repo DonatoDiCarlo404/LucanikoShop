@@ -87,6 +87,10 @@ export const productsAPI = {
 
   // Crea prodotto (seller/admin)
   create: async (productData, token) => {
+    // Assicura che ivaPercent sia un numero
+    if (productData.ivaPercent !== undefined) {
+      productData.ivaPercent = Number(productData.ivaPercent);
+    }
     const response = await fetch(`${API_URL}/products`, {
       method: 'POST',
       headers: {
@@ -100,6 +104,9 @@ export const productsAPI = {
 
   // Aggiorna prodotto (seller/admin)
   update: async (id, productData, token) => {
+    if (productData.ivaPercent !== undefined) {
+      productData.ivaPercent = Number(productData.ivaPercent);
+    }
     const response = await fetch(`${API_URL}/products/${id}`, {
       method: 'PUT',
       headers: {

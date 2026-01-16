@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Form, Button, Card, Alert, Row, Col, Modal } from 'react-bootstrap';
+import { Container, Form, Button, Card, Alert, Row, Col, Modal, Dropdown } from 'react-bootstrap';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { productsAPI, uploadAPI, categoriesAPI } from '../services/api';
@@ -15,6 +15,7 @@ const ProductForm = () => {
     name: '',
     description: '',
     price: '',
+    ivaPercent: 22,
     category: '',
     subcategory: '',
     stock: '',
@@ -38,6 +39,8 @@ const ProductForm = () => {
   const [selectedVariantAttributes, setSelectedVariantAttributes] = useState([]); // Chiavi attributi per varianti
   const [showSuccess, setShowSuccess] = useState(false);
   const [vendorInfo, setVendorInfo] = useState(null); // Info venditore se admin sta operando per lui
+  // Stato per modale "nessun attributo salvato"
+  const [showNoSavedModal, setShowNoSavedModal] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -96,7 +99,6 @@ const ProductForm = () => {
         throw new Error('Errore nel caricamento delle categorie');
       }
       const data = await response.json();
-      console.log('📁 Categorie caricate:', data);
       setCategories(data);
     } catch (err) {
       console.error('❌ Errore caricamento categorie:', err);
@@ -113,7 +115,6 @@ const ProductForm = () => {
         throw new Error('Errore nel caricamento delle sottocategorie');
       }
       const data = await response.json();
-      console.log('📂 Sottocategorie caricate per categoria', categoryId, ':', data);
       setSubcategories(data);
     } catch (err) {
       console.error('❌ Errore caricamento sottocategorie:', err);
@@ -157,31 +158,35 @@ const ProductForm = () => {
       // Ricostruisci i label nelle varianti dai customAttributes
       let reconstructedVariants = product.variants || [];
       if (reconstructedVariants.length > 0 && customAttrs.length > 0) {
-        reconstructedVariants = reconstructedVariants.map(variant => ({
-          ...variant,
-          attributes: variant.attributes.map(attr => {
-            // Trova l'attributo personalizzato corrispondente
-            const customAttr = customAttrs.find(ca => ca.key === attr.key);
-            if (customAttr && customAttr.options) {
-              // Trova l'opzione corrispondente per ottenere il label
-              const option = customAttr.options.find(opt => opt.value === attr.value);
-              if (option) {
-                return {
-                  ...attr,
-                  label: option.label
-                };
+        reconstructedVariants = reconstructedVariants.map(variant => {
+          return {
+            ...variant,
+            image: variant.image || null, // Mantieni l'immagine della variante
+            attributes: variant.attributes.map(attr => {
+              // Trova l'attributo personalizzato corrispondente
+              const customAttr = customAttrs.find(ca => ca.key === attr.key);
+              if (customAttr && customAttr.options) {
+                // Trova l'opzione corrispondente per ottenere il label
+                const option = customAttr.options.find(opt => opt.value === attr.value);
+                if (option) {
+                  return {
+                    ...attr,
+                    label: option.label
+                  };
+                }
               }
-            }
-            return attr;
-          })
-        }));
+              return attr;
+            })
+          };
+        });
       }
       
       setFormData({
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category._id || product.category,
+        ivaPercent: product.ivaPercent ?? 22,
+        category: product.category?._id || product.category || '',
         subcategory: product.subcategory?._id || product.subcategory || '',
         stock: product.stock,
         unit: product.unit,
@@ -227,6 +232,61 @@ const ProductForm = () => {
     }));
   };
 
+  // Salva attributi custom in localStorage
+  const saveCustomAttributesToStorage = (attrs) => {
+    if (!user || !user._id) return;
+    const storageKey = `savedAttributes_${user._id}`;
+    const existingAttrs = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    // Aggiungi o aggiorna attributi (non duplicare per nome)
+    attrs.forEach(attr => {
+      // Filtra le opzioni per salvare solo quelle con label valide
+      const validOptions = attr.options.filter(opt => 
+        opt.label && 
+        opt.label.trim() !== '' && 
+        opt.label !== 'Nuova Opzione' && 
+        opt.label !== 'Nuova'
+      );
+      
+      if (attr.name !== 'Nuova Opzione' && validOptions.length > 0) {
+        const existingIndex = existingAttrs.findIndex(a => a.name.toLowerCase() === attr.name.toLowerCase());
+        
+        if (existingIndex !== -1) {
+          // Aggiorna l'attributo esistente
+          existingAttrs[existingIndex] = {
+            name: attr.name,
+            type: attr.type,
+            options: validOptions
+          };
+        } else {
+          // Aggiungi nuovo attributo
+          existingAttrs.push({
+            name: attr.name,
+            type: attr.type,
+            options: validOptions
+          });
+        }
+      }
+    });
+    
+    localStorage.setItem(storageKey, JSON.stringify(existingAttrs));
+  };
+
+  // Carica attributi salvati da localStorage
+  const loadSavedAttributes = () => {
+    if (!user || !user._id) return [];
+    const storageKey = `savedAttributes_${user._id}`;
+    const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    return saved;
+  };
+
+  // Verifica se tutte le varianti hanno un prezzo impostato
+  const hasVariantsWithPrices = () => {
+    return formData.hasVariants && 
+           formData.variants.length > 0 && 
+           formData.variants.every(v => v.price !== null && v.price !== undefined && v.price !== '');
+  };
+
   // Aggiungere attributo personalizzato
   const addCustomAttribute = () => {
     const newAttr = {
@@ -237,6 +297,30 @@ const ProductForm = () => {
       allowVariants: true,
       order: customAttributes.length + 1,
       options: [],
+      placeholder: ''
+    };
+    setCustomAttributes([...customAttributes, newAttr]);
+    
+    // Inizializza valore nel formData
+    setFormData(prev => ({
+      ...prev,
+      attributes: [...prev.attributes, { key: newAttr.key, value: '' }]
+    }));
+  };
+
+  // Aggiungi attributo salvato esistente
+  const addSavedAttribute = (savedAttr) => {
+    const newAttr = {
+      name: savedAttr.name,
+      key: `custom_${Date.now()}`,
+      type: savedAttr.type,
+      required: false,
+      allowVariants: true,
+      order: customAttributes.length + 1,
+      options: savedAttr.options.map((opt, idx) => ({ 
+        ...opt, 
+        value: `opt_${Date.now()}_${idx}_${Math.random()}` 
+      })),
       placeholder: ''
     };
     setCustomAttributes([...customAttributes, newAttr]);
@@ -260,20 +344,30 @@ const ProductForm = () => {
 
   // Aggiornare attributo personalizzato
   const updateCustomAttribute = (key, field, value) => {
-    setCustomAttributes(customAttributes.map(attr => 
+    const updated = customAttributes.map(attr => 
       attr.key === key ? { ...attr, [field]: value } : attr
-    ));
+    );
+    setCustomAttributes(updated);
+    
+    // Salva in localStorage quando si aggiungono opzioni o si cambia il nome
+    if (field === 'options' || field === 'name') {
+      saveCustomAttributesToStorage(updated);
+    }
   };
 
   // Aggiungere opzione a un attributo personalizzato
   const addOptionToCustomAttribute = (attrKey) => {
-    setCustomAttributes(customAttributes.map(attr => {
+    const updated = customAttributes.map(attr => {
       if (attr.key === attrKey) {
         const newOption = { label: 'Nuova Opzione', value: `opt_${Date.now()}` };
         return { ...attr, options: [...attr.options, newOption] };
       }
       return attr;
-    }));
+    });
+    setCustomAttributes(updated);
+    
+    // Salva in localStorage
+    saveCustomAttributesToStorage(updated);
   };
 
   // Rimuovere opzione da attributo personalizzato
@@ -643,23 +737,49 @@ const ProductForm = () => {
                 </Form.Group>
 
                 <Row>
-                  <Col md={6}>
+                  <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Prezzo (€)</Form.Label>
+                      <Form.Label>Prezzo (€) <span className="text-muted" style={{fontWeight:400}}>(IVA inclusa)</span></Form.Label>
                       <Form.Control
                         type="number"
                         step="0.01"
                         name="price"
-                        value={formData.price}
+                        value={formData.price ?? ''}
                         onChange={handleChange}
                         placeholder="0.00"
+                        required={!hasVariantsWithPrices()}
                       />
                       <Form.Text className="text-muted">
-                        Se il prodotto ha opzioni, inserisci il prezzo per ogni variante nella sezione sotto.
+                        {hasVariantsWithPrices() 
+                          ? 'Prezzo non necessario: tutte le varianti hanno un prezzo specifico.'
+                          : 'Se il prodotto ha opzioni, inserisci il prezzo per ogni variante nella sezione sotto.'
+                        }
                       </Form.Text>
                     </Form.Group>
                   </Col>
-                  <Col md={6}>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>IVA (%) *</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        name="ivaPercent"
+                        value={formData.ivaPercent}
+                        onChange={handleChange}
+                        min={0}
+                        max={100}
+                        required
+                        isInvalid={formData.ivaPercent === '' || formData.ivaPercent === null || isNaN(Number(formData.ivaPercent))}
+                      />
+                      <Form.Control.Feedback type="invalid">
+                        La percentuale IVA è obbligatoria.
+                      </Form.Control.Feedback>
+                      <Form.Text className="text-muted">
+                        Inserisci la percentuale di IVA applicata (es. 22).
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
                     <Form.Group className="mb-3">
                       <Form.Label>Categoria *</Form.Label>
                       <Form.Select
@@ -731,7 +851,7 @@ const ProductForm = () => {
                       <Form.Control
                         type="number"
                         name="stock"
-                        value={formData.stock}
+                        value={formData.stock ?? ''}
                         onChange={handleChange}
                         placeholder="0"
                       />
@@ -769,7 +889,7 @@ const ProductForm = () => {
                   <Form.Control
                     type="date"
                     name="expiryDate"
-                    value={formData.expiryDate}
+                    value={formData.expiryDate ?? ''}
                     onChange={handleChange}
                   />
                   <Form.Text className="text-muted">
@@ -794,12 +914,13 @@ const ProductForm = () => {
 
               <Col md={4}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Immagini Prodotto</Form.Label>
+                  <Form.Label>Immagini Prodotto <span className="text-danger">*</span></Form.Label>
                   <Form.Control
                     type="file"
                     accept="image/*"
                     multiple
                     onChange={handleImageChange}
+                    required={!formData.variants.some(v => v.image)}
                   />
                   <Form.Text className="text-muted">
                     Clicca sulla stella per impostare la foto principale.
@@ -918,9 +1039,42 @@ const ProductForm = () => {
             <Card className="mb-4 border-info">
               <Card.Header className="bg-info text-white d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">🎨 Opzioni Prodotto (Varianti)</h5>
-                <Button size="sm" variant="light" onClick={addCustomAttribute}>
-                  + Aggiungi Opzione
-                </Button>
+                <div className="d-flex gap-2">
+                  {user && (
+                    <>
+                      {loadSavedAttributes().length > 0 ? (
+                        <Dropdown>
+                          <Dropdown.Toggle size="sm" variant="light">
+                            📋 Usa Salvate
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu>
+                            {loadSavedAttributes().map((attr, idx) => (
+                              <Dropdown.Item
+                                key={idx}
+                                onClick={() => addSavedAttribute(attr)}
+                              >
+                                {attr.name} ({attr.options.length} opzioni)
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="light"
+                          onClick={() => {
+                            setShowNoSavedModal(true);
+                          }}
+                        >
+                          📋 Usa Salvate
+                        </Button>
+                      )}
+                    </>
+                  )}
+                  <Button size="sm" variant="light" onClick={addCustomAttribute}>
+                    + Aggiungi Nuova
+                  </Button>
+                </div>
               </Card.Header>
               <Card.Body>
                 <Alert variant="info" className="small mb-3">
@@ -939,13 +1093,20 @@ const ProductForm = () => {
                             <Col md={5}>
                               <Form.Group>
                                 <Form.Label className="small fw-bold">Nome Macrocategoria</Form.Label>
-                                <Form.Control
-                                  size="sm"
-                                  type="text"
-                                  value={attr.name}
-                                  onChange={(e) => updateCustomAttribute(attr.key, 'name', e.target.value)}
-                                  placeholder="Es. Taglia, Colore, Capacità, Gusto..."
-                                />
+                                  <Form.Control
+                                    size="sm"
+                                    type="text"
+                                    value={attr.name}
+                                    onChange={(e) => updateCustomAttribute(attr.key, 'name', e.target.value)}
+                                    onFocus={(e) => {
+                                      if (
+                                        e.target.value === 'Nuova Macrocategoria' ||
+                                        e.target.value === 'Nuova' ||
+                                        e.target.value === 'Nuova Opzione'
+                                      ) e.target.value = '';
+                                    }}
+                                    placeholder="Es. Taglia, Colore, Capacità, Gusto..."
+                                  />
                               </Form.Group>
                             </Col>
                             <Col md={3}>
@@ -999,6 +1160,11 @@ const ProductForm = () => {
                                         return a;
                                       });
                                       setCustomAttributes(updated);
+                                      // Salva in localStorage quando si modificano le label
+                                      saveCustomAttributesToStorage(updated);
+                                    }}
+                                    onFocus={(e) => {
+                                      if (e.target.value === 'Nuova Opzione' || e.target.value === 'Nuova') e.target.value = '';
                                     }}
                                     style={{ maxWidth: '60px' }}
                                   />
@@ -1066,6 +1232,21 @@ const ProductForm = () => {
           </Form>
         </Card.Body>
       </Card>
+
+      {/* Modale di avviso per nessun attributo salvato */}
+      <Modal show={showNoSavedModal} onHide={() => setShowNoSavedModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Nessuna opzione salvata</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Non hai ancora salvato nessuna opzione variante. Crea e salva almeno una opzione per poterla riutilizzare in futuro.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => setShowNoSavedModal(false)}>
+            Ok
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

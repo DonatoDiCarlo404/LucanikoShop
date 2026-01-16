@@ -91,6 +91,12 @@ const ProductDetail = () => {
     loadProduct();
   }, [id]);
 
+  useEffect(() => {
+    if (product) {
+      // Prodotto caricato e pronto
+    }
+  }, [product]);
+
   // LOAD REVIEWS
   const loadReviews = async () => {
     try {
@@ -313,7 +319,17 @@ const ProductDetail = () => {
       <Row>
         {/* COLONNA IMMAGINI */}
         <Col md={6}>
-          {product.images?.length > 0 ? (
+          {selectedVariant?.image ? (
+            // Mostra l'immagine della variante se disponibile
+            <div>
+              <img
+                className="d-block w-100"
+                src={selectedVariant.image}
+                alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')}`}
+                style={{ height: '400px', objectFit: 'cover', borderRadius: '8px' }}
+              />
+            </div>
+          ) : product.images?.length > 0 ? (
             <Carousel>
               {product.images.map((image, index) => (
                 <Carousel.Item key={index}>
@@ -396,7 +412,9 @@ const ProductDetail = () => {
                       <strong>{attr.name}:</strong>{' '}
                       <select
                         value={selectedOptions[attr.key] || ''}
-                        onChange={e => setSelectedOptions(opts => ({ ...opts, [attr.key]: e.target.value }))}
+                        onChange={e => {
+                          setSelectedOptions(opts => ({ ...opts, [attr.key]: e.target.value }));
+                        }}
                         style={{ minWidth: 120, padding: '4px 8px' }}
                       >
                         <option value="">Seleziona...</option>
@@ -626,6 +644,12 @@ const ProductDetail = () => {
                                   <h3 className="text-primary mb-0">
                                     €{Number(product.price).toFixed(2)}
                                     <small className="text-muted">/{product.unit}</small>
+                                    {typeof product.ivaPercent === 'number' && (
+                                      <span className="ms-2" style={{fontSize:'0.9rem', color:'#888'}}>
+                                        IVA {product.ivaPercent}% (
+                                        €{(Number(product.price) * (product.ivaPercent/(100+product.ivaPercent))).toFixed(2)} )
+                                      </span>
+                                    )}
                                   </h3>
                                   {product.stock > 0 ? (
                                     <Badge bg="success">✓ Disponibile</Badge>

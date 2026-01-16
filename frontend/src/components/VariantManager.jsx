@@ -28,6 +28,7 @@ const VariantManager = ({ attributes, variants, onChange }) => {
       sku: '',  // sarà generato dal backend
       stock: 0,
       price: null, // null = usa prezzo base
+      image: null, // immagine specifica della variante
       active: true
     }));
     
@@ -84,13 +85,9 @@ const VariantManager = ({ attributes, variants, onChange }) => {
               <tr>
                 <th style={{ minWidth: '200px' }}>Variante</th>
                 <th style={{ width: '100px' }}>Stock</th>
-                <th style={{ width: '120px' }}>
-                  Prezzo
-                  <div className="text-muted" style={{ fontSize: '10px', fontWeight: 'normal' }}>
-                    (vuoto = base)
-                  </div>
-                </th>
-                <th style={{ width: '80px' }}>Attiva</th>
+                <th style={{ width: '120px' }}>Prezzo<div className="text-muted" style={{ fontSize: '10px', fontWeight: 'normal' }}>(vuoto = base)</div></th>
+                <th style={{ width: '150px' }}>Immagine</th>
+                <th style={{ width: '80px' }}>Stato</th>
                 <th style={{ width: '80px' }}>Azioni</th>
               </tr>
             </thead>
@@ -100,9 +97,7 @@ const VariantManager = ({ attributes, variants, onChange }) => {
                   <td>
                     <strong>{variant.attributes.map(a => a.label || a.value).join(' • ')}</strong>
                     {variant.sku && (
-                      <div className="text-muted" style={{ fontSize: '11px' }}>
-                        SKU: {variant.sku}
-                      </div>
+                      <div className="text-muted" style={{ fontSize: '11px' }}>SKU: {variant.sku}</div>
                     )}
                   </td>
                   <td>
@@ -126,7 +121,7 @@ const VariantManager = ({ attributes, variants, onChange }) => {
                       step="0.01"
                       min="0"
                       placeholder="Auto"
-                      value={variant.price || ''}
+                      value={variant.price ?? ''}
                       onChange={(e) => {
                         const updated = [...variants];
                         updated[idx].price = e.target.value ? parseFloat(e.target.value) : null;
@@ -134,6 +129,65 @@ const VariantManager = ({ attributes, variants, onChange }) => {
                       }}
                       disabled={!variant.active}
                     />
+                  </td>
+                  <td>
+                    <div className="d-flex flex-column gap-1">
+                      {variant.image && (
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <img
+                            src={variant.image}
+                            alt="Variante"
+                            style={{ 
+                              width: '50px', 
+                              height: '50px', 
+                              objectFit: 'cover', 
+                              borderRadius: '4px',
+                              border: '1px solid #ddd'
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            style={{
+                              position: 'absolute',
+                              top: '-5px',
+                              right: '-5px',
+                              padding: '0',
+                              width: '18px',
+                              height: '18px',
+                              fontSize: '10px',
+                              borderRadius: '50%'
+                            }}
+                            onClick={() => {
+                              const updated = [...variants];
+                              updated[idx].image = null;
+                              onChange(updated);
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      )}
+                      <Form.Control
+                        type="file"
+                        size="sm"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const updated = [...variants];
+                              updated[idx].image = reader.result;
+                              onChange(updated);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        disabled={!variant.active}
+                        style={{ fontSize: '11px' }}
+                      />
+                    </div>
                   </td>
                   <td>
                     <Form.Check

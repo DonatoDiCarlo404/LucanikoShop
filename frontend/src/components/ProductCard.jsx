@@ -205,6 +205,11 @@ const ProductCard = ({ product }) => {
                   <small className="text-muted" style={{ fontSize: '0.75rem' }}>
                     /{product.unit}
                   </small>
+                  {typeof product.ivaPercent === 'number' && (
+                    <span className="ms-2" style={{fontSize:'0.8rem', color:'#888'}}>
+                      IVA {product.ivaPercent}%
+                    </span>
+                  )}
                 </h5>
               ) : (
                 <h5 className="text-muted mb-0">
@@ -212,16 +217,24 @@ const ProductCard = ({ product }) => {
                 </h5>
               )}
             </div>
-
-            {(typeof product.stock === 'number' && product.stock > 0) || totalVariantStock > 0 ? (
-              <Badge bg="success">
-                Disponibile
-              </Badge>
-            ) : (
-              <Badge bg="danger">
-                Esaurito
-              </Badge>
+            {typeof product.ivaPercent === 'number' && minVariantPrice === null && (
+              <div style={{fontSize:'0.8rem', color:'#888'}}>
+                IVA {product.ivaPercent}%
+              </div>
             )}
+
+            {(() => {
+              const hasStock = (typeof product.stock === 'number' && product.stock > 0) || totalVariantStock > 0;
+              const isAvailable = hasStock && product.isActive;
+              if (!hasStock) {
+                return <Badge bg="danger">Esaurito</Badge>;
+              }
+              return isAvailable ? (
+                <Badge bg="success">Disponibile</Badge>
+              ) : (
+                <Badge bg="secondary">Non disponibile</Badge>
+              );
+            })()}
           </div>
         </div>
       </Card.Body>

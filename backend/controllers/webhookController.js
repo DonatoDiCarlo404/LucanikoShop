@@ -43,13 +43,23 @@ export const handleStripeWebhook = async (req, res) => {
       // Recupera i dati del carrello dai metadata
       const cartItemsData = JSON.parse(session.metadata.cartItems)
 
-      // Crea gli orderItems usando i dati completi dai metadata
+      // Recupera info IVA per ogni prodotto
+      const productsMap = {};
+      for (const item of cartItemsData) {
+        if (!productsMap[item.productId]) {
+          const prod = await Product.findById(item.productId);
+          productsMap[item.productId] = prod ? prod.ivaPercent : 22;
+        }
+      }
+
+      // Crea gli orderItems con info IVA
       const orderItems = cartItemsData.map((item) => ({
         product: item.productId,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
         seller: item.sellerId,
+        ivaPercent: productsMap[item.productId],
       }));
 
       // Ottieni indirizzo di spedizione (se presente)
@@ -57,6 +67,15 @@ export const handleStripeWebhook = async (req, res) => {
 
       // Ottieni costo spedizione dai metadata
       const shippingCost = parseFloat(session.metadata.shippingCost || '0');
+
+      // Calcola importo IVA totale
+      let totalIva = 0;
+      for (const item of orderItems) {
+        // Calcolo IVA su prezzo lordo (inclusa):
+        // iva = prezzo * (ivaPercent / (100 + ivaPercent))
+        const ivaItem = (item.price * item.quantity) * (item.ivaPercent / (100 + item.ivaPercent));
+        totalIva += ivaItem;
+      }
 
       // Crea l'ordine nel database
       const order = await Order.create({
@@ -78,7 +97,7 @@ export const handleStripeWebhook = async (req, res) => {
         },
         itemsPrice: session.amount_subtotal / 100,
         shippingPrice: shippingCost,
-        taxPrice: 0,
+        taxPrice: Math.round(totalIva * 100) / 100,
         totalPrice: session.amount_total / 100,
         status: 'processing',
         isPaid: true,
@@ -94,7 +113,8 @@ export const handleStripeWebhook = async (req, res) => {
         if (user) {
           await sendPurchaseConfirmationEmail(user.email, user.name, {
             orderId: order._id,
-            total: order.totalPrice
+            total: order.totalPrice,
+            iva: order.taxPrice
           });
         }
       } catch (emailError) {

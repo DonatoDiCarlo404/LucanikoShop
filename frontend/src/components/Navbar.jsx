@@ -146,10 +146,8 @@ const Navbar = () => {
             )}
           </Nav>
 
-          <Nav className="ms-auto align-items-center">
-            {/* Carrello solo desktop */}
-            {/* Carrello - Catalogo - Categorie - Dropdown user/login (desktop) */}
-            <Nav.Link as={Link} to="/cart" className="d-none d-lg-inline-flex align-items-center me-3">
+          <Nav className="ms-auto align-items-center justify-content-end" style={{ minWidth: 400 }}>
+            <Nav.Link as={Link} to="/cart" className="d-none d-lg-inline-flex align-items-center">
               <span><i className="bi bi-cart"></i></span>
               {cartCount > 0 && (
                 <Badge bg="danger" className="ms-2">
@@ -157,20 +155,20 @@ const Navbar = () => {
                 </Badge>
               )}
             </Nav.Link>
-            <Nav.Link as={Link} to="/products" className="me-2 d-none d-lg-inline">
+            <Nav.Link as={Link} to="/products" className="d-none d-lg-inline">
               Catalogo
             </Nav.Link>
-            <Nav.Link as={Link} to="/offers" className="me-2 d-none d-lg-inline">
+            <Nav.Link as={Link} to="/offers" className="d-none d-lg-inline">
               Offerte
             </Nav.Link>
-            <Nav.Link as={Link} to="/categories" className="me-2 d-none d-lg-inline">
+            <Nav.Link as={Link} to="/categories" className="d-none d-lg-inline">
               Categorie
             </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
                 title={
-                  <span className="d-none d-lg-inline">
-                    Ciao, {user.role === 'buyer' && user.name ? user.name.split(' ')[0] : user.name} <Badge bg="secondary">{user.role}</Badge>
+                  <span className="d-none d-lg-inline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15rem' }}>
+                    Ciao, {user.role === 'buyer' && user.name ? user.name.split(' ')[0] : user.name} <Badge bg="secondary" style={{ marginLeft: '0.15rem' }}>{user.role}</Badge>
                   </span>
                 }
                 id="user-dropdown"

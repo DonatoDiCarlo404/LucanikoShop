@@ -37,8 +37,8 @@ app.use('/api/webhook', webhookRoutes);
 // Middleware
 app.use(cors());
 import { renewExpiredSubscriptions } from './utils/subscriptionUtils.js';
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(helmet());
 app.use(passport.initialize());
 

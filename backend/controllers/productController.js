@@ -19,8 +19,8 @@ export const getProducts = async (req, res) => {
   try {
     const { search, category, subcategory, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
 
-    // Costruisci query - solo prodotti attivi per catalogo pubblico
-    let query = { isActive: true };
+    // Costruisci query - mostra tutti i prodotti (isActive gestito nel frontend)
+    let query = {};
 
     // Ricerca full-text
     if (search) {
@@ -123,22 +123,12 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
 
   try {
-    // DEBUG: logga tutto il body ricevuto
-    console.log('--- [DEBUG] Richiesta creazione prodotto ---');
-    console.log('req.body:', JSON.stringify(req.body, null, 2));
-
+    // Parse customAttributes se è stringa
     if (req.body.customAttributes) {
-      console.log('typeof customAttributes:', typeof req.body.customAttributes);
-      console.log('customAttributes:', req.body.customAttributes);
-      if (Array.isArray(req.body.customAttributes)) {
-        console.log('customAttributes è un array, length:', req.body.customAttributes.length);
-      } else {
-        console.log('customAttributes NON è un array');
-        // Se è una stringa, prova a fare il parse
+      if (!Array.isArray(req.body.customAttributes)) {
         if (typeof req.body.customAttributes === 'string') {
           try {
             req.body.customAttributes = JSON.parse(req.body.customAttributes);
-            console.log('customAttributes dopo parse:', req.body.customAttributes);
           } catch (e) {
             console.error('Errore parsing customAttributes:', e);
           }
@@ -147,7 +137,7 @@ export const createProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, category, subcategory, stock, unit, expiryDate, tags,
+      name, description, price, ivaPercent, category, subcategory, stock, unit, expiryDate, tags,
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes, sellerId 
     } = req.body;
 
@@ -204,6 +194,7 @@ export const createProduct = async (req, res) => {
       name,
       description,
       price,
+      ivaPercent,
       category,
       subcategory: subcategory || null,
       stock,
@@ -218,11 +209,6 @@ export const createProduct = async (req, res) => {
       hasVariants: hasVariants || false,
       variants: processedVariants
     };
-    
-    console.log('--- [DEBUG] Dati per Product.create ---');
-    console.log('productData.customAttributes:', JSON.stringify(productData.customAttributes, null, 2));
-    console.log('typeof productData.customAttributes:', typeof productData.customAttributes);
-    console.log('Array.isArray(productData.customAttributes):', Array.isArray(productData.customAttributes));
     
     const product = await Product.create(productData);
 
@@ -254,7 +240,7 @@ export const updateProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, category, subcategory, stock, unit, expiryDate, tags, isActive, images,
+      name, description, price, ivaPercent, category, subcategory, stock, unit, expiryDate, tags, isActive, images,
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
     } = req.body;
 
@@ -280,6 +266,7 @@ export const updateProduct = async (req, res) => {
     if (name) product.name = name;
     if (description) product.description = description;
     if (price) product.price = price;
+    if (ivaPercent !== undefined) product.ivaPercent = ivaPercent;
     if (category) product.category = category;
     if (subcategory !== undefined) product.subcategory = subcategory || null;
     if (stock !== undefined) product.stock = stock;
