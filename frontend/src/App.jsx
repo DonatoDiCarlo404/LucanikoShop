@@ -38,6 +38,8 @@ import HelpCenterBuyer from './pages/HelpCenterBuyer';
 import ShippingAndPayments from './pages/ShippingAndPayments';
 import SpazioVenditoriLucani from './pages/SpazioVenditoriLucani';
 import HelpCenterVendor from './pages/HelpCenterVendor';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AppContent() {
   const location = useLocation();
@@ -50,6 +52,18 @@ function AppContent() {
     <>
       <Navbar />
       <CookieBanner />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         <Route path="/" element={<Products />} />
         <Route path="/login" element={<Login />} />

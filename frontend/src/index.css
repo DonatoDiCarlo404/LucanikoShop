@@ -92,7 +92,7 @@ body {
 }
 
 /* Sfondo bianco per navbar, carosello categorie e footer */
-.navbar, .navbar * {
+.navbar {
   background: #fff !important;
 }
 .categories-carousel-container {

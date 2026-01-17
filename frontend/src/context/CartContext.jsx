@@ -45,19 +45,22 @@ export const CartProvider = ({ children }) => {
     // Aggiungi prodotto al carrello
   const addToCart = (product, quantity = 1) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find(item => item._id === product._id);
-      
+      const getKey = (item) => item._id + (item.selectedVariantSku ? `__${item.selectedVariantSku}` : '');
+      const newProductKey = getKey(product);
+      const existingItem = prevItems.find(item => getKey(item) === newProductKey);
+
+      let newItems;
       if (existingItem) {
-        // Se il prodotto esiste già, aumenta la quantità
-        return prevItems.map(item =>
-          item._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
+        newItems = prevItems.map(item =>
+          getKey(item) === newProductKey
+            ? { ...product, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        // Altrimenti aggiungi nuovo prodotto
-        return [...prevItems, { ...product, quantity }];
+        newItems = [...prevItems, { ...product, quantity }];
       }
+
+      return newItems;
     });
   };
 
@@ -87,10 +90,17 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  
+  const cartTotal = cartItems.reduce((total, item) => {
+    const price = item.discountedPrice || item.originalPrice || item.price || 0;
+    return total + (price * item.quantity);
+  }, 0);
+
   const value = {
     cartItems,
-    cartCount: cartItems.reduce((total, item) => total + item.quantity, 0),
-    cartTotal: cartItems.reduce((total, item) => total + (item.price * item.quantity), 0),
+    cartCount,
+    cartTotal,
     addToCart,
     removeFromCart,
     updateQuantity,

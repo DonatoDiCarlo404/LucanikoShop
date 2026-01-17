@@ -66,3 +66,32 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+// Middleware opzionale per autenticazione (non blocca se token mancante)
+// Utile per route che supportano sia utenti loggati che guest
+export const optionalAuth = async (req, res, next) => {
+  let token;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      // Estrai il token dall'header
+      token = req.headers.authorization.split(' ')[1];
+
+      // Verifica il token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Aggiungi l'utente alla request (senza password)
+      req.user = await User.findById(decoded.id).select('-password');
+      
+      console.log('🔐 [optionalAuth] Utente autenticato:', { id: req.user._id, email: req.user.email });
+    } catch (error) {
+      console.error('⚠️ [optionalAuth] Token non valido, continua come guest:', error.message);
+      req.user = null;
+    }
+  } else {
+    console.log('🔐 [optionalAuth] Nessun token, continua come guest');
+    req.user = null;
+  }
+
+  next();
+};

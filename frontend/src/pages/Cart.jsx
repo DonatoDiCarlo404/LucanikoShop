@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form, Spinner, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
 import { checkoutAPI } from '../services/api';
+import { toast } from 'react-toastify';
 
 const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -26,6 +27,12 @@ const Cart = () => {
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingDetails, setShippingDetails] = useState(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
+
+  // State per gestione termini e condizioni venditore
+  const [vendorTerms, setVendorTerms] = useState({});
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [loadingTerms, setLoadingTerms] = useState(false);
 
   // Calcola costo spedizione
   const calculateShipping = async () => {
@@ -79,10 +86,47 @@ const Cart = () => {
     calculateShipping();
   }, [cartItems, user]);
 
+  // Recupera i termini e condizioni del venditore
+  useEffect(() => {
+    const fetchVendorTerms = async () => {
+      if (cartItems.length === 0) return;
+
+      setLoadingTerms(true);
+      try {
+        const vendorId = cartItems[0]?.seller?._id || cartItems[0]?.seller;
+        
+        if (vendorId) {
+          const res = await fetch(`http://localhost:5000/api/vendors/${vendorId}`);
+          const data = await res.json();
+          
+          const vendorData = data.vendor || data;
+
+          if (res.ok && vendorData.shopSettings?.termsAndConditions?.content) {
+            setVendorTerms({
+              vendorId,
+              vendorName: vendorData.businessName || 'Venditore',
+              termsText: vendorData.shopSettings.termsAndConditions.content
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Errore recupero termini venditore:', error);
+      } finally {
+        setLoadingTerms(false);
+      }
+    };
+
+    fetchVendorTerms();
+  }, [cartItems]);
+
   const handleCheckout = async () => {
     if (cartCount === 0) return;
 
-    // Se l'utente non è loggato e non ha fornito email, mostra il form
+    if (vendorTerms.termsText && !acceptedTerms) {
+      alert('Devi accettare i Termini e Condizioni del Venditore per procedere.');
+      return;
+    }
+
     if (!user && !guestEmail) {
       setShowGuestForm(true);
       return;
@@ -96,15 +140,13 @@ const Cart = () => {
         guestEmail
       );
 
-      // Salva esplicitamente il carrello prima del redirect
       localStorage.setItem('cart', JSON.stringify(cartItems));
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Reindirizza a Stripe Checkout
       window.location.href = url;
     } catch (error) {
       console.error('Errore durante il checkout:', error);
-      alert('Errore durante il checkout. Riprova.');
+      toast.error('Errore durante il checkout. Riprova.');
       setIsCheckingOut(false);
     }
   };
@@ -178,6 +220,8 @@ const Cart = () => {
     setCouponError('');
   };
 
+  // ...existing code...
+
   // Calcola il totale finale con sconto e spedizione
   const finalTotal = cartTotal + shippingCost - discountAmount;
 
@@ -205,9 +249,12 @@ const Cart = () => {
         <Col md={8}>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2>Il tuo Carrello</h2>
-            <Button variant="outline-danger" size="sm" onClick={clearCart}>
-              Svuota Carrello
-            </Button>
+            <div>
+              {/* ...rimosso Fix Prezzi... */}
+              <Button variant="outline-danger" size="sm" onClick={clearCart}>
+                Svuota Carrello
+              </Button>
+            </div>
           </div>
 
           <ListGroup>
@@ -407,12 +454,41 @@ const Cart = () => {
                 </Alert>
               )}
 
+              {/* Checkbox Termini e Condizioni Venditore */}
+              {vendorTerms.termsText && (
+                <Form.Group className="mt-3">
+                  <Form.Check
+                    type="checkbox"
+                    id="accept-vendor-terms"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    label={
+                      <span>
+                        Accetto i{' '}
+                        <Button
+                          variant="link"
+                          className="p-0 text-decoration-underline"
+                          style={{ fontSize: 'inherit', verticalAlign: 'baseline' }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowTermsModal(true);
+                          }}
+                        >
+                          Termini e Condizioni del Venditore
+                        </Button>
+                      </span>
+                    }
+                    required
+                  />
+                </Form.Group>
+              )}
+
               <div className="d-grid gap-2 mt-3">
                 <Button
                   variant="primary"
                   size="lg"
                   onClick={handleCheckout}
-                  disabled={isCheckingOut}
+                  disabled={isCheckingOut || (vendorTerms.termsText && !acceptedTerms)}
                 >
                   {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}
                 </Button>
@@ -443,6 +519,30 @@ const Cart = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modale Termini e Condizioni Venditore */}
+      <Modal show={showTermsModal} onHide={() => setShowTermsModal(false)} size="lg" scrollable>
+        <Modal.Header closeButton>
+          <Modal.Title>Termini e Condizioni del Venditore</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ whiteSpace: 'pre-wrap' }}>
+          {vendorTerms.termsText || 'Termini e condizioni non disponibili.'}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
+            Chiudi
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              setAcceptedTerms(true);
+              setShowTermsModal(false);
+            }}
+          >
+            Accetta e Chiudi
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

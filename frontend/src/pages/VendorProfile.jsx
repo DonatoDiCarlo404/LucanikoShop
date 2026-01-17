@@ -161,7 +161,12 @@ const VendorProfile = () => {
       termsAndConditions: {
         content: '',
         lastUpdated: null,
-        version: 1
+        version: 1,
+        sellerLegalName: '',
+        sellerLegalAddress: '',
+        sellerVatNumber: '',
+        sellerEmail: '',
+        sellerPhone: ''
       },
       shipping: {
         freeShipping: false,
@@ -864,14 +869,15 @@ const VendorProfile = () => {
                     </Form.Group>
                     {/* CAMPO RAGIONE SOCIALE */}
                     <Form.Group className="mb-3">
-                      <Form.Label>Ragione Sociale</Form.Label>
-                      <Form.Control
-                        type="text"
-                        name="ragioneSociale"
-                        value={formData.ragioneSociale || ''}
-                        onChange={handleChange}
-                        placeholder="Es: Lucaniko S.r.l."
-                      />
+                        <Form.Label>Ragione Sociale <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="ragioneSociale"
+                          value={formData.ragioneSociale || ''}
+                          onChange={handleChange}
+                          placeholder="Es: Lucaniko S.r.l."
+                          required
+                        />
                     </Form.Group>
                   </Col>
                   <Col md={6}>
@@ -1062,13 +1068,14 @@ const VendorProfile = () => {
                 <Row>
                   <Col md={4}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Email Negozio</Form.Label>
+                      <Form.Label>Email Negozio <span className="text-danger">*</span></Form.Label>
                       <Form.Control
                         type="email"
                         name="businessEmail"
                         value={formData.businessEmail}
                         onChange={handleChange}
                         placeholder="info@mioshop.it"
+                        required
                       />
                     </Form.Group>
                   </Col>
@@ -1839,11 +1846,280 @@ const VendorProfile = () => {
                   <strong>Importante:</strong> I clienti dovranno accettare questi termini prima di completare l'acquisto
                 </Alert>
 
+                <h5 className="mb-3">Dati del Venditore</h5>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Ragione Sociale <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.shopSettings.termsAndConditions.sellerLegalName || formData.ragioneSociale}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          shopSettings: {
+                            ...prev.shopSettings,
+                            termsAndConditions: {
+                              ...prev.shopSettings.termsAndConditions,
+                              sellerLegalName: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="Nome completo o ragione sociale"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Partita IVA / Codice Fiscale <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.shopSettings.termsAndConditions.sellerVatNumber || formData.vatNumber}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          shopSettings: {
+                            ...prev.shopSettings,
+                            termsAndConditions: {
+                              ...prev.shopSettings.termsAndConditions,
+                              sellerVatNumber: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="P.IVA o C.F."
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={12}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Sede Legale <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.shopSettings.termsAndConditions.sellerLegalAddress || 
+                          `${formData.businessAddress?.street || ''} ${formData.businessAddress?.city || ''} ${formData.businessAddress?.zipCode || ''}`.trim()}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          shopSettings: {
+                            ...prev.shopSettings,
+                            termsAndConditions: {
+                              ...prev.shopSettings.termsAndConditions,
+                              sellerLegalAddress: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="Via, Città, CAP, Provincia"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Email di Contatto <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="email"
+                        value={formData.shopSettings.termsAndConditions.sellerEmail || formData.businessEmail}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          shopSettings: {
+                            ...prev.shopSettings,
+                            termsAndConditions: {
+                              ...prev.shopSettings.termsAndConditions,
+                              sellerEmail: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="email@esempio.it"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Numero di Telefono (facoltativo)</Form.Label>
+                      <Form.Control
+                        type="tel"
+                        value={formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          shopSettings: {
+                            ...prev.shopSettings,
+                            termsAndConditions: {
+                              ...prev.shopSettings.termsAndConditions,
+                              sellerPhone: e.target.value
+                            }
+                          }
+                        }))}
+                        placeholder="+39 ..."
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <hr className="my-4" />
+
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="mb-0">Testo Termini e Condizioni</h5>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => {
+                      const template = `TERMINI E CONDIZIONI DI VENDITA DEL VENDITORE
+
+1. Identità del Venditore
+
+I prodotti e/o servizi acquistati tramite la piattaforma Lucaniko Shop sono venduti direttamente dal Venditore, i cui dati identificativi sono i seguenti:
+• Ragione sociale: ${formData.shopSettings.termsAndConditions.sellerLegalName || formData.ragioneSociale || '__________'}
+• Sede legale: ${formData.shopSettings.termsAndConditions.sellerLegalAddress || `${formData.businessAddress?.street || ''} ${formData.businessAddress?.city || ''} ${formData.businessAddress?.zipCode || ''}`.trim() || '__________'}
+• Partita IVA / Codice Fiscale: ${formData.shopSettings.termsAndConditions.sellerVatNumber || formData.vatNumber || '__________'}
+• Email di contatto: ${formData.shopSettings.termsAndConditions.sellerEmail || formData.businessEmail || '__________'}
+• Numero di telefono (facoltativo): ${formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || '__________'}
+
+Il Venditore opera in qualità di soggetto autonomo e indipendente rispetto alla piattaforma Lucaniko Shop.
+
+⸻
+
+2. Oggetto del Contratto
+
+Le presenti Condizioni Generali di Vendita disciplinano la vendita dei prodotti e/o servizi offerti dal Venditore tramite la piattaforma Lucaniko Shop agli utenti acquirenti ("Acquirenti").
+
+Con l'invio dell'ordine, l'Acquirente dichiara di aver letto, compreso e accettato integralmente le presenti condizioni.
+
+⸻
+
+3. Prodotti e Disponibilità
+
+Le caratteristiche essenziali dei prodotti sono descritte nelle relative schede informative presenti sulla piattaforma.
+
+La disponibilità dei prodotti è indicativa e può subire variazioni. In caso di indisponibilità successiva all'ordine, il Venditore informerà tempestivamente l'Acquirente e procederà al rimborso delle somme eventualmente già pagate.
+
+⸻
+
+4. Prezzi
+
+Tutti i prezzi sono espressi in Euro (€) e comprendono l'IVA, salvo diversa indicazione espressamente specificata nella scheda prodotto.
+
+Eventuali costi aggiuntivi (spedizione, imballaggio, commissioni, ecc.) sono chiaramente indicati prima della conferma dell'ordine.
+
+Il Venditore si riserva il diritto di modificare i prezzi in qualsiasi momento, senza pregiudicare gli ordini già confermati.
+
+⸻
+
+5. Modalità di Ordine
+
+L'ordine si considera concluso quando l'Acquirente riceve conferma dell'accettazione da parte del Venditore tramite la piattaforma.
+
+Il Venditore si riserva il diritto di rifiutare o annullare ordini in caso di:
+• dati errati o incompleti;
+• sospetto di attività fraudolente;
+• indisponibilità del prodotto.
+
+⸻
+
+6. Modalità di Pagamento
+
+I pagamenti avvengono tramite i sistemi messi a disposizione dalla piattaforma Lucaniko Shop.
+
+Il Venditore non gestisce direttamente i dati di pagamento dell'Acquirente.
+
+L'addebito avviene al momento della conferma dell'ordine, salvo diversa indicazione.
+
+⸻
+
+7. Spedizione e Consegna
+
+Il Venditore provvede alla spedizione dei prodotti secondo le modalità e i tempi indicati nella scheda prodotto.
+
+I termini di consegna sono indicativi e non vincolanti. Eventuali ritardi non danno diritto a risarcimenti, salvo i casi previsti dalla legge.
+
+Il rischio di perdita o danneggiamento dei prodotti si trasferisce all'Acquirente al momento della consegna.
+
+⸻
+
+8. Diritto di Recesso (per Acquirenti Consumatori)
+
+Se l'Acquirente è un consumatore ai sensi del D.Lgs. 206/2005 (Codice del Consumo), ha diritto di recedere dal contratto entro 14 giorni dalla ricezione dei prodotti, senza obbligo di motivazione.
+
+Il recesso deve essere comunicato per iscritto al Venditore.
+
+Le spese di restituzione dei prodotti sono a carico dell'Acquirente, salvo diversa indicazione o promozione specifica comunicata dal Venditore.
+
+Il rimborso sarà effettuato entro 14 giorni dal ricevimento della merce resa, previa verifica dell'integrità del prodotto.
+
+⸻
+
+9. Esclusioni dal Recesso
+
+Il diritto di recesso è escluso nei casi previsti dalla legge, tra cui:
+• prodotti personalizzati o realizzati su misura;
+• prodotti deperibili;
+• beni sigillati che non si prestano a essere restituiti per motivi igienici se aperti.
+
+⸻
+
+10. Garanzia Legale
+
+I prodotti venduti sono coperti dalla garanzia legale di conformità prevista dagli artt. 128 e seguenti del Codice del Consumo, ove applicabile.
+
+In caso di difetti o non conformità, l'Acquirente dovrà contattare il Venditore entro i termini di legge.
+
+⸻
+
+11. Responsabilità
+
+Il Venditore è responsabile esclusivamente dei prodotti venduti e delle informazioni fornite.
+
+La piattaforma Lucaniko Shop non è parte del contratto di vendita tra Venditore e Acquirente e non risponde di eventuali inadempimenti del Venditore.
+
+⸻
+
+12. Protezione dei Dati Personali
+
+I dati personali dell'Acquirente sono trattati dal Venditore nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR).
+
+Per maggiori informazioni, si rimanda all'informativa privacy del Venditore.
+
+⸻
+
+13. Legge Applicabile e Foro Competente
+
+Il contratto è regolato dalla legge italiana.
+
+Per le controversie con Acquirenti consumatori, è competente il foro di residenza o domicilio del consumatore, come previsto dalla legge.
+
+⸻
+
+14. Modifiche alle Condizioni
+
+Il Venditore si riserva il diritto di modificare le presenti condizioni in qualsiasi momento. Le modifiche si applicheranno esclusivamente agli ordini effettuati successivamente alla loro pubblicazione.
+
+⸻
+
+Accettazione
+
+Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le presenti Condizioni Generali di Vendita del Venditore.`;
+                      setFormData(prev => ({
+                        ...prev,
+                        shopSettings: {
+                          ...prev.shopSettings,
+                          termsAndConditions: {
+                            ...prev.shopSettings.termsAndConditions,
+                            content: template,
+                            lastUpdated: new Date()
+                          }
+                        }
+                      }));
+                    }}
+                  >
+                    📄 Usa Template
+                  </Button>
+                </div>
+
                 <Form.Group className="mb-3">
-                  <Form.Label>Termini e Condizioni del tuo Negozio</Form.Label>
                   <Form.Control
                     as="textarea"
-                    rows={15}
+                    rows={20}
                     value={formData.shopSettings.termsAndConditions.content}
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
@@ -1857,6 +2133,7 @@ const VendorProfile = () => {
                       }
                     }))}
                     placeholder="Inserisci qui i tuoi termini e condizioni di vendita..."
+                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
                   />
                   <Form.Text className="text-muted">
                     Include informazioni su: diritto di recesso, garanzie, modalità di reso, privacy, ecc.

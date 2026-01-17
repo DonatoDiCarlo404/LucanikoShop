@@ -12,6 +12,7 @@ import {
   Carousel,
   ListGroup,
 } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 
 import { productsAPI } from '../services/api';
 import { useAuth } from '../context/authContext';
@@ -239,7 +240,7 @@ const ProductDetail = () => {
   // Delete review
   const handleDeleteReview = async (reviewId) => {
     if (!user) {
-      alert('Devi essere loggato.');
+      toast.error('Devi essere loggato.');
       return;
     }
 
@@ -257,9 +258,10 @@ const ProductDetail = () => {
       if (!res.ok) throw new Error(data.message);
 
       setDeleteSuccess('Recensione eliminata.');
+      toast.success('Recensione eliminata con successo!');
       await loadReviews();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || 'Errore nell\'eliminazione della recensione');
     }
   };
 
@@ -267,14 +269,94 @@ const ProductDetail = () => {
   // ADD TO CART
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product, 1);
-    alert(`✅ ${product.name} aggiunto al carrello!`);
+    
+    if (product.hasVariants && product.variants?.length > 0 && !selectedVariant) {
+      toast.error('Seleziona una variante prima di aggiungere al carrello');
+      return;
+    }
+    
+    let finalPrice = 0;
+    
+    if (product.hasVariants && selectedVariant && selectedVariant.price != null) {
+      finalPrice = selectedVariant.price;
+    } 
+    else if (product.hasActiveDiscount && product.discountedPrice != null) {
+      finalPrice = product.discountedPrice;
+    } else if (product.originalPrice != null) {
+      finalPrice = product.originalPrice;
+    } else if (product.price != null) {
+      finalPrice = product.price;
+    }
+    
+    if (finalPrice === 0 || finalPrice == null) {
+      toast.error('Impossibile determinare il prezzo del prodotto');
+      return;
+    }
+    
+    const productToAdd = {
+      ...product,
+      price: finalPrice,
+      originalPrice: product.originalPrice || product.price || finalPrice,
+      discountedPrice: product.hasActiveDiscount ? product.discountedPrice : undefined,
+      hasActiveDiscount: product.hasActiveDiscount || false,
+      discountPercentage: product.discountPercentage || 0,
+      ...(product.hasVariants && selectedVariant ? {
+        selectedVariantSku: selectedVariant.sku,
+        selectedVariantAttributes: selectedVariant.attributes,
+        variantPrice: selectedVariant.price
+      } : {})
+    };
+    
+    addToCart(productToAdd, 1);
+    toast.success(`✅ ${product.name} aggiunto al carrello!`, {
+      position: "top-right",
+      autoClose: 2000,
+    });
   };
 
   // ACQUISTA ORA
   const handleBuyNow = () => {
     if (!product) return;
-    addToCart(product, 1);
+    
+    // Se il prodotto ha varianti, verifica che una variante sia selezionata
+    if (product.hasVariants && product.variants?.length > 0 && !selectedVariant) {
+      toast.error('Seleziona una variante prima di procedere');
+      return;
+    }
+    
+    let finalPrice = 0;
+    
+    if (product.hasVariants && selectedVariant && selectedVariant.price != null) {
+      finalPrice = selectedVariant.price;
+    } 
+    else if (product.hasActiveDiscount && product.discountedPrice != null) {
+      finalPrice = product.discountedPrice;
+    } else if (product.originalPrice != null) {
+      finalPrice = product.originalPrice;
+    } else if (product.price != null) {
+      finalPrice = product.price;
+    }
+    
+    if (finalPrice === 0 || finalPrice == null) {
+      toast.error('Impossibile determinare il prezzo del prodotto');
+      return;
+    }
+    
+    const productToAdd = {
+      ...product,
+      price: finalPrice,
+      originalPrice: product.originalPrice || product.price || finalPrice,
+      discountedPrice: product.hasActiveDiscount ? product.discountedPrice : undefined,
+      hasActiveDiscount: product.hasActiveDiscount || false,
+      discountPercentage: product.discountPercentage || 0,
+      ...(product.hasVariants && selectedVariant ? {
+        selectedVariantSku: selectedVariant.sku,
+        selectedVariantAttributes: selectedVariant.attributes,
+        variantPrice: selectedVariant.price
+      } : {})
+    };
+    
+    addToCart(productToAdd, 1);
     // Attendi che il carrello sia aggiornato, poi vai al checkout
     setTimeout(() => {
       navigate('/cart');
@@ -452,11 +534,18 @@ const ProductDetail = () => {
                           </h3>
                         )}
                       </div>
-                      {selectedVariant.stock > 0 ? (
-                        <Badge bg="success">✓ Disponibile ({selectedVariant.stock})</Badge>
-                      ) : (
-                        <Badge bg="danger">✗ Esaurito</Badge>
-                      )}
+                      {(() => {
+                        const hasStock = selectedVariant.stock > 0;
+                        const isAvailable = hasStock && product.isActive;
+                        if (!hasStock) {
+                          return <Badge bg="danger">✗ Esaurito</Badge>;
+                        }
+                        return isAvailable ? (
+                          <Badge bg="success">✓ Disponibile ({selectedVariant.stock})</Badge>
+                        ) : (
+                          <Badge bg="secondary">Non disponibile</Badge>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="d-flex justify-content-between align-items-center mt-3">
@@ -492,11 +581,18 @@ const ProductDetail = () => {
                       </h3>
                     )}
                   </div>
-                  {product.stock > 0 ? (
-                    <Badge bg="success">✓ Disponibile</Badge>
-                  ) : (
-                    <Badge bg="danger">✗ Esaurito</Badge>
-                  )}
+                  {(() => {
+                    const hasStock = product.stock > 0;
+                    const isAvailable = hasStock && product.isActive;
+                    if (!hasStock) {
+                      return <Badge bg="danger">✗ Esaurito</Badge>;
+                    }
+                    return isAvailable ? (
+                      <Badge bg="success">✓ Disponibile</Badge>
+                    ) : (
+                      <Badge bg="secondary">Non disponibile</Badge>
+                    );
+                  })()}
                 </div>
               )}
             </Card.Body>
@@ -723,16 +819,16 @@ const ProductDetail = () => {
               size="lg"
               disabled={
                 (Array.isArray(product.variants) && product.variants.length > 0)
-                  ? !(selectedVariant && selectedVariant.stock > 0)
-                  : product.stock === 0
+                  ? !(selectedVariant && selectedVariant.stock > 0 && product.isActive)
+                  : !(product.stock > 0 && product.isActive)
               }
               onClick={handleAddToCart}
             >
               {(Array.isArray(product.variants) && product.variants.length > 0)
-                ? (selectedVariant && selectedVariant.stock > 0
+                ? (selectedVariant && selectedVariant.stock > 0 && product.isActive
                     ? '🛒 Aggiungi al carrello (Jamm bell!)'
-                    : 'Non disponibile')
-                : (product.stock > 0 ? '🛒 Aggiungi al carrello' : 'Non disponibile')}
+                    : '🛒 Aggiungi al carrello (Jamm bell!)')
+                : (product.stock > 0 && product.isActive ? '🛒 Aggiungi al carrello' : 'Non disponibile')}
             </Button>
             <Button
               variant="success"
@@ -740,12 +836,16 @@ const ProductDetail = () => {
               className="mt-2"
               disabled={
                 (Array.isArray(product.variants) && product.variants.length > 0)
-                  ? !(selectedVariant && selectedVariant.stock > 0)
-                  : product.stock === 0
+                  ? !(selectedVariant && selectedVariant.stock > 0 && product.isActive)
+                  : !(product.stock > 0 && product.isActive)
               }
               onClick={handleBuyNow}
             >
-              🚀 Acquista Ora (Mò Stess!)
+              {(Array.isArray(product.variants) && product.variants.length > 0)
+                ? (selectedVariant && selectedVariant.stock > 0 && product.isActive
+                    ? '🚀 Acquista Ora (Mò Stess!)'
+                    : '🚀 Acquista Ora (Mò Stess!)')
+                : (product.stock > 0 && product.isActive ? '🚀 Acquista Ora (Mò Stess!)' : 'Non disponibile')}
             </Button>
           </div>
         </Col>

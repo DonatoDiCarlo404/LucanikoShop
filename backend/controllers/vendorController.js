@@ -6,7 +6,7 @@ import { User, Product } from '../models/index.js';
 export const getPublicVendorProfile = async (req, res) => {
   try {
     const vendor = await User.findById(req.params.id).select(
-      'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role'
+      'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings'
     );
 
     if (!vendor) {
@@ -47,7 +47,8 @@ export const getPublicVendorProfile = async (req, res) => {
         website: vendor.website,
         socialLinks: vendor.socialLinks,
         isApproved: vendor.isApproved,
-        memberSince: vendor.createdAt
+        memberSince: vendor.createdAt,
+        shopSettings: vendor.shopSettings
       },
       products,
       stats: {
