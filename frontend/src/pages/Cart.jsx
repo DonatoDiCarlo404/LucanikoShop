@@ -34,6 +34,10 @@ const Cart = () => {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [loadingTerms, setLoadingTerms] = useState(false);
 
+  // Stato per il paese e la regione di spedizione
+  const [shippingCountry, setShippingCountry] = useState('Italia');
+  const [shippingRegion, setShippingRegion] = useState('');
+
   // Calcola costo spedizione
   const calculateShipping = async () => {
     if (cartCount === 0) return;
@@ -56,8 +60,8 @@ const Cart = () => {
             quantity: item.quantity
           })),
           shippingAddress: {
-            country: 'Italia',
-            state: ''
+            country: shippingCountry,
+            state: shippingCountry === 'Italia' ? shippingRegion : ''
           }
         })
       });
@@ -81,10 +85,10 @@ const Cart = () => {
     }
   };
 
-  // Ricalcola spedizione quando il carrello cambia
+  // Ricalcola spedizione quando il carrello, il paese o la regione cambiano
   useEffect(() => {
     calculateShipping();
-  }, [cartItems, user]);
+  }, [cartItems, user, shippingCountry, shippingRegion]);
 
   // Recupera i termini e condizioni del venditore
   useEffect(() => {
@@ -362,6 +366,76 @@ const Cart = () => {
                   )}
                 </ListGroup.Item>
                 
+
+                {/* Dropdown selezione paese di spedizione */}
+
+                <ListGroup.Item className="d-flex justify-content-between align-items-center">
+                  <Form.Group className="w-100 mb-0">
+                    <Form.Label className="small mb-1">Spedisci in</Form.Label>
+                    <Form.Select
+                      value={shippingCountry}
+                      onChange={e => setShippingCountry(e.target.value)}
+                      aria-label="Seleziona paese di spedizione"
+                    >
+                      <option value="Italia">Italia</option>
+                      <option value="Francia">Francia</option>
+                      <option value="Germania">Germania</option>
+                      <option value="Spagna">Spagna</option>
+                      <option value="Portogallo">Portogallo</option>
+                      <option value="Paesi Bassi">Paesi Bassi</option>
+                      <option value="Belgio">Belgio</option>
+                      <option value="Albania">Albania</option>
+                      <option value="Austria">Austria</option>
+                      <option value="Svizzera">Svizzera</option>
+                      <option value="Polonia">Polonia</option>
+                      <option value="Grecia">Grecia</option>
+                      <option value="Svezia">Svezia</option>
+                      <option value="Danimarca">Danimarca</option>
+                      <option value="Finlandia">Finlandia</option>
+                      <option value="Repubblica Ceca">Repubblica Ceca</option>
+                      <option value="Ungheria">Ungheria</option>
+                      <option value="Romania">Romania</option>
+                      <option value="Bulgaria">Bulgaria</option>
+                    </Form.Select>
+                  </Form.Group>
+                </ListGroup.Item>
+
+                {/* Dropdown regione se Italia */}
+                {shippingCountry === 'Italia' && (
+                  <ListGroup.Item className="d-flex justify-content-between align-items-center">
+                    <Form.Group className="w-100 mb-0">
+                      <Form.Label className="small mb-1">Regione</Form.Label>
+                      <Form.Select
+                        value={shippingRegion}
+                        onChange={e => setShippingRegion(e.target.value)}
+                        aria-label="Seleziona regione"
+                      >
+                        <option value="">Seleziona regione</option>
+                        <option value="Abruzzo">Abruzzo</option>
+                        <option value="Basilicata">Basilicata</option>
+                        <option value="Calabria">Calabria</option>
+                        <option value="Campania">Campania</option>
+                        <option value="Emilia-Romagna">Emilia-Romagna</option>
+                        <option value="Friuli-Venezia Giulia">Friuli-Venezia Giulia</option>
+                        <option value="Lazio">Lazio</option>
+                        <option value="Liguria">Liguria</option>
+                        <option value="Lombardia">Lombardia</option>
+                        <option value="Marche">Marche</option>
+                        <option value="Molise">Molise</option>
+                        <option value="Piemonte">Piemonte</option>
+                        <option value="Puglia">Puglia</option>
+                        <option value="Sardegna">Sardegna</option>
+                        <option value="Sicilia">Sicilia</option>
+                        <option value="Toscana">Toscana</option>
+                        <option value="Trentino-Alto Adige">Trentino-Alto Adige</option>
+                        <option value="Umbria">Umbria</option>
+                        <option value="Valle d'Aosta">Valle d'Aosta</option>
+                        <option value="Veneto">Veneto</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </ListGroup.Item>
+                )}
+
                 {/* Sconto applicato */}
                 {appliedCoupon && discountAmount > 0 && (
                   <ListGroup.Item className="d-flex justify-content-between align-items-center">
@@ -380,6 +454,8 @@ const Cart = () => {
                     <strong className="text-success">-€{discountAmount.toFixed(2)}</strong>
                   </ListGroup.Item>
                 )}
+
+
 
                 <ListGroup.Item className="d-flex justify-content-between">
                   <h5 className="mb-0">Totale</h5>
@@ -487,7 +563,7 @@ const Cart = () => {
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={handleCheckout}
+                  onClick={() => navigate('/billing-info')}
                   disabled={isCheckingOut || (vendorTerms.termsText && !acceptedTerms)}
                 >
                   {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}

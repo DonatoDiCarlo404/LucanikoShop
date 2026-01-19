@@ -40,6 +40,7 @@ import SpazioVenditoriLucani from './pages/SpazioVenditoriLucani';
 import HelpCenterVendor from './pages/HelpCenterVendor';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import BillingInfo from './pages/BillingInfo';
 
 function AppContent() {
   const location = useLocation();
@@ -80,6 +81,7 @@ function AppContent() {
         <Route path="/checkout/cancel" element={<CheckoutCancel />} />
         <Route path="/offers" element={<OffersAndDiscounts />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/billing-info" element={<BillingInfo />} />
 
         {/* Prodotti protetti (solo seller/admin) */}
         <Route path="/my-products" element={<ProtectedRoute allowedRoles={['seller', 'admin']}> <MyProducts /> </ProtectedRoute>} />
