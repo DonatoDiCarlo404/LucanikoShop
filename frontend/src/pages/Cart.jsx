@@ -27,6 +27,8 @@ const Cart = () => {
   const [shippingCost, setShippingCost] = useState(0);
   const [shippingDetails, setShippingDetails] = useState(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedShippingOption, setSelectedShippingOption] = useState(null);
 
   // State per gestione termini e condizioni venditore
   const [vendorTerms, setVendorTerms] = useState({});
@@ -41,6 +43,11 @@ const Cart = () => {
   // Calcola costo spedizione
   const calculateShipping = async () => {
     if (cartCount === 0) return;
+
+    console.log('🔵 [CART DEBUG] Inizio calcolo spedizione');
+    console.log('🔵 [CART DEBUG] Paese selezionato:', shippingCountry);
+    console.log('🔵 [CART DEBUG] Regione selezionata:', shippingRegion);
+    console.log('🔵 [CART DEBUG] Items nel carrello:', cartItems);
 
     setLoadingShipping(true);
     try {
@@ -57,7 +64,8 @@ const Cart = () => {
         body: JSON.stringify({
           items: cartItems.map(item => ({
             product: item._id,
-            quantity: item.quantity
+            quantity: item.quantity,
+            price: item.price
           })),
           shippingAddress: {
             country: shippingCountry,
@@ -68,13 +76,38 @@ const Cart = () => {
 
       const data = await res.json();
 
+      console.log('🟢 [CART DEBUG] Risposta server calcolo spedizione:', data);
+      console.log('🟢 [CART DEBUG] Costi spedizione per venditore:', data.vendorShippingCosts);
+
       if (res.ok && data.success) {
         setShippingCost(data.totalShipping || 0);
         setShippingDetails(data.vendorShippingCosts || null);
+        
+        // Estrai le opzioni di spedizione disponibili
+        const allOptions = [];
+        if (data.vendorShippingCosts) {
+          Object.values(data.vendorShippingCosts).forEach(vendorShipping => {
+            console.log('🟡 [CART DEBUG] Opzioni venditore:', vendorShipping.shippingOptions);
+            if (vendorShipping.shippingOptions && vendorShipping.shippingOptions.length > 0) {
+              allOptions.push(...vendorShipping.shippingOptions);
+            }
+          });
+        }
+        console.log('🟢 [CART DEBUG] Tutte le opzioni estratte:', allOptions);
+        setShippingOptions(allOptions);
+        
+        // Seleziona automaticamente l'opzione più economica se disponibile
+        if (allOptions.length > 0) {
+          const cheapest = allOptions.reduce((min, opt) => opt.price < min.price ? opt : min, allOptions[0]);
+          setSelectedShippingOption(cheapest);
+          setShippingCost(cheapest.price);
+        }
       } else {
         console.error('Errore calcolo spedizione:', data.message);
         setShippingCost(0);
         setShippingDetails(null);
+        setShippingOptions([]);
+        setSelectedShippingOption(null);
       }
     } catch (error) {
       console.error('Errore nella richiesta calcolo spedizione:', error);
@@ -365,6 +398,8 @@ const Cart = () => {
                     <strong>€{shippingCost.toFixed(2)}</strong>
                   )}
                 </ListGroup.Item>
+                
+
                 
 
                 {/* Dropdown selezione paese di spedizione */}

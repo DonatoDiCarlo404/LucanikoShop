@@ -19,6 +19,7 @@ const ProductForm = () => {
     category: '',
     subcategory: '',
     stock: '',
+    weight: '',
     unit: 'pz',
     expiryDate: '',
     tags: '',
@@ -148,6 +149,8 @@ const ProductForm = () => {
   const loadProduct = async () => {
     try {
       const product = await productsAPI.getById(id);
+      console.log('📦 [PRODUCT LOAD] Prodotto ricevuto:', product);
+      console.log('📦 [PRODUCT LOAD] Weight del prodotto:', product.weight);
       
       // Carica attributi personalizzati per primi (servono per ricostruire i label)
       const customAttrs = product.customAttributes || [];
@@ -181,7 +184,7 @@ const ProductForm = () => {
         });
       }
       
-      setFormData({
+      const loadedFormData = {
         name: product.name,
         description: product.description,
         price: product.price,
@@ -189,13 +192,17 @@ const ProductForm = () => {
         category: product.category?._id || product.category || '',
         subcategory: product.subcategory?._id || product.subcategory || '',
         stock: product.stock,
+        weight: product.weight || '',
         unit: product.unit,
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
         tags: product.tags.join(', '),
         attributes: product.attributes || [],
         hasVariants: product.hasVariants || false,
         variants: reconstructedVariants
-      });
+      };
+      console.log('📝 [PRODUCT LOAD] FormData impostato:', loadedFormData);
+      console.log('📝 [PRODUCT LOAD] Weight in formData:', loadedFormData.weight);
+      setFormData(loadedFormData);
       
       // Carica selezione attributi per varianti
       if (product.selectedVariantAttributes) {
@@ -216,6 +223,9 @@ const ProductForm = () => {
   };
 
   const handleChange = (e) => {
+    if (e.target.name === 'weight') {
+      console.log('✏️ [WEIGHT CHANGE] Nuovo valore weight:', e.target.value);
+    }
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -412,6 +422,19 @@ const ProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('💾 [PRODUCT SAVE] Dati da salvare:', formData);
+    console.log('💾 [PRODUCT SAVE] Weight da salvare:', formData.weight);
+    
+    // Validazione prezzo: deve essere un numero valido > 0 se il prodotto non ha varianti
+    if (!formData.hasVariants) {
+      const priceValue = parseFloat(formData.price);
+      if (isNaN(priceValue) || priceValue < 0) {
+        setError('Il prezzo deve essere un numero valido maggiore o uguale a 0');
+        setLoading(false);
+        return;
+      }
+    }
+    
     setError('');
     setLoading(true);
 
@@ -857,6 +880,23 @@ const ProductForm = () => {
                       />
                       <Form.Text className="text-muted">
                         Se il prodotto ha opzioni, inserisci la quantità per ogni variante nella sezione sotto.
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Peso per una quantità</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="weight"
+                        value={formData.weight ?? ''}
+                        onChange={handleChange}
+                        placeholder="Es. 0.5"
+                        min="0"
+                        step="0.01"
+                      />
+                      <Form.Text className="text-muted">
+                        Inserisci il peso di una singola unità (es. 0.5 kg).
                       </Form.Text>
                     </Form.Group>
                   </Col>

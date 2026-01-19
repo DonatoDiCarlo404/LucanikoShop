@@ -213,6 +213,28 @@ const userSchema = new mongoose.Schema(
             regions: [String], // Es: ["Lombardia", "Piemonte"], oppure ["IT", "FR", "DE"]
             rate: Number,
             estimatedDays: String
+          }],
+          // Flag specifici per Italia
+          italiaIsoleEscluse: {
+            type: Boolean,
+            default: false
+          },
+          italiaSardegnaSicilia: {
+            type: Boolean,
+            default: false
+          },
+          // Campi per tariffe avanzate (a livello rate)
+          country: String, // Paese (es: "Francia", "Italia")
+          anyCartTotal: Boolean, // Se vale per qualsiasi totale carrello
+          cartWeightFrom: String, // Peso minimo carrello (kg)
+          cartWeightTo: String, // Peso massimo carrello (kg)
+          cartTotalFrom: String, // Totale minimo carrello
+          cartTotalTo: String, // Totale massimo carrello
+          // Opzioni spedizione multiple per questa tariffa
+          shippingOptions: [{
+            shippingName: String, // Nome opzione (es: "Corriere", "Standard")
+            shippingPrice: String, // Prezzo spedizione
+            shippingDays: String // Tempo stimato
           }]
         }],
         defaultShippingRate: Number // Tariffa predefinita

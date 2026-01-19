@@ -22,6 +22,15 @@ export const createDiscount = async (req, res) => {
       sellerId // Admin può specificare il venditore
     } = req.body;
 
+    console.log('🟢 [COUPON DEBUG] Richiesta creazione coupon:', {
+      couponCode,
+      discountType,
+      discountValue,
+      applicationType,
+      startDate,
+      endDate
+    });
+
     // Verifica che l'utente sia un seller o admin
     if (req.user.role !== 'seller' && req.user.role !== 'admin') {
       return res.status(403).json({
@@ -401,6 +410,8 @@ async function removeDiscountFromProducts(discount) {
 export const validateCoupon = async (req, res) => {
   try {
     const { couponCode, cartTotal } = req.body;
+    
+    console.log('🟢 [COUPON DEBUG] Richiesta validazione coupon:', { couponCode, cartTotal });
 
     if (!couponCode) {
       return res.status(400).json({
@@ -415,8 +426,21 @@ export const validateCoupon = async (req, res) => {
       applicationType: 'coupon',
       isActive: true
     });
+    
+    console.log('🟢 [COUPON DEBUG] Coupon cercato:', couponCode.toUpperCase());
+    console.log('🟢 [COUPON DEBUG] Coupon trovato:', discount ? {
+      _id: discount._id,
+      couponCode: discount.couponCode,
+      discountType: discount.discountType,
+      discountValue: discount.discountValue,
+      startDate: discount.startDate,
+      endDate: discount.endDate,
+      isActive: discount.isActive,
+      minPurchaseAmount: discount.minPurchaseAmount
+    } : null);
 
     if (!discount) {
+      console.log('🔴 [COUPON DEBUG] Coupon non trovato o non attivo');
       return res.status(404).json({
         success: false,
         message: 'Codice coupon non valido'
@@ -424,7 +448,16 @@ export const validateCoupon = async (req, res) => {
     }
 
     // Verifica validità temporale
-    if (!discount.isValidNow()) {
+    const isValid = discount.isValidNow();
+    console.log('🟢 [COUPON DEBUG] Verifica validità temporale:', {
+      isValid,
+      now: new Date(),
+      startDate: discount.startDate,
+      endDate: discount.endDate
+    });
+    
+    if (!isValid) {
+      console.log('🔴 [COUPON DEBUG] Coupon scaduto o non ancora valido');
       return res.status(400).json({
         success: false,
         message: 'Questo coupon è scaduto o non è più valido'
@@ -432,13 +465,21 @@ export const validateCoupon = async (req, res) => {
     }
 
     // Verifica importo minimo
+    console.log('🟢 [COUPON DEBUG] Verifica importo minimo:', {
+      cartTotal,
+      minPurchaseAmount: discount.minPurchaseAmount,
+      isPassing: cartTotal >= discount.minPurchaseAmount
+    });
+    
     if (cartTotal < discount.minPurchaseAmount) {
+      console.log('🔴 [COUPON DEBUG] Importo minimo non raggiunto');
       return res.status(400).json({
         success: false,
         message: `Importo minimo di acquisto richiesto: €${discount.minPurchaseAmount}`
       });
     }
 
+    console.log('🟢 [COUPON DEBUG] Coupon valido! Risposta inviata al frontend');
     res.status(200).json({
       success: true,
       discount: {

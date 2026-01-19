@@ -347,8 +347,9 @@ export const calculateShippingCost = async (req, res) => {
             });
         }
 
-        // Raggruppa items per venditore
+        // Raggruppa items per venditore e calcola il totale del carrello
         const itemsByVendor = {};
+        let totalCartValue = 0;
 
         for (const item of items) {
             const product = await Product.findById(item.product).populate('seller', 'shopSettings');
@@ -375,17 +376,22 @@ export const calculateShippingCost = async (req, res) => {
                 product: {
                     _id: product._id,
                     name: product.name,
-                    weight: product.weight || 0
+                    weight: product.weight || 0,
+                    price: (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : ((typeof product.price === 'number' && !isNaN(product.price)) ? product.price : 0)
                 },
                 quantity: item.quantity
             });
+
+            // Accumula il totale del carrello
+            totalCartValue += (product.price || 0) * item.quantity;
         }
 
         // Calcola spedizione per ogni venditore
         const vendorShippingArray = Object.values(itemsByVendor);
         const shippingResult = calculateMultiVendorShipping(
             vendorShippingArray,
-            shippingAddress || { country: 'Italia', state: '' }
+            shippingAddress || { country: 'Italia', state: '' },
+            totalCartValue
         );
 
         res.status(200).json({

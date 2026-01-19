@@ -123,6 +123,9 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
 
   try {
+    console.log('📥 [BACKEND CREATE] Dati ricevuti:', req.body);
+    console.log('📥 [BACKEND CREATE] Weight ricevuto:', req.body.weight);
+    
     // Parse customAttributes se è stringa
     if (req.body.customAttributes) {
       if (!Array.isArray(req.body.customAttributes)) {
@@ -137,7 +140,7 @@ export const createProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, ivaPercent, category, subcategory, stock, unit, expiryDate, tags,
+      name, description, price, ivaPercent, category, subcategory, stock, weight, unit, expiryDate, tags,
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes, sellerId 
     } = req.body;
 
@@ -198,6 +201,7 @@ export const createProduct = async (req, res) => {
       category,
       subcategory: subcategory || null,
       stock,
+      weight,
       unit,
       expiryDate,
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
@@ -210,7 +214,13 @@ export const createProduct = async (req, res) => {
       variants: processedVariants
     };
     
+    console.log('💾 [BACKEND CREATE] ProductData da creare:', productData);
+    console.log('💾 [BACKEND CREATE] Weight in productData:', productData.weight);
+    
     const product = await Product.create(productData);
+    
+    console.log('✅ [BACKEND CREATE] Prodotto creato:', product);
+    console.log('✅ [BACKEND CREATE] Weight del prodotto creato:', product.weight);
 
     res.status(201).json(product);
   } catch (error) {
@@ -228,6 +238,9 @@ export const createProduct = async (req, res) => {
 // @access  Private (seller proprietario o admin)
 export const updateProduct = async (req, res) => {
   try {
+    console.log('📥 [BACKEND UPDATE] Dati ricevuti:', req.body);
+    console.log('📥 [BACKEND UPDATE] Weight ricevuto:', req.body.weight);
+    
     const product = await Product.findById(req.params.id);
 
     if (!product) {
@@ -240,7 +253,7 @@ export const updateProduct = async (req, res) => {
     }
 
     const { 
-      name, description, price, ivaPercent, category, subcategory, stock, unit, expiryDate, tags, isActive, images,
+      name, description, price, ivaPercent, category, subcategory, stock, weight, unit, expiryDate, tags, isActive, images,
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes 
     } = req.body;
 
@@ -270,6 +283,10 @@ export const updateProduct = async (req, res) => {
     if (category) product.category = category;
     if (subcategory !== undefined) product.subcategory = subcategory || null;
     if (stock !== undefined) product.stock = stock;
+    if (weight !== undefined) {
+      product.weight = weight;
+      console.log('✅ [BACKEND UPDATE] Weight assegnato al prodotto:', product.weight);
+    }
     if (unit) product.unit = unit;
     if (expiryDate) product.expiryDate = expiryDate;
     if (tags) product.tags = tags.split(',').map(tag => tag.trim());
@@ -289,7 +306,9 @@ export const updateProduct = async (req, res) => {
       }));
     }
 
+    console.log('💾 [BACKEND UPDATE] Prima del salvataggio - weight:', product.weight);
     const updatedProduct = await product.save();
+    console.log('✅ [BACKEND UPDATE] Dopo il salvataggio - weight:', updatedProduct.weight);
 
     res.json(updatedProduct);
   } catch (error) {

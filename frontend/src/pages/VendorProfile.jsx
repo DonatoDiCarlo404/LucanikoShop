@@ -52,7 +52,10 @@ const VendorProfile = () => {
     baseRate: 0,
     ratePerUnit: 0,
     estimatedDays: '',
-    zones: []
+    zones: [],
+    shippingOptions: [
+      { shippingName: '', shippingPrice: '' }
+    ]
   });
 
   // State per Abbonamento
@@ -508,6 +511,15 @@ const VendorProfile = () => {
       setError('');
       setSuccess('');
 
+      // Log dei dati prima dell'invio
+      console.log('📤 [SAVE] Dati da inviare al backend:', dataToSave);
+      console.log('📤 [SAVE] shippingRates completo:', JSON.stringify(dataToSave?.shopSettings?.shipping?.shippingRates, null, 2));
+      if (dataToSave?.shopSettings?.shipping?.shippingRates) {
+        dataToSave.shopSettings.shipping.shippingRates.forEach((rate, i) => {
+          console.log(`📤 [SAVE] Tariffa ${i} - shippingOptions:`, rate.shippingOptions);
+        });
+      }
+
       // Se admin sta modificando profilo di un altro venditore, usa endpoint specifico
       const url = (user.role === 'admin' && sellerId)
         ? `http://localhost:5000/api/admin/sellers/${sellerId}/profile`
@@ -528,6 +540,14 @@ const VendorProfile = () => {
         throw new Error(data.message || 'Errore nel salvataggio del profilo');
       }
 
+      // Log dei dati ricevuti dal backend
+      console.log('📥 [SAVE] Dati ricevuti dal backend:', data);
+      console.log('📥 [SAVE] shippingRates dal backend:', JSON.stringify(data?.shopSettings?.shipping?.shippingRates, null, 2));
+      if (data?.shopSettings?.shipping?.shippingRates) {
+        data.shopSettings.shipping.shippingRates.forEach((rate, i) => {
+          console.log(`📥 [SAVE] Tariffa ${i} dal backend - shippingOptions:`, rate.shippingOptions);
+        });
+      }
 
       setSuccess(successMessage);
       setProfileData(data);
@@ -1734,7 +1754,10 @@ const VendorProfile = () => {
                         baseRate: 0,
                         ratePerUnit: 0,
                         estimatedDays: '',
-                        zones: []
+                        zones: [],
+                        shippingOptions: [
+                          { shippingName: '', shippingPrice: '' }
+                        ]
                       });
                       setShowShippingModal(true);
                     }}
@@ -1745,7 +1768,10 @@ const VendorProfile = () => {
 
                 {formData.shopSettings.shipping.shippingRates && formData.shopSettings.shipping.shippingRates.length > 0 ? (
                   <div className="mb-3">
-                    {formData.shopSettings.shipping.shippingRates.map((rate, index) => (
+                    {formData.shopSettings.shipping.shippingRates.map((rate, index) => {
+                      console.log(`🟡 [DEBUG] Visualizzazione tariffa ${index}:`, rate);
+                      console.log(`🟡 [DEBUG] Opzioni spedizione tariffa ${index}:`, rate.shippingOptions);
+                      return (
                       <Card key={index} className="mb-2">
                         <Card.Body>
                           <div className="d-flex justify-content-between align-items-start">
@@ -1757,14 +1783,26 @@ const VendorProfile = () => {
                                 {rate.calculationType === 'weight' && 'Basato su Peso'}
                                 {rate.calculationType === 'zone' && 'Zone Geografiche'}
                               </Badge>
-                              {rate.calculationType === 'fixed' && (
-                                <span className="text-success fw-bold">€{rate.baseRate?.toFixed(2)}</span>
-                              )}
-                              {rate.calculationType === 'weight' && (
-                                <span className="text-success fw-bold">€{rate.baseRate?.toFixed(2)} + €{rate.ratePerUnit?.toFixed(2)}/kg</span>
-                              )}
-                              {rate.calculationType === 'zone' && rate.zones && (
-                                <span className="text-muted small"> ({rate.zones.length} zone)</span>
+                              {rate.shippingOptions && rate.shippingOptions.length > 0 ? (
+                                <div className="mt-2">
+                                  {rate.shippingOptions.map((option, idx) => (
+                                    <div key={idx} className="text-success small">
+                                      <strong>{option.shippingName}</strong>: €{parseFloat(option.shippingPrice || 0).toFixed(2)}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <>
+                                  {rate.calculationType === 'fixed' && (
+                                    <span className="text-success fw-bold">€{rate.baseRate?.toFixed(2)}</span>
+                                  )}
+                                  {rate.calculationType === 'weight' && (
+                                    <span className="text-success fw-bold">€{rate.baseRate?.toFixed(2)} + €{rate.ratePerUnit?.toFixed(2)}/kg</span>
+                                  )}
+                                  {rate.calculationType === 'zone' && rate.zones && (
+                                    <span className="text-muted small"> ({rate.zones.length} zone)</span>
+                                  )}
+                                </>
                               )}
                               {rate.estimatedDays && (
                                 <span className="text-muted ms-2 small">⏱ {rate.estimatedDays}</span>
@@ -1777,7 +1815,10 @@ const VendorProfile = () => {
                                 className="me-2"
                                 onClick={() => {
                                   setEditingShippingRate(index);
-                                  setShippingRateForm(rate);
+                                  setShippingRateForm({
+                                    ...rate,
+                                    shippingOptions: rate.shippingOptions || [{ shippingName: '', shippingPrice: '' }]
+                                  });
                                   setShowShippingModal(true);
                                 }}
                               >
@@ -1809,7 +1850,8 @@ const VendorProfile = () => {
                           </div>
                         </Card.Body>
                       </Card>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <Alert variant="secondary">Nessuna tariffa avanzata configurata</Alert>
@@ -2455,227 +2497,210 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Row>
-              <Col md={8}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Nome Tariffa *</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={shippingRateForm.name}
-                    onChange={(e) => setShippingRateForm({ ...shippingRateForm, name: e.target.value })}
-                    placeholder="Es: Standard, Express, Economica"
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Tempo Stimato</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={shippingRateForm.estimatedDays}
-                    onChange={(e) => setShippingRateForm({ ...shippingRateForm, estimatedDays: e.target.value })}
-                    placeholder="Es: 3-5 giorni"
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
             <Form.Group className="mb-3">
-              <Form.Label>Descrizione</Form.Label>
+              <Form.Label>Nome tariffa *</Form.Label>
               <Form.Control
-                as="textarea"
-                rows={2}
-                value={shippingRateForm.description}
-                onChange={(e) => setShippingRateForm({ ...shippingRateForm, description: e.target.value })}
-                placeholder="Breve descrizione del servizio di spedizione"
+                type="text"
+                value={shippingRateForm.name || ''}
+                onChange={e => setShippingRateForm({ ...shippingRateForm, name: e.target.value })}
+                placeholder="Es. Spedizione standard Italia"
+                required
               />
             </Form.Group>
-
             <Form.Group className="mb-3">
-              <Form.Label>Tipo di Calcolo *</Form.Label>
+              <Form.Label>Seleziona Nazione *</Form.Label>
               <Form.Select
-                value={shippingRateForm.calculationType}
-                onChange={(e) => setShippingRateForm({ 
-                  ...shippingRateForm, 
-                  calculationType: e.target.value,
-                  zones: e.target.value === 'zone' ? shippingRateForm.zones : []
-                })}
+                value={shippingRateForm.country || ''}
+                onChange={e => setShippingRateForm({ ...shippingRateForm, country: e.target.value })}
+                aria-label="Seleziona nazione di spedizione"
+                required
               >
-                <option value="fixed">Tariffa Fissa</option>
-                <option value="weight">Basato su Peso (€/kg)</option>
-                <option value="zone">Zone Geografiche</option>
+                <option value="">Seleziona una nazione</option>
+                <option value="Italia">Italia</option>
+                <option value="Francia">Francia</option>
+                <option value="Germania">Germania</option>
+                <option value="Spagna">Spagna</option>
+                <option value="Portogallo">Portogallo</option>
+                <option value="Paesi Bassi">Paesi Bassi</option>
+                <option value="Belgio">Belgio</option>
+                <option value="Albania">Albania</option>
+                <option value="Austria">Austria</option>
+                <option value="Svizzera">Svizzera</option>
+                <option value="Polonia">Polonia</option>
+                <option value="Grecia">Grecia</option>
+                <option value="Svezia">Svezia</option>
+                <option value="Danimarca">Danimarca</option>
+                <option value="Finlandia">Finlandia</option>
+                <option value="Repubblica Ceca">Repubblica Ceca</option>
+                <option value="Ungheria">Ungheria</option>
+                <option value="Romania">Romania</option>
+                <option value="Bulgaria">Bulgaria</option>
               </Form.Select>
+              {/* Flag per Italia */}
+              {shippingRateForm.country === 'Italia' && (
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '2rem' }}>
+                  <Form.Check
+                    type="checkbox"
+                    id="italia-isole-escluse"
+                    label="Italia, Isole escluse"
+                    checked={!!shippingRateForm.italiaIsoleEscluse}
+                    onChange={e => setShippingRateForm({ ...shippingRateForm, italiaIsoleEscluse: e.target.checked })}
+                  />
+                  <Form.Check
+                    type="checkbox"
+                    id="italia-sardegna-sicilia"
+                    label="Italia, Sardegna/Sicilia"
+                    checked={!!shippingRateForm.italiaSardegnaSicilia}
+                    onChange={e => setShippingRateForm({ ...shippingRateForm, italiaSardegnaSicilia: e.target.checked })}
+                  />
+                </div>
+              )}
             </Form.Group>
-
-            {shippingRateForm.calculationType === 'fixed' && (
-              <Form.Group className="mb-3">
-                <Form.Label>Costo Spedizione (€) *</Form.Label>
-                <Form.Control
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={typeof shippingRateForm.baseRate === 'string' ? shippingRateForm.baseRate : shippingRateForm.baseRate === 0 ? '' : shippingRateForm.baseRate}
-                  onChange={(e) => setShippingRateForm({ ...shippingRateForm, baseRate: e.target.value })}
-                  placeholder="0.00"
-                  required
-                />
-              </Form.Group>
-            )}
-
-            {shippingRateForm.calculationType === 'weight' && (
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Tariffa Base (€) *</Form.Label>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', marginTop: '2rem', gap: '2.5rem' }}>
+              {/* Prezzo totale carrello */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <Form.Label style={{ fontWeight: 500 }}>Prezzo totale carrello</Form.Label>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                  <Form.Group className="mb-2" style={{ minWidth: 90, maxWidth: 100 }}>
+                    <Form.Label className="small">Da (€)</Form.Label>
                     <Form.Control
                       type="number"
                       step="0.01"
                       min="0"
-                      value={shippingRateForm.baseRate}
-                      onChange={(e) => setShippingRateForm({ ...shippingRateForm, baseRate: parseFloat(e.target.value) || 0 })}
-                      placeholder="0.00"
-                      required
+                      value={shippingRateForm.cartTotalFrom || ''}
+                      onChange={e => setShippingRateForm({ ...shippingRateForm, cartTotalFrom: e.target.value })}
+                      placeholder="Da"
                     />
-                    <Form.Text className="text-muted">
-                      Costo fisso iniziale
-                    </Form.Text>
                   </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Costo per kg (€) *</Form.Label>
+                  <Form.Group className="mb-2" style={{ minWidth: 90, maxWidth: 100 }}>
+                    <Form.Label className="small">A (€)</Form.Label>
                     <Form.Control
                       type="number"
                       step="0.01"
                       min="0"
-                      value={typeof shippingRateForm.ratePerUnit === 'string' ? shippingRateForm.ratePerUnit : shippingRateForm.ratePerUnit === 0 ? '' : shippingRateForm.ratePerUnit}
-                      onChange={(e) => setShippingRateForm({ ...shippingRateForm, ratePerUnit: e.target.value })}
-                      placeholder="0.00"
-                      required
+                      value={shippingRateForm.cartTotalTo || ''}
+                      onChange={e => setShippingRateForm({ ...shippingRateForm, cartTotalTo: e.target.value })}
+                      placeholder="A"
                     />
-                    <Form.Text className="text-muted">
-                      Costo aggiuntivo per kg
-                    </Form.Text>
                   </Form.Group>
-                </Col>
-              </Row>
-            )}
+                </div>
+                <Form.Group className="mb-2" controlId="anyCartTotalFlag">
+                  <Form.Check
+                    type="checkbox"
+                    label="Qualsiasi totale carrello"
+                    checked={!!shippingRateForm.anyCartTotal}
+                    onChange={e => setShippingRateForm({ ...shippingRateForm, anyCartTotal: e.target.checked })}
+                  />
+                </Form.Group>
+              </div>
+              {/* Peso totale carrello */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <Form.Label style={{ fontWeight: 500 }}>Peso totale carrello</Form.Label>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                  <Form.Group className="mb-2" style={{ minWidth: 90, maxWidth: 100 }}>
+                    <Form.Label className="small">Da (kg)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={shippingRateForm.cartWeightFrom || ''}
+                      onChange={e => setShippingRateForm({ ...shippingRateForm, cartWeightFrom: e.target.value })}
+                      placeholder="Da"
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-2" style={{ minWidth: 90, maxWidth: 100 }}>
+                    <Form.Label className="small">A (kg)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={shippingRateForm.cartWeightTo || ''}
+                      onChange={e => setShippingRateForm({ ...shippingRateForm, cartWeightTo: e.target.value })}
+                      placeholder="A"
+                    />
+                  </Form.Group>
+                </div>
+                <Form.Group className="mb-2" controlId="anyCartWeightFlag">
+                  <Form.Check
+                    type="checkbox"
+                    label="Qualsiasi totale peso"
+                    checked={!!shippingRateForm.anyCartWeight}
+                    onChange={e => setShippingRateForm({ ...shippingRateForm, anyCartWeight: e.target.checked })}
+                  />
+                </Form.Group>
+              </div>
+            </div>
 
-            {shippingRateForm.calculationType === 'zone' && (
-              <div>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <Form.Label className="mb-0">Zone Geografiche *</Form.Label>
+            {/* Nome e prezzo della spedizione */}
+            <div style={{ marginTop: '2.5rem', width: '100%' }}>
+              <Form.Label style={{ fontWeight: 500, fontSize: '1rem' }}>Nome e prezzo della spedizione</Form.Label>
+              <div style={{ fontSize: '0.95em', color: '#666', marginBottom: '1rem' }}>
+                Crea le opzioni di spedizione che i tuoi clienti potranno selezionare al momento dell'acquisto.
+              </div>
+              {(shippingRateForm.shippingOptions || []).map((option, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                  <Form.Group className="mb-3" style={{ minWidth: 220, maxWidth: 260, flex: 1 }}>
+                    <Form.Label>Nome Spedizione</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={option.shippingName}
+                      onChange={e => {
+                        const newOptions = [...shippingRateForm.shippingOptions];
+                        newOptions[idx].shippingName = e.target.value;
+                        setShippingRateForm({ ...shippingRateForm, shippingOptions: newOptions });
+                      }}
+                      placeholder="Es. corriere espresso"
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-3" style={{ minWidth: 120, maxWidth: 140 }}>
+                    <Form.Label>Prezzo (€)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={option.shippingPrice}
+                      onChange={e => {
+                        const newOptions = [...shippingRateForm.shippingOptions];
+                        newOptions[idx].shippingPrice = e.target.value;
+                        setShippingRateForm({ ...shippingRateForm, shippingOptions: newOptions });
+                      }}
+                      placeholder="Prezzo"
+                    />
+                  </Form.Group>
+                  {/* Pulsante elimina riga */}
                   <Button
-                    variant="outline-success"
-                    size="sm"
+                    variant="outline-danger"
+                    type="button"
+                    style={{ height: 38, marginBottom: 8 }}
                     onClick={() => {
-                      setShippingRateForm({
-                        ...shippingRateForm,
-                        zones: [
-                          ...shippingRateForm.zones,
-                          { name: '', regions: [], rate: 0, estimatedDays: '' }
-                        ]
-                      });
+                      const newOptions = (shippingRateForm.shippingOptions || []).filter((_, i) => i !== idx);
+                      setShippingRateForm({ ...shippingRateForm, shippingOptions: newOptions });
                     }}
+                    disabled={(shippingRateForm.shippingOptions || []).length === 1}
+                    title={(shippingRateForm.shippingOptions || []).length === 1 ? 'Devi avere almeno una opzione' : 'Elimina questa opzione'}
                   >
-                    + Aggiungi Zona
+                    🗑
                   </Button>
                 </div>
-
-                {shippingRateForm.zones && shippingRateForm.zones.length > 0 ? (
-                  shippingRateForm.zones.map((zone, index) => (
-                    <Card key={index} className="mb-3" style={{ backgroundColor: '#f8f9fa' }}>
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-start mb-2">
-                          <h6>Zona {index + 1}</h6>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => {
-                              const newZones = shippingRateForm.zones.filter((_, i) => i !== index);
-                              setShippingRateForm({ ...shippingRateForm, zones: newZones });
-                            }}
-                          >
-                            Elimina
-                          </Button>
-                        </div>
-                        <Row>
-                          <Col md={6}>
-                            <Form.Group className="mb-2">
-                              <Form.Label>Nome Zona *</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={zone.name}
-                                onChange={(e) => {
-                                  const newZones = [...shippingRateForm.zones];
-                                  newZones[index].name = e.target.value;
-                                  setShippingRateForm({ ...shippingRateForm, zones: newZones });
-                                }}
-                                placeholder="Es: Nord Italia, UE, Isole"
-                                required
-                              />
-                            </Form.Group>
-                          </Col>
-                          <Col md={3}>
-                            <Form.Group className="mb-2">
-                              <Form.Label>Tariffa (€) *</Form.Label>
-                              <Form.Control
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={typeof zone.rate === 'string' ? zone.rate : zone.rate === 0 ? '' : zone.rate}
-                                onChange={(e) => {
-                                  const newZones = [...shippingRateForm.zones];
-                                  newZones[index].rate = e.target.value;
-                                  setShippingRateForm({ ...shippingRateForm, zones: newZones });
-                                }}
-                                placeholder="0.00"
-                                required
-                              />
-                            </Form.Group>
-                          </Col>
-                          <Col md={3}>
-                            <Form.Group className="mb-2">
-                              <Form.Label>Giorni</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={zone.estimatedDays}
-                                onChange={(e) => {
-                                  const newZones = [...shippingRateForm.zones];
-                                  newZones[index].estimatedDays = e.target.value;
-                                  setShippingRateForm({ ...shippingRateForm, zones: newZones });
-                                }}
-                                placeholder="3-5"
-                              />
-                            </Form.Group>
-                          </Col>
-                        </Row>
-                        <Form.Group>
-                          <Form.Label>Regioni/Paesi (separati da virgola)</Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={Array.isArray(zone.regions) ? zone.regions.join(', ') : (zone.regions || '')}
-                            onChange={(e) => {
-                              const newZones = [...shippingRateForm.zones];
-                              // Mantieni come stringa durante la digitazione
-                              newZones[index].regions = e.target.value;
-                              setShippingRateForm({ ...shippingRateForm, zones: newZones });
-                            }}
-                            placeholder="Es: Lombardia, Piemonte, Veneto o IT, FR, DE"
-                          />
-                          <Form.Text className="text-muted">
-                            Per Italia: nomi regioni. Per estero: codici ISO (IT, FR, DE, ES)
-                          </Form.Text>
-                        </Form.Group>
-                      </Card.Body>
-                    </Card>
-                  ))
-                ) : (
-                  <Alert variant="info">Aggiungi almeno una zona geografica</Alert>
-                )}
+              ))}
+              <div style={{ marginTop: '0.5rem' }}>
+                <Button variant="outline-primary" type="button" onClick={() => {
+                  setShippingRateForm({
+                    ...shippingRateForm,
+                    shippingOptions: [
+                      ...(shippingRateForm.shippingOptions || []),
+                      { shippingName: '', shippingPrice: '' }
+                    ]
+                  });
+                }}>
+                  Aggiungi opzione di spedizione
+                </Button>
               </div>
-            )}
+            </div>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -2704,8 +2729,10 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 return val;
               };
               let rateToSave = { ...shippingRateForm };
+              console.log('🔵 [DEBUG] Tariffa da salvare (prima conversione):', rateToSave);
               rateToSave.baseRate = convertRate(rateToSave.baseRate);
               rateToSave.ratePerUnit = convertRate(rateToSave.ratePerUnit);
+              console.log('🔵 [DEBUG] Tariffa dopo conversione rate:', rateToSave);
               if (rateToSave.zones && Array.isArray(rateToSave.zones)) {
                 rateToSave.zones = rateToSave.zones.map(z => ({
                   ...z,
@@ -2738,6 +2765,8 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 }
               };
               setFormData(updatedFormData);
+              console.log('🟢 [DEBUG] Tariffa salvata in formData:', rateToSave);
+              console.log('🟢 [DEBUG] Tutte le tariffe dopo salvataggio:', updatedFormData.shopSettings.shipping.shippingRates);
               setShowShippingModal(false);
               
               // Salva automaticamente sul server
@@ -2745,7 +2774,6 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
               await saveProfile(updatedFormData, successMessage);
             }}
             disabled={
-              !shippingRateForm.name ||
               (shippingRateForm.calculationType === 'zone' && (!shippingRateForm.zones || shippingRateForm.zones.length === 0))
             }
           >

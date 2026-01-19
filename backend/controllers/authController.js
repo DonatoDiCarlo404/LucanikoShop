@@ -296,6 +296,14 @@ export const getVendorProfile = async (req, res) => {
 // @access  Private/Seller
 export const updateVendorProfile = async (req, res) => {
   try {
+    // Log dei dati ricevuti dal frontend
+    console.log('📥 [BACKEND SAVE] Dati ricevuti dal frontend:', JSON.stringify(req.body?.shopSettings?.shipping?.shippingRates, null, 2));
+    if (req.body?.shopSettings?.shipping?.shippingRates) {
+      req.body.shopSettings.shipping.shippingRates.forEach((rate, i) => {
+        console.log(`📥 [BACKEND SAVE] Tariffa ${i} ricevuta - shippingOptions:`, rate.shippingOptions);
+      });
+    }
+
     if (req.user.role !== 'seller' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accesso negato. Solo venditori possono modificare il profilo aziendale.' });
     }
@@ -406,6 +414,14 @@ export const updateVendorProfile = async (req, res) => {
     }
 
     const updatedUser = await user.save();
+
+    // Log di cosa è stato salvato
+    console.log('💾 [BACKEND SAVE] Dati salvati nel database:', JSON.stringify(updatedUser?.shopSettings?.shipping?.shippingRates, null, 2));
+    if (updatedUser?.shopSettings?.shipping?.shippingRates) {
+      updatedUser.shopSettings.shipping.shippingRates.forEach((rate, i) => {
+        console.log(`💾 [BACKEND SAVE] Tariffa ${i} salvata - shippingOptions:`, rate.shippingOptions);
+      });
+    }
 
     res.json({
       _id: updatedUser._id,

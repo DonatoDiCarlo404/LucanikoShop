@@ -35,8 +35,9 @@ const productSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      required: false,
-      min: [0, 'Il prezzo non può essere negativo']
+      required: [true, 'Il prezzo è obbligatorio'],
+      min: [0, 'Il prezzo non può essere negativo'],
+      default: 0
     },
     ivaPercent: {
       type: Number,
@@ -93,6 +94,12 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: false,
       min: [0, 'Lo stock non può essere negativo'],
+      default: 0
+    },
+    weight: {
+      type: Number,
+      required: false,
+      min: [0, 'Il peso non può essere negativo'],
       default: 0
     },
     sold: {

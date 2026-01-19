@@ -133,11 +133,12 @@ discountSchema.pre('save', function(next) {
 // Metodo per verificare se lo sconto è valido ora
 discountSchema.methods.isValidNow = function() {
   const now = new Date();
+  
   return (
     this.isActive &&
     this.startDate <= now &&
     this.endDate >= now &&
-    (this.usageLimit === undefined || this.usageCount < this.usageLimit)
+    (!this.usageLimit || this.usageCount < this.usageLimit)
   );
 };
 
