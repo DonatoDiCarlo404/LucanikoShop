@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -33,6 +32,45 @@ const BuyerProfile = () => {
   const [editPassword, setEditPassword] = useState(false);
   const [editAddress, setEditAddress] = useState(false);
   const [editPayment, setEditPayment] = useState(false);
+  // Stati per nome/cognome
+  const [editName, setEditName] = useState(false);
+  // Fallback: se non esistono firstName/lastName, splitta name
+  const getInitialFirstName = () => user?.firstName || (user?.name ? user.name.split(' ')[0] : '');
+  const getInitialLastName = () => user?.lastName || (user?.name ? user.name.split(' ').slice(1).join(' ') : '');
+  const [nameForm, setNameForm] = useState({
+    firstName: getInitialFirstName(),
+    lastName: getInitialLastName(),
+    phone: user?.phone || ''
+  });
+    // Gestione input nome/cognome
+    const handleNameChange = (e) => {
+      const { name, value } = e.target;
+      setNameForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Salva nome/cognome e aggiorna context utente
+    const handleSaveName = async () => {
+      setSaveLoading((prev) => ({ ...prev, name: true }));
+      setSaveError((prev) => ({ ...prev, name: null }));
+      setSaveSuccess((prev) => ({ ...prev, name: false }));
+      try {
+        if (!nameForm.firstName.trim() || !nameForm.lastName.trim()) throw new Error('Nome e cognome obbligatori');
+        const fullName = `${nameForm.firstName} ${nameForm.lastName}`.trim();
+        const updatedUser = await authAPI.updateProfile({
+          firstName: nameForm.firstName,
+          lastName: nameForm.lastName,
+          name: fullName // retrocompatibilità
+        }, token);
+        setUser(prev => ({ ...prev, ...updatedUser }));
+        setSaveSuccess((prev) => ({ ...prev, name: true }));
+        setEditName(false);
+      } catch (err) {
+        setSaveError((prev) => ({ ...prev, name: err.message }));
+      } finally {
+        setSaveLoading((prev) => ({ ...prev, name: false }));
+        setTimeout(() => setSaveSuccess((prev) => ({ ...prev, name: false })), 2000);
+      }
+    };
   
   const [passwordForm, setPasswordForm] = useState({ password: '' });
   const [addressForm, setAddressForm] = useState({
@@ -146,25 +184,23 @@ const BuyerProfile = () => {
     }
   };
 
-  // Salva indirizzi
+  // Salva indirizzo e aggiorna context utente
   const handleSaveAddress = async () => {
-    setSaveLoading((prev) => ({ ...prev, address: true }));
-    setSaveError((prev) => ({ ...prev, address: null }));
-    setSaveSuccess((prev) => ({ ...prev, address: false }));
+    setSaveLoading(l => ({ ...l, address: true }));
+    setSaveError(e => ({ ...e, address: null }));
+    setSaveSuccess(s => ({ ...s, address: false }));
     try {
-      const data = { address: addressForm.address };
-      if (addressForm.differentBillingAddress) {
-        data.billingAddress = addressForm.billingAddress;
-      }
-      const updated = await authAPI.updateProfile(data, token);
-      setSaveSuccess((prev) => ({ ...prev, address: true }));
+      const updatedUser = await authAPI.updateProfile({
+        address: addressForm.address,
+        billingAddress: addressForm.differentBillingAddress ? addressForm.billingAddress : addressForm.address
+      }, token);
+      setUser(prev => ({ ...prev, ...updatedUser }));
+      setSaveSuccess(s => ({ ...s, address: true }));
       setEditAddress(false);
-      setUser && setUser((prev) => ({ ...prev, ...updated }));
     } catch (err) {
-      setSaveError((prev) => ({ ...prev, address: err.message || 'Errore nel salvataggio' }));
+      setSaveError(e => ({ ...e, address: err.message }));
     } finally {
-      setSaveLoading((prev) => ({ ...prev, address: false }));
-      setTimeout(() => setSaveSuccess((prev) => ({ ...prev, address: false })), 2000);
+      setSaveLoading(l => ({ ...l, address: false }));
     }
   };
 
@@ -195,8 +231,67 @@ const BuyerProfile = () => {
   return (
     <div className="container py-4">
       <h2 className="mb-4">Il mio Profilo</h2>
-      
 
+      {/* Sezione nome/cognome */}
+      <Card className="mb-4" style={{ maxWidth: 500 }}>
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <strong>Benvenuto</strong>
+            </div>
+            <Button size="sm" variant="outline-primary" onClick={() => setEditName(v => !v)}>
+              {editName ? 'Annulla' : 'Modifica'}
+            </Button>
+          </div>
+          {editName ? (
+            <>
+              <Form.Group className="mb-2">
+                <Form.Label>Nome</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="firstName"
+                  value={nameForm.firstName}
+                  onChange={handleNameChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Cognome</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="lastName"
+                  value={nameForm.lastName}
+                  onChange={handleNameChange}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Numero di Telefono</Form.Label>
+                <Form.Control
+                  type="tel"
+                  name="phone"
+                  value={nameForm.phone}
+                  onChange={handleNameChange}
+                  required
+                />
+              </Form.Group>
+              <Button size="sm" variant="success" onClick={handleSaveName} disabled={saveLoading.name}>
+                {saveLoading.name ? 'Salvataggio...' : 'Salva'}
+              </Button>
+              {saveError.name && <Alert variant="danger" className="mt-2">{saveError.name}</Alert>}
+              {saveSuccess.name && <Alert variant="success" className="mt-2">Salvato!</Alert>}
+            </>
+          ) : (
+            <div>
+              {user.firstName || user.lastName
+                ? <>{user.firstName} {user.lastName}</>
+                : user.name}
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* ...existing code... */}
       <Row>
         <Col md={4}>
           <Card className="mb-4">
@@ -208,6 +303,9 @@ const BuyerProfile = () => {
                 </ListGroup.Item>
                 <ListGroup.Item>
                   <strong>Email:</strong> {user.email}
+                </ListGroup.Item>
+                <ListGroup.Item>
+                  <strong>Telefono:</strong> {user.phone || '-'}
                 </ListGroup.Item>
                 <ListGroup.Item>
                   <strong>Ruolo:</strong> {user.role === 'buyer' || user.role === 'user' ? 'Acquirente' : user.role}
@@ -237,18 +335,6 @@ const BuyerProfile = () => {
                     {user.billingAddress.taxCode && <><br /><strong>CF:</strong> {user.billingAddress.taxCode}</>}
                   </ListGroup.Item>
                 )}
-                <ListGroup.Item>
-                  <strong>Metodo di pagamento:</strong> {user.paymentMethod ? paymentMethodLabel(user.paymentMethod) : <span className="text-muted">Non impostato</span>}
-                  {user.paymentMethod === 'carta' && user.cardDetails?.cardNumber && (
-                    <div className="mt-2">
-                      <small className="text-muted">
-                        <strong>Carta:</strong> {user.cardDetails.cardType || 'N/A'} •••• {user.cardDetails.cardNumber.slice(-4)}<br />
-                        <strong>Intestatario:</strong> {user.cardDetails.cardHolder}<br />
-                        <strong>Scadenza:</strong> {user.cardDetails.expiryDate}
-                      </small>
-                    </div>
-                  )}
-                </ListGroup.Item>
               </ListGroup>
             </Card.Body>
           </Card>
@@ -463,95 +549,7 @@ const BuyerProfile = () => {
             </Card.Body>
           </Card>
 
-          {/* Sezione 3: Metodo di Pagamento */}
-          <Card className="mb-4">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Metodo di Pagamento</h5>
-                <Button size="sm" variant={editPayment ? 'secondary' : 'primary'} onClick={() => setEditPayment((v) => !v)}>
-                  {editPayment ? 'Annulla' : 'Modifica'}
-                </Button>
-              </div>
-              {editPayment && (
-                <Form>
-                  <Form.Group className="mb-3" controlId="formPaymentMethod">
-                    <Form.Label>Metodo di pagamento</Form.Label>
-                    <Form.Select
-                      name="paymentMethod"
-                      value={paymentForm.paymentMethod}
-                      onChange={handlePaymentChange}
-                    >
-                      <option value="">Seleziona...</option>
-                      <option value="carta">Carta di credito/debito</option>
-                    </Form.Select>
-                  </Form.Group>
-                  {paymentForm.paymentMethod === 'carta' && (
-                    <>
-                      <Form.Group className="mb-2" controlId="formCardHolder">
-                        <Form.Label>Intestatario carta</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="cardDetails.cardHolder"
-                          value={paymentForm.cardDetails.cardHolder}
-                          onChange={handlePaymentChange}
-                          placeholder="Nome e Cognome"
-                        />
-                      </Form.Group>
-                      <Form.Group className="mb-2" controlId="formCardNumber">
-                        <Form.Label>Numero carta</Form.Label>
-                        <Form.Control
-                          type="text"
-                          name="cardDetails.cardNumber"
-                          value={paymentForm.cardDetails.cardNumber}
-                          onChange={handlePaymentChange}
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                        />
-                      </Form.Group>
-                      <Row>
-                        <Col md={6}>
-                          <Form.Group className="mb-2" controlId="formExpiryDate">
-                            <Form.Label>Scadenza</Form.Label>
-                            <Form.Control
-                              type="text"
-                              name="cardDetails.expiryDate"
-                              value={paymentForm.cardDetails.expiryDate}
-                              onChange={handlePaymentChange}
-                              placeholder="MM/AA"
-                              maxLength={5}
-                            />
-                          </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                          <Form.Group className="mb-2" controlId="formCardType">
-                            <Form.Label>Tipo carta</Form.Label>
-                            <Form.Select
-                              name="cardDetails.cardType"
-                              value={paymentForm.cardDetails.cardType}
-                              onChange={handlePaymentChange}
-                            >
-                              <option value="">Seleziona...</option>
-                              <option value="Visa">Visa</option>
-                              <option value="Mastercard">Mastercard</option>
-                              <option value="American Express">American Express</option>
-                              <option value="Altro">Altro</option>
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                      </Row>
-                    </>
-                  )}
-                  <div className="d-flex gap-2 align-items-center mt-2">
-                    <Button variant="success" onClick={handleSavePayment} disabled={saveLoading.payment}>
-                      {saveLoading.payment ? 'Salvataggio...' : 'Salva pagamento'}
-                    </Button>
-                    {saveSuccess.payment && <span className="text-success">Salvato!</span>}
-                    {saveError.payment && <span className="text-danger">{saveError.payment}</span>}
-                  </div>
-                </Form>
-              )}
-            </Card.Body>
-          </Card>
+          {/* Sezione Metodo di Pagamento rimossa */}
         </Col>
 
         <Col md={8}>

@@ -10,40 +10,31 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // @access  Public (supporta guest checkout)
 export const createCheckoutSession = async (req, res) => {
     try {
-        console.log('💳 [Backend] createCheckoutSession - Inizio');
-        console.log('💳 [Backend] req.user:', req.user ? { id: req.user._id, email: req.user.email } : 'Non presente');
-        console.log('💳 [Backend] req.body:', JSON.stringify(req.body, null, 2));
-        
-        const { cartItems, guestEmail } = req.body;
+        const { cartItems, guestEmail, appliedCoupon, discountAmount } = req.body;
 
         if (!cartItems || cartItems.length === 0) {
-            console.log('⚠️ [Backend] Carrello vuoto');
             return res.status(400).json({ message: 'Il carrello è vuoto' });
         }
 
-        console.log('💳 [Backend] cartItems ricevuti:', cartItems.map(item => ({
-            id: item._id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            seller: item.seller
-        })));
+        console.log('🛒 [CHECKOUT] Ricevuti', cartItems.length, 'prodotti');
+        console.log('🎫 [CHECKOUT] appliedCoupon ricevuto:', JSON.stringify(appliedCoupon));
+        console.log('🎫 [CHECKOUT] discountAmount ricevuto:', discountAmount, 'tipo:', typeof discountAmount);
 
-        // Raggruppa items per venditore e calcola spedizione
+        // Calcola totale carrello
+        const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const discountedTotal = cartTotal - (discountAmount || 0);
+
+        console.log('💰 [CHECKOUT] Totale: €' + cartTotal.toFixed(2), '| Dopo sconto: €' + discountedTotal.toFixed(2));
+
+        // Raggruppa items per venditore
         const itemsByVendor = {};
 
         for (const item of cartItems) {
-            console.log(`💳 [Backend] Processando item: ${item._id}`);
             const product = await Product.findById(item._id).populate('seller', 'shopSettings name');
             
             if (!product) {
-                console.log(`❌ [Backend] Prodotto non trovato: ${item._id}`);
-                return res.status(404).json({ 
-                    message: `Prodotto non trovato: ${item._id}` 
-                });
+                return res.status(404).json({ message: `Prodotto non trovato: ${item._id}` });
             }
-
-            console.log(`💳 [Backend] Prodotto trovato: ${product.name}, Venditore: ${product.seller.name}`);
 
             const vendorId = product.seller._id.toString();
 
@@ -60,30 +51,27 @@ export const createCheckoutSession = async (req, res) => {
                 product: {
                     _id: product._id,
                     name: product.name,
-                    weight: product.weight || 0
+                    weight: product.weight || 0,
+                    price: product.price
                 },
                 quantity: item.quantity,
                 price: item.price
             });
         }
 
-        console.log('💳 [Backend] Items raggruppati per venditore:', Object.keys(itemsByVendor).length);
-
-        // Calcola costo spedizione totale
+        // Calcola spedizione usando il totale SCONTATO per i range
         const vendorShippingArray = Object.values(itemsByVendor);
         const shippingResult = calculateMultiVendorShipping(
             vendorShippingArray,
-            { country: 'Italia', state: '' } // Default, verrà aggiornato con l'indirizzo reale durante il checkout
+            { country: 'Italia', state: '' },
+            discountedTotal // Passa il totale scontato
         );
 
-        console.log('💳 [Backend] Costo spedizione:', shippingResult.totalShipping);
+        console.log('📦 [CHECKOUT] Costo spedizione calcolato: €' + shippingResult.totalShipping.toFixed(2));
 
         // Converti i prodotti del carrello in formato Stripe
         const lineItems = cartItems.map(item => {
             const price = item.price || 0;
-            console.log(`💳 [Backend] Line item - ${item.name}: €${price} x ${item.quantity}`);
-            
-            // Estrai il nome della categoria se è un oggetto
             const categoryDescription = typeof item.category === 'string' 
                 ? item.category 
                 : item.category?.name || 'Prodotto';
@@ -102,15 +90,14 @@ export const createCheckoutSession = async (req, res) => {
                             sellerId: item.seller._id || item.seller,
                         },
                     },
-                    unit_amount: Math.round(price * 100), // Converti in centesimi
+                    unit_amount: Math.round(price * 100),
                 },
                 quantity: item.quantity,
             };
         });
 
-        // Aggiungi costo spedizione come line item se > 0
+        // Aggiungi spedizione come line item
         if (shippingResult.totalShipping > 0) {
-            console.log(`💳 [Backend] Aggiungendo spedizione: €${shippingResult.totalShipping}`);
             lineItems.push({
                 price_data: {
                     currency: 'eur',
@@ -126,27 +113,26 @@ export const createCheckoutSession = async (req, res) => {
 
         // Determina l'email del cliente
         const customerEmail = req.user ? req.user.email : guestEmail;
-        console.log('💳 [Backend] Email cliente per Stripe:', customerEmail);
 
         if (!customerEmail) {
-            console.log('❌ [Backend] Email cliente mancante');
             return res.status(400).json({ message: 'Email cliente richiesta per il checkout' });
         }
 
-        console.log('💳 [Backend] Creazione sessione Stripe...');
-        
-        // Crea la sessione di Stripe checkout
-        const session = await stripe.checkout.sessions.create({
+        // Prepara le opzioni per la sessione Stripe
+        const sessionOptions = {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
-            customer_email: customerEmail,
+            billing_address_collection: 'auto',
             metadata: {
                 userId: req.user ? req.user._id.toString() : 'guest',
                 guestEmail: guestEmail || '',
                 shippingCost: shippingResult.totalShipping.toString(),
+                appliedCouponCode: appliedCoupon?.couponCode || '',
+                appliedCouponId: appliedCoupon?._id?.toString() || '',
+                discountAmount: discountAmount ? discountAmount.toString() : '0',
                 cartItems: JSON.stringify(cartItems.map(item => ({
                     productId: item._id,
                     sellerId: item.seller._id || item.seller,
@@ -155,17 +141,67 @@ export const createCheckoutSession = async (req, res) => {
                     price: item.price,
                 }))),
             },
-        });
+        };
 
-        console.log('✅ [Backend] Sessione Stripe creata:', session.id);
+        // Per utenti registrati, usa customer_email per pre-compilare
+        sessionOptions.customer_email = customerEmail;
+
+        // Se c'è uno sconto, crea un Coupon Stripe al volo e applicalo
+        if (discountAmount && discountAmount > 0) {
+            console.log('🎫 [CHECKOUT] Condizione sconto verificata - discountAmount:', discountAmount);
+            console.log('🎫 [CHECKOUT] Creazione coupon Stripe per:', appliedCoupon?.couponCode, '- Sconto: €' + discountAmount.toFixed(2));
+            
+            try {
+                // Crea un coupon Stripe temporaneo
+                const stripeCoupon = await stripe.coupons.create({
+                    amount_off: Math.round(discountAmount * 100),
+                    currency: 'eur',
+                    duration: 'once',
+                    name: appliedCoupon?.couponCode || 'Sconto',
+                });
+
+                console.log('✅ [CHECKOUT] Coupon Stripe creato:', stripeCoupon.id, '| amount_off:', stripeCoupon.amount_off);
+
+                // Applica il coupon alla sessione
+                sessionOptions.discounts = [{
+                    coupon: stripeCoupon.id
+                }];
+
+                console.log('✅ [CHECKOUT] Discount applicato a sessionOptions');
+            } catch (couponError) {
+                console.error('⚠️ [CHECKOUT] Errore creazione coupon Stripe:', couponError.message);
+                console.error('⚠️ [CHECKOUT] Stack:', couponError.stack);
+                // Fallback: usa line item negativo
+                lineItems.push({
+                    price_data: {
+                        currency: 'eur',
+                        product_data: {
+                            name: appliedCoupon?.couponCode ? `Sconto (${appliedCoupon.couponCode})` : 'Sconto',
+                            description: 'Sconto applicato al carrello',
+                        },
+                        unit_amount: -Math.round(discountAmount * 100),
+                    },
+                    quantity: 1,
+                });
+                console.log('⚠️ [CHECKOUT] Fallback: aggiunto line item negativo');
+            }
+        } else {
+            console.log('⚠️ [CHECKOUT] Nessuno sconto da applicare - discountAmount:', discountAmount);
+        }
+
+        // Crea la sessione Stripe
+        console.log('🔧 [CHECKOUT] Creazione sessione con discounts:', sessionOptions.discounts);
+        const session = await stripe.checkout.sessions.create(sessionOptions);
+
+        console.log('✅ [CHECKOUT] Sessione Stripe creata con successo - ID:', session.id);
+        console.log('✅ [CHECKOUT] Sessione amount_total:', session.amount_total, '(centesimi)');
 
         res.status(200).json({
             sessionId: session.id,
             url: session.url,
         });
     } catch (error) {
-        console.error('❌ [Backend] Errore nella creazione sessione Stripe:', error);
-        console.error('❌ [Backend] Stack trace:', error.stack);
+        console.error('❌ [CHECKOUT] Errore:', error.message);
         res.status(500).json({ message: error.message });
     }
 };

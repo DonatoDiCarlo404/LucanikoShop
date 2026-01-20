@@ -78,21 +78,60 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
       // 3. Verifica che il pagamento sia andato a buon fine
       if (paymentIntent.status === 'succeeded') {
         console.log('[StripePaymentForm] Pagamento riuscito!');
+        // Estrai dati non sensibili della carta dal backend
+        let cardDetails = undefined;
+        try {
+          const paymentMethodId = paymentIntent?.payment_method;
+          console.log('[StripePaymentForm] paymentMethodId:', paymentMethodId);
+          
+          if (typeof paymentMethodId === 'string') {
+            // Recupera i dati della carta dal backend
+            const pmResponse = await fetch(`${API_URL}/payment/get-payment-method`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentMethodId })
+            });
+            
+            if (pmResponse.ok) {
+              const pmData = await pmResponse.json();
+              console.log('[StripePaymentForm] Payment method data:', pmData);
+              
+              if (pmData.cardDetails) {
+                cardDetails = {
+                  cardHolder: cardholderName,
+                  cardType: pmData.cardDetails.brand,
+                  cardNumber: pmData.cardDetails.last4,
+                  expiryDate: `${pmData.cardDetails.exp_month.toString().padStart(2, '0')}/${pmData.cardDetails.exp_year.toString().slice(-2)}`
+                };
+                console.log('[StripePaymentForm] cardDetails estratti:', cardDetails);
+              }
+            } else {
+              console.warn('[StripePaymentForm] Errore recupero payment method dal backend');
+            }
+          } else {
+            console.warn('[StripePaymentForm] paymentMethodId non disponibile');
+          }
+        } catch (e) {
+          console.warn('Impossibile estrarre i dati carta:', e);
+        }
+
         // 4. Se ci sono dati di registrazione, registra l'utente
         if (registrationData) {
           try {
-            console.log('[StripePaymentForm] Invio dati registrazione:', registrationData);
+            const regBody = {
+              ...registrationData,
+              paymentIntentId: paymentIntent.id,
+              subscriptionType,
+              subscriptionPaid: true
+            };
+            if (cardDetails) regBody.cardDetails = cardDetails;
+            console.log('[StripePaymentForm] Invio dati registrazione:', regBody);
             const registerResponse = await fetch(`${API_URL}/auth/register`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                ...registrationData,
-                paymentIntentId: paymentIntent.id,
-                subscriptionType,
-                subscriptionPaid: true
-              })
+              body: JSON.stringify(regBody)
             });
 
             console.log('[StripePaymentForm] Risposta registrazione status:', registerResponse.status);

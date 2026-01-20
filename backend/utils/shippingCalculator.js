@@ -7,11 +7,6 @@
 export const calculateShipping = (vendorShippingSettings, cartData) => {
     const { items, shippingAddress, cartTotal } = cartData;
 
-    console.log('🔵 [BACKEND] Inizio calcolo spedizione');
-    console.log('🔵 [BACKEND] Impostazioni venditore:', JSON.stringify(vendorShippingSettings, null, 2));
-    console.log('🔵 [BACKEND] Indirizzo spedizione:', shippingAddress);
-    console.log('🔵 [BACKEND] Totale carrello:', cartTotal);
-
     // Default: nessuna spedizione configurata
     if (!vendorShippingSettings) {
         return {
@@ -24,41 +19,21 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     }
 
     // Calcola peso totale del carrello
-    console.log('🔍 [BACKEND] Items nel carrello:', items.length);
     const totalWeight = items.reduce((sum, item) => {
-        console.log(`🔍 [BACKEND] Item:`, {
-            productId: item.product?._id,
-            name: item.product?.name,
-            weight: item.product?.weight,
-            quantity: item.quantity
-        });
         const weight = item.product?.weight || 0;
         return sum + (weight * item.quantity);
     }, 0);
-    console.log('🔍 [BACKEND] Peso totale calcolato:', totalWeight, 'kg');
 
-        // Calcola totale carrello se non passato
-        const calculatedCartTotal = (typeof cartTotal === 'number' && !isNaN(cartTotal))
-            ? cartTotal
-            : items.reduce((sum, item) => {
-                    const price = (typeof item.product?.price === 'number' && !isNaN(item.product?.price)) ? item.product.price : 0;
-                    console.log('🟣 [BACKEND] Calcolo totale: item', {
-                        productId: item.product?._id,
-                        name: item.product?.name,
-                        price,
-                        quantity: item.quantity,
-                        subtotale: price * item.quantity
-                    });
-                    return sum + (price * item.quantity);
-                }, 0);
-        console.log('🟣 [BACKEND] Totale carrello calcolato:', calculatedCartTotal);
+    // Calcola totale carrello se non passato
+    const calculatedCartTotal = (typeof cartTotal === 'number' && !isNaN(cartTotal))
+        ? cartTotal
+        : items.reduce((sum, item) => {
+                const price = (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : 0;
+                return sum + (price * item.quantity);
+            }, 0);
 
     // PRIORITÀ: Controlla prima se ci sono tariffe avanzate configurate
-    // Le tariffe avanzate hanno priorità sulla spedizione gratuita globale
     const hasAdvancedRates = vendorShippingSettings.shippingRates && vendorShippingSettings.shippingRates.length > 0;
-    
-    console.log('🟢 [BACKEND] Ha tariffe avanzate?', hasAdvancedRates);
-    console.log('🟢 [BACKEND] Numero tariffe:', vendorShippingSettings.shippingRates?.length || 0);
     
     // Se non ci sono tariffe avanzate, applica le regole globali
     if (!hasAdvancedRates) {
@@ -93,17 +68,10 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     const region = shippingAddress?.state || '';
 
     for (const rate of vendorShippingSettings.shippingRates) {
-        console.log('🟡 [BACKEND] ===== Controllo tariffa:', rate.name || 'senza nome');
-        console.log('🟡 [BACKEND] Paese tariffa:', rate.country);
-        console.log('🟡 [BACKEND] Paese richiesto:', country);
-        console.log('🟡 [BACKEND] Opzioni spedizione tariffa:', rate.shippingOptions);
-        
         // 1. Verifica se la tariffa si applica al paese di destinazione
         if (rate.country && rate.country !== country) {
-            console.log('❌ [BACKEND] Tariffa scartata: paese non corrisponde');
-            continue; // Il paese non corrisponde
+            continue;
         }
-        console.log('✅ [BACKEND] Paese corretto!');
 
         // 1.1 Se il paese è Italia, verifica i flag delle isole
         if (country === 'Italia' && region) {
@@ -125,26 +93,19 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
             const cartTotalFrom = parseFloat(rate.cartTotalFrom) || 0;
             const cartTotalTo = parseFloat(rate.cartTotalTo) || Infinity;
             
-            console.log(`🔍 [BACKEND] Controllo totale: carrello=€${calculatedCartTotal}, range=€${cartTotalFrom}-€${cartTotalTo}`);
-            
             if (calculatedCartTotal < cartTotalFrom || calculatedCartTotal > cartTotalTo) {
-                console.log('❌ [BACKEND] Tariffa scartata: totale fuori range');
-                continue; // Il totale carrello non rientra nel range
+                continue;
             }
         }
 
         // 3. Verifica il range del peso carrello
-        // Se anyCartWeight è true OPPURE se i campi peso non sono impostati, salta il controllo
         const hasWeightRange = rate.cartWeightFrom || rate.cartWeightTo;
         if (!rate.anyCartWeight && hasWeightRange) {
             const cartWeightFrom = parseFloat(rate.cartWeightFrom) || 0;
             const cartWeightTo = parseFloat(rate.cartWeightTo) || Infinity;
             
-            console.log(`🔍 [BACKEND] Controllo peso: carrello=${totalWeight}kg, range=${cartWeightFrom}-${cartWeightTo}kg`);
-            
             if (totalWeight < cartWeightFrom || totalWeight > cartWeightTo) {
-                console.log('❌ [BACKEND] Tariffa scartata: peso fuori range');
-                continue; // Il peso carrello non rientra nel range
+                continue;
             }
         }
 
@@ -187,18 +148,17 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     }
 
     // Restituisci tutte le opzioni disponibili
-    // Il cliente potrà scegliere quale opzione di spedizione preferisce
     const allShippingOptions = [];
     applicableRates.forEach(ar => {
         allShippingOptions.push(...ar.shippingOptions);
     });
 
-    console.log('🟢 [BACKEND] Opzioni finali disponibili:', allShippingOptions);
-
     // Per default, selezioniamo l'opzione più economica
     const cheapestOption = allShippingOptions.reduce((min, opt) => 
         opt.price < min.price ? opt : min
     , allShippingOptions[0]);
+
+    console.log('📦 [SHIPPING] Opzione selezionata:', cheapestOption.name, '- €' + cheapestOption.price.toFixed(2));
 
     return {
         shippingCost: cheapestOption.price,
@@ -219,28 +179,21 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
  * Calcola la spedizione per carrello multi-venditore
  * @param {Array} itemsByVendor - Array di {vendorId, items, vendorShippingSettings}
  * @param {Object} shippingAddress - Indirizzo di spedizione
- * @param {Number} totalCartValue - Totale del carrello (opzionale)
+ * @param {Number} totalCartValue - Totale del carrello scontato (per range spedizione)
  * @returns {Object} - { totalShipping, vendorShippingCosts }
  */
 export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, totalCartValue = 0) => {
     const vendorShippingCosts = {};
     let totalShipping = 0;
 
+    console.log('📦 [SHIPPING] Calcolo spedizione per', itemsByVendor.length, 'venditori | Totale carrello: €' + totalCartValue.toFixed(2));
+
     itemsByVendor.forEach(({ vendorId, items, vendorShippingSettings }) => {
-        // Calcola il subtotale per questo venditore
+        // Calcola il subtotale per questo venditore usando il prezzo dal carrello
         const vendorCartTotal = items.reduce((sum, item) => {
-            const price = item.product?.price || 0;
-            console.log('💰 [BACKEND] Calcolo prezzo item:', {
-                productId: item.product?._id,
-                name: item.product?.name,
-                price: price,
-                quantity: item.quantity,
-                subtotale: price * item.quantity
-            });
+            const price = item.price || 0; // Usa il prezzo dal carrello (può essere scontato)
             return sum + (price * item.quantity);
         }, 0);
-        
-        console.log('💰 [BACKEND] Totale carrello venditore:', vendorCartTotal);
 
         const shippingResult = calculateShipping(vendorShippingSettings, {
             items,
@@ -251,6 +204,8 @@ export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, tot
         vendorShippingCosts[vendorId] = shippingResult;
         totalShipping += shippingResult.shippingCost;
     });
+
+    console.log('📦 [SHIPPING] Spedizione totale calcolata: €' + totalShipping.toFixed(2));
 
     return {
         totalShipping,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Card, Button, Form, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
@@ -8,7 +8,11 @@ import { toast } from 'react-toastify';
 
 const BillingInfo = () => {
   const navigate = useNavigate();
-  const { cartItems } = useCart();
+  const { 
+    cartItems, 
+    appliedCoupon, 
+    discountAmount 
+  } = useCart();
   const { user } = useAuth();
   // Stato per i dati di fatturazione (da aggiungere campi in seguito)
   const [formData, setFormData] = useState({});
@@ -19,6 +23,48 @@ const BillingInfo = () => {
   const [useAltShipping, setUseAltShipping] = useState(false);
   // Stato per il modale di riepilogo
   const [showSummary, setShowSummary] = useState(false);
+
+  // Popola automaticamente i dati di fatturazione se utente loggato
+  useEffect(() => {
+    if (user) {
+      // Fallback: se non esistono firstName/lastName, splitta name
+      const fallbackFirstName = user.firstName || (user.name ? user.name.split(' ')[0] : '');
+      const fallbackLastName = user.lastName || (user.name ? user.name.split(' ').slice(1).join(' ') : '');
+      
+      setFormData(prev => ({
+        ...prev,
+        buyerType: user.role === 'seller' ? 'azienda' : 'privato',
+        // Dati privato
+        nome: fallbackFirstName,
+        cognome: fallbackLastName,
+        email: user.email || '',
+        telefono: user.phone || '',
+        indirizzo: user.address?.street || '',
+        citta: user.address?.city || '',
+        stato: user.address?.state || '',
+        cap: user.address?.zipCode || '',
+        country: user.address?.country || 'Italia',
+        codiceFiscale: user.address?.taxCode || '',
+        billingStreet: user.billingAddress?.street || '',
+        billingCity: user.billingAddress?.city || '',
+        billingState: user.billingAddress?.state || '',
+        billingZipCode: user.billingAddress?.zipCode || '',
+        billingCountry: user.billingAddress?.country || 'Italia',
+        billingTaxCode: user.billingAddress?.taxCode || '',
+        // Dati azienda (per venditori)
+        aziendaNome: fallbackFirstName,
+        aziendaCognome: fallbackLastName,
+        aziendaRagioneSociale: user.ragioneSociale || user.businessName || '',
+        aziendaPartitaIVA: user.vatNumber || '',
+        aziendaPecSdi: user.codiceSDI || user.pec || '',
+        aziendaEmail: user.businessEmail || user.email || '',
+        aziendaTelefono: user.businessPhone || user.phone || '',
+        aziendaIndirizzo: user.businessAddress?.street || user.address?.street || '',
+        aziendaCitta: user.businessAddress?.city || user.address?.city || '',
+        aziendaCap: user.businessAddress?.zipCode || user.address?.zipCode || '',
+      }));
+    }
+  }, [user]);
 
   // Handler per invio dati
   const handleSubmit = (e) => {
@@ -33,10 +79,14 @@ const BillingInfo = () => {
         ? formData.aziendaEmail 
         : formData.email;
 
+      console.log('🚀 [BILLING] Invio checkout con coupon:', appliedCoupon?.couponCode, '| Sconto:', discountAmount);
+
       const { sessionId, url } = await checkoutAPI.createSession(
         cartItems, 
         user ? user.token : null,
-        customerEmail
+        customerEmail,
+        appliedCoupon,
+        discountAmount
       );
 
       localStorage.setItem('cart', JSON.stringify(cartItems));

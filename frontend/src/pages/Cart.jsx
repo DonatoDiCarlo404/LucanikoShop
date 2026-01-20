@@ -10,7 +10,18 @@ const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { cartItems, cartCount, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { 
+    cartItems, 
+    cartCount, 
+    cartTotal, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart,
+    appliedCoupon,
+    discountAmount,
+    applyCoupon,
+    removeCoupon
+  } = useCart();
 
   // State per gestione guest checkout
   const [guestEmail, setGuestEmail] = useState('');
@@ -18,10 +29,8 @@ const Cart = () => {
 
   // State per gestione coupon
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
-  const [discountAmount, setDiscountAmount] = useState(0);
 
   // State per gestione spedizione
   const [shippingCost, setShippingCost] = useState(0);
@@ -169,12 +178,16 @@ const Cart = () => {
       return;
     }
 
+    console.log('🚀 [CART] Invio checkout - Coupon:', appliedCoupon?.couponCode, '| Sconto:', discountAmount);
+
     setIsCheckingOut(true);
     try {
       const { sessionId, url } = await checkoutAPI.createSession(
-        cartItems, 
+        cartItems,
         user ? user.token : null,
-        guestEmail
+        guestEmail,
+        appliedCoupon,
+        discountAmount
       );
 
       localStorage.setItem('cart', JSON.stringify(cartItems));
@@ -237,13 +250,11 @@ const Cart = () => {
         }
       }
 
-      setAppliedCoupon(data.discount);
-      setDiscountAmount(parseFloat(discount.toFixed(2)));
+      applyCoupon(data.discount, parseFloat(discount.toFixed(2)));
       setCouponError('');
     } catch (err) {
       setCouponError(err.message);
-      setAppliedCoupon(null);
-      setDiscountAmount(0);
+      removeCoupon();
     } finally {
       setApplyingCoupon(false);
     }
@@ -251,8 +262,7 @@ const Cart = () => {
 
   // Rimuovi coupon applicato
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setDiscountAmount(0);
+    removeCoupon();
     setCouponCode('');
     setCouponError('');
   };

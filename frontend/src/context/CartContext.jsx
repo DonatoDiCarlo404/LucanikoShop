@@ -16,6 +16,8 @@ export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   // Genera la chiave del carrello basata sull'utente
   const getCartKey = () => {
@@ -26,11 +28,23 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const cartKey = getCartKey();
     const savedCart = localStorage.getItem(cartKey);
+    const savedCoupon = localStorage.getItem('appliedCoupon');
+    const savedDiscount = localStorage.getItem('discountAmount');
+    
     if (savedCart) {
       setCartItems(JSON.parse(savedCart));
     } else {
       setCartItems([]); // Carrello vuoto per nuovo utente
     }
+    
+    if (savedCoupon) {
+      setAppliedCoupon(JSON.parse(savedCoupon));
+    }
+    
+    if (savedDiscount) {
+      setDiscountAmount(parseFloat(savedDiscount));
+    }
+    
     setIsLoaded(true);
   }, [user?._id]); // Ricarica quando cambia utente
 
@@ -90,6 +104,22 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  // Applica coupon
+  const applyCoupon = (coupon, discount) => {
+    setAppliedCoupon(coupon);
+    setDiscountAmount(discount);
+    localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+    localStorage.setItem('discountAmount', discount.toString());
+  };
+
+  // Rimuovi coupon
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('discountAmount');
+  };
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   
   const cartTotal = cartItems.reduce((total, item) => {
@@ -105,6 +135,10 @@ export const CartProvider = ({ children }) => {
     removeFromCart,
     updateQuantity,
     clearCart,
+    appliedCoupon,
+    discountAmount,
+    applyCoupon,
+    removeCoupon,
   };
 
   return (

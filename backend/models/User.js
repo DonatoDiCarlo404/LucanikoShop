@@ -3,11 +3,23 @@ import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
+    // Campi separati per nome e cognome
+    firstName: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'Il nome non può superare 50 caratteri']
+    },
+    lastName: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'Il cognome non può superare 50 caratteri']
+    },
+    // Campo name legacy per retrocompatibilità
     name: {
       type: String,
       required: [true, 'Il nome è obbligatorio'],
       trim: true,
-      maxlength: [50, 'Il nome non può superare 50 caratteri']
+      maxlength: [100, 'Il nome completo non può superare 100 caratteri']
     },
     email: {
       type: String,

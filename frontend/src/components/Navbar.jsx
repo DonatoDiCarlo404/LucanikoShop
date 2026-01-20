@@ -196,11 +196,11 @@ const Navbar = () => {
                 </NavDropdown.Item>
               </NavDropdown>
             ) : (
-              <Nav.Link as={Link} to="/login" className="text-end w-100 d-none d-lg-block">
-                <span>
-                  <i className="bi bi-person-circle"></i>
-                </span>
-              </Nav.Link>
+              <div className="d-none d-lg-block" style={{ padding: 0, margin: 0, minWidth: 0 }}>
+                <Link to="/login" style={{ display: 'inline-block', padding: 0, margin: 0, minWidth: 0, lineHeight: 1, color: '#6c757d', marginLeft: '1.2rem' }}>
+                  <i className="bi bi-person-circle" style={{ fontSize: '1.7rem', verticalAlign: 'middle', display: 'block', margin: 0, padding: 0, color: '#6c757d' }}></i>
+                </Link>
+              </div>
             )}
             {/* Mobile hamburger: solo link pubblici per utenti non autenticati */}
             {!isAuthenticated && (

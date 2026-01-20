@@ -18,7 +18,8 @@ const SUBSCRIPTION_PRICES = {
 };
 
 const Register = () => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState(() => localStorage.getItem('registerRememberedEmail') || '');
   const [password, setPassword] = useState(() => localStorage.getItem('registerRememberedPassword') || '');
   const [confirmPassword, setConfirmPassword] = useState(() => localStorage.getItem('registerRememberedPassword') || '');
@@ -129,16 +130,27 @@ const Register = () => {
       return setError('La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo.');
     }
 
+    if (!firstName.trim()) return setError('Il nome è obbligatorio');
+    if (!lastName.trim()) return setError('Il cognome è obbligatorio');
+
     setLoading(true);
 
-    const result = await register(name, email, password, role, businessName, vatNumber);
+    const fullName = `${firstName} ${lastName}`.trim();
+    const result = await register({
+      firstName,
+      lastName,
+      name: fullName, // retrocompatibilità
+      email,
+      password,
+      role,
+      businessName,
+      vatNumber
+    });
 
     if (result.success) {
-      // Se è un seller, vai alla pagina pending approval
       if (role === 'seller') {
         navigate('/pending-approval');
       } else {
-        // Se è un buyer, vai alla home
         navigate('/');
       }
     } else {
@@ -158,14 +170,25 @@ const Register = () => {
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3" controlId="name">
-                <Form.Label>Nome e Cognome <span style={{color: 'red'}}>*</span></Form.Label>
+              <Form.Group className="mb-3" controlId="firstName">
+                <Form.Label>Nome <span style={{color: 'red'}}>*</span></Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Inserisci nome"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
+                  placeholder="Inserisci il nome"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3" controlId="lastName">
+                <Form.Label>Cognome <span style={{color: 'red'}}>*</span></Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Inserisci il cognome"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  autoComplete="family-name"
                   required
                 />
               </Form.Group>
@@ -333,23 +356,36 @@ const Register = () => {
                       </Dropdown.Toggle>
 
                       <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto', width: '100%' }}>
-                        {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
+                        {/* Mostra solo le macrocategorie predefinite come nel catalogo */}
+                        {[
+                          { name: 'Cibi e Bevande' },
+                          { name: 'Abbigliamento e Accessori' },
+                          { name: 'Benessere e Salute' },
+                          { name: 'Calzature' },
+                          { name: 'Casa, Arredi e Ufficio' },
+                          { name: 'Elettronica e Informatica' },
+                          { name: 'Industria, Ferramenta e Artigianato' },
+                          { name: 'Libri, Media e Giocattoli' },
+                          { name: 'Orologi e Gioielli' },
+                          { name: 'Ricambi e accessori per auto e moto' },
+                          { name: 'Sport, Hobby e Viaggi' }
+                        ].map(cat => (
                           <Dropdown.Item
-                            key={cat._id}
+                            key={cat.name}
                             as="div"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={e => e.stopPropagation()}
                             style={{ cursor: 'pointer' }}
                           >
                             <Form.Check
                               type="checkbox"
-                              id={`category-${cat._id}`}
+                              id={`category-${cat.name}`}
                               label={cat.name}
-                              checked={selectedCategories.includes(cat._id)}
+                              checked={selectedCategories.includes(cat.name)}
                               onChange={() => {
-                                if (selectedCategories.includes(cat._id)) {
-                                  setSelectedCategories(selectedCategories.filter(c => c !== cat._id));
+                                if (selectedCategories.includes(cat.name)) {
+                                  setSelectedCategories(selectedCategories.filter(c => c !== cat.name));
                                 } else {
-                                  setSelectedCategories([...selectedCategories, cat._id]);
+                                  setSelectedCategories([...selectedCategories, cat.name]);
                                 }
                               }}
                             />
@@ -357,25 +393,24 @@ const Register = () => {
                         ))}
                       </Dropdown.Menu>
                     </Dropdown>
-                    {selectedCategories.length > 0 && (
+                    {/* Mostra le categorie selezionate come badge sotto il dropdown, al posto del testo */}
+                    {selectedCategories.length > 0 ? (
                       <div className="mt-2">
-                        {selectedCategories.map(catId => {
-                          const catObj = categories.find(c => c._id === catId);
-                          return catObj ? (
-                            <Badge 
-                              key={catObj._id} 
-                              bg="primary" 
-                              className="me-1 mb-1"
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => setSelectedCategories(selectedCategories.filter(c => c !== catObj._id))}
-                            >
-                              {catObj.name} ×
-                            </Badge>
-                          ) : null;
-                        })}
+                        {selectedCategories.map(catName => (
+                          <Badge
+                            key={catName}
+                            bg="primary"
+                            className="me-1 mb-1"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => setSelectedCategories(selectedCategories.filter(c => c !== catName))}
+                          >
+                            {catName} ×
+                          </Badge>
+                        ))}
                       </div>
+                    ) : (
+                      <Form.Text className="text-muted">Seleziona una o più categorie dal menu.</Form.Text>
                     )}
-                    <Form.Text className="text-muted">Seleziona una o più categorie dal menu.</Form.Text>
                   </Form.Group>
 
                   <Form.Group className="mb-3" controlId="subscription">
@@ -459,7 +494,9 @@ const Register = () => {
                       onPaymentError={handlePaymentError}
                       disabled={!acceptTerms}
                       registrationData={{
-                        name,
+                        firstName,
+                        lastName,
+                        name: `${firstName} ${lastName}`.trim(),
                         email,
                         password,
                         role: 'seller',
@@ -500,7 +537,7 @@ const Register = () => {
           </Alert>
           <Alert variant="info">
             <h5>📝 Registrazione completata!</h5>
-            <p className="mb-2">Benvenuto <strong>{name}</strong>!</p>
+            <p className="mb-2">Benvenuto <strong>{`${firstName} ${lastName}`.trim()}</strong>!</p>
             <p className="mb-0">La tua registrazione come venditore è stata completata con successo. Il tuo account è ora in attesa di approvazione da parte dell'amministratore.</p>
           </Alert>
           <p className="text-muted small mt-3">

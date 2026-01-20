@@ -68,6 +68,23 @@ const VendorProfile = () => {
     cvv: ''
   });
 
+  // Precompila il form pagamento quando si apre il modal
+  useEffect(() => {
+    if (showPaymentModal && profileData?.cardDetails) {
+      console.log('[VendorProfile] Dati carta salvati:', profileData.cardDetails);
+      setPaymentForm(form => ({
+        ...form,
+        cardHolder: profileData.cardDetails.cardHolder || '',
+        cardNumber: '', // Lascia vuoto per inserire nuova carta (salviamo solo ultimi 4)
+        expiryDate: profileData.cardDetails.expiryDate || '',
+        cvv: ''
+      }));
+    }
+    if (!showPaymentModal) {
+      setPaymentForm(form => ({ ...form, cvv: '' }));
+    }
+  }, [showPaymentModal, profileData]);
+
   // State per gestione sconti
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [discountForm, setDiscountForm] = useState({
@@ -702,6 +719,13 @@ const VendorProfile = () => {
       setTimeout(() => setError(''), 3000);
     }
   };
+
+  // Log all'avvio del componente
+  useEffect(() => {
+    if (profileData) {
+      console.log('[VendorProfile] profileData:', profileData);
+    }
+  }, [profileData]);
 
   if (loading) {
     return (
@@ -2319,16 +2343,19 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     </Button>
                   </div>
                   
-                  {profileData?.paymentMethod ? (
+                  {profileData?.cardDetails && (profileData.cardDetails.cardHolder || profileData.cardDetails.cardNumber) ? (
                     <div className="border rounded p-3 bg-light">
                       <div className="mb-2">
-                        <strong>Intestatario:</strong> {profileData.paymentMethod.cardHolder || 'Non disponibile'}
+                        <strong>Intestatario:</strong> {profileData.cardDetails.cardHolder || 'Non disponibile'}
                       </div>
                       <div className="mb-2">
-                        <strong>Numero Carta:</strong> •••• •••• •••• {profileData.paymentMethod.last4 || '****'}
+                        <strong>Tipo Carta:</strong> {profileData.cardDetails.cardType || 'Non disponibile'}
                       </div>
                       <div className="mb-2">
-                        <strong>Scadenza:</strong> {profileData.paymentMethod.expiryDate || 'Non disponibile'}
+                        <strong>Numero Carta:</strong> •••• {profileData.cardDetails.cardNumber || '****'}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Scadenza:</strong> {profileData.cardDetails.expiryDate || 'Non disponibile'}
                       </div>
                       <div>
                         <Badge bg="success">Metodo salvato</Badge>
@@ -2827,6 +2854,14 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
               setSaving(false);
             }
           }}>
+            {profileData?.cardDetails && (profileData.cardDetails.cardHolder || profileData.cardDetails.cardNumber) && (
+              <Alert variant="info" className="mb-3">
+                <strong>Carta attuale:</strong> {profileData.cardDetails.cardType || 'N/A'} •••• {profileData.cardDetails.cardNumber || '****'}
+                <br />
+                <small>Inserisci i dati completi di una nuova carta per aggiornarla</small>
+              </Alert>
+            )}
+
             <Form.Group className="mb-3">
               <Form.Label>Intestatario Carta *</Form.Label>
               <Form.Control
@@ -2849,12 +2884,12 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     setPaymentForm({ ...paymentForm, cardNumber: value });
                   }
                 }}
-                placeholder="1234 5678 9012 3456"
+                placeholder={profileData?.cardDetails?.cardNumber ? `Carta corrente: •••• ${profileData.cardDetails.cardNumber}` : "1234 5678 9012 3456"}
                 maxLength="16"
                 required
               />
               <Form.Text className="text-muted">
-                Inserisci 16 cifre senza spazi
+                Inserisci 16 cifre senza spazi della nuova carta
               </Form.Text>
             </Form.Group>
 

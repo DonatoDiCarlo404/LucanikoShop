@@ -376,14 +376,14 @@ export const calculateShippingCost = async (req, res) => {
                 product: {
                     _id: product._id,
                     name: product.name,
-                    weight: product.weight || 0,
-                    price: (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : ((typeof product.price === 'number' && !isNaN(product.price)) ? product.price : 0)
+                    weight: product.weight || 0
                 },
-                quantity: item.quantity
+                quantity: item.quantity,
+                price: item.price || product.price || 0
             });
 
-            // Accumula il totale del carrello
-            totalCartValue += (product.price || 0) * item.quantity;
+            // Accumula il totale del carrello usando il prezzo dal carrello
+            totalCartValue += (item.price || product.price || 0) * item.quantity;
         }
 
         // Calcola spedizione per ogni venditore

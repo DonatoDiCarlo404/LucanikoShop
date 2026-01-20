@@ -65,6 +65,32 @@ router.post('/verify-payment', async (req, res) => {
   }
 });
 
+// Recupera dati payment method
+router.post('/get-payment-method', async (req, res) => {
+  try {
+    const { paymentMethodId } = req.body;
+    
+    if (!paymentMethodId) {
+      return res.status(400).json({ error: 'Payment Method ID mancante' });
+    }
+
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+    
+    // Estrai solo i dati non sensibili della carta
+    const cardDetails = paymentMethod.card ? {
+      brand: paymentMethod.card.brand,
+      last4: paymentMethod.card.last4,
+      exp_month: paymentMethod.card.exp_month,
+      exp_year: paymentMethod.card.exp_year
+    } : null;
+    
+    res.json({ cardDetails });
+  } catch (error) {
+    console.error('Errore recupero payment method:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Webhook endpoint per eventi Stripe
 router.post('/webhook', 
   express.raw({type: 'application/json'}), 

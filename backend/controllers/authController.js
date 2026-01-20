@@ -12,6 +12,11 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'Utente non trovato' });
     }
 
+    // Aggiorna numero di telefono
+    if (typeof req.body.phone === 'string') {
+      user.phone = req.body.phone;
+    }
+
     // Aggiorna indirizzo
     if (req.body.address) {
       user.address = {
@@ -61,6 +66,8 @@ export const updateProfile = async (req, res) => {
     res.json({
       _id: user._id,
       name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       role: user.role,
       isApproved: user.isApproved,
@@ -100,7 +107,8 @@ export const register = async (req, res) => {
       selectedCategories,
       paymentIntentId,
       subscriptionType,
-      subscriptionPaid
+      subscriptionPaid,
+      cardDetails
     } = req.body;
 
     console.log('[Backend] Registrazione ricevuta:', { name, email, role, businessName, vatNumber });
@@ -161,6 +169,20 @@ export const register = async (req, res) => {
         userData.subscriptionPaymentId = paymentIntentId;
         userData.subscriptionType = subscriptionType;
         userData.subscriptionPaid = subscriptionPaid;
+      }
+
+      // Salva dati non sensibili della carta se presenti
+      if (cardDetails && typeof cardDetails === 'object') {
+        console.log('[Backend] cardDetails ricevuti durante registrazione:', cardDetails);
+        userData.cardDetails = {
+          cardHolder: cardDetails.cardHolder || '',
+          cardType: cardDetails.cardType || '',
+          cardNumber: cardDetails.cardNumber || '',
+          expiryDate: cardDetails.expiryDate || ''
+        };
+        console.log('[Backend] cardDetails salvati in userData:', userData.cardDetails);
+      } else {
+        console.log('[Backend] Nessun cardDetails ricevuto durante registrazione');
       }
     }
 
@@ -236,6 +258,8 @@ export const getProfile = async (req, res) => {
       res.json({
         _id: user._id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         role: user.role,
         isApproved: user.isApproved,
@@ -245,7 +269,22 @@ export const getProfile = async (req, res) => {
         paymentMethod: user.paymentMethod,
         cardDetails: user.cardDetails,
         avatar: user.avatar,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        // Campi venditore
+        businessName: user.businessName,
+        ragioneSociale: user.ragioneSociale,
+        businessDescription: user.businessDescription,
+        vatNumber: user.vatNumber,
+        codiceSDI: user.codiceSDI,
+        businessAddress: user.businessAddress,
+        businessPhone: user.businessPhone,
+        businessEmail: user.businessEmail,
+        businessWhatsapp: user.businessWhatsapp,
+        pec: user.pec,
+        storeAddress: user.storeAddress,
+        website: user.website,
+        socialLinks: user.socialLinks,
+        logo: user.logo
       });
     } else {
       res.status(404).json({ message: 'Utente non trovato' });
@@ -282,6 +321,7 @@ export const getVendorProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
+      console.log('[getVendorProfile] User cardDetails:', user.cardDetails);
       res.json(user);
     } else {
       res.status(404).json({ message: 'Utente non trovato' });
