@@ -408,7 +408,7 @@ const ProductDetail = () => {
                 className="d-block w-100"
                 src={selectedVariant.image}
                 alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')}`}
-                style={{ height: '400px', objectFit: 'cover', borderRadius: '8px' }}
+                style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
               />
             </div>
           ) : product.images?.length > 0 ? (
@@ -419,7 +419,7 @@ const ProductDetail = () => {
                     className="d-block w-100"
                     src={image.url}
                     alt={`${product.name} - ${index + 1}`}
-                    style={{ height: '400px', objectFit: 'cover', borderRadius: '8px' }}
+                    style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
                   />
                 </Carousel.Item>
               ))}
@@ -427,7 +427,7 @@ const ProductDetail = () => {
           ) : (
             <div
               style={{
-                height: '400px',
+                height: '520px',
                 backgroundColor: '#f0f0f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -444,27 +444,43 @@ const ProductDetail = () => {
 
         <Col md={6}>
           <div className="mb-3">
-            <Badge bg="secondary" className="mb-2">
+            <Badge className="badge-category-product mb-2">
               {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
             </Badge>
-            <h2>{product.name}</h2>
+            <h2 style={{ color: '#004b75', fontWeight: 700 }}>{product.name}</h2>
           </div>
 
           {/* VENDITORE */}
           {product.seller && (
             <Card className="mb-3">
               <Card.Body>
-                <h5>Venduto da</h5>
+                <h5 style={{ color: '#861515', fontWeight: 700 }}>Venduto da</h5>
                 <ListGroup variant="flush">
                   <ListGroup.Item>
                     <strong>Azienda:</strong>{' '}
-                    <span 
-                      style={{ 
-                        color: '#0d6efd', 
+                    <span
+                      style={{
                         cursor: 'pointer',
-                        textDecoration: 'underline'
+                        color: '#004b75',
+                        textDecoration: 'underline',
+                        textDecorationColor: '#004b75',
+                        textDecorationThickness: '2px',
+                        textUnderlineOffset: '2px',
+                        WebkitTextDecorationColor: '#004b75',
+                        fontWeight: 600,
+                        transition: 'color 0.2s, text-decoration-color 0.2s'
                       }}
                       onClick={() => navigate(`/shop/${product.seller._id}`)}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.color = '#861515';
+                        e.currentTarget.style.textDecorationColor = '#861515';
+                        e.currentTarget.style.WebkitTextDecorationColor = '#861515';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.color = '#004b75';
+                        e.currentTarget.style.textDecorationColor = '#004b75';
+                        e.currentTarget.style.WebkitTextDecorationColor = '#004b75';
+                      }}
                     >
                       {product.seller.businessName || product.seller.name}
                     </span>
@@ -491,7 +507,7 @@ const ProductDetail = () => {
                   {/* Selettori per ogni attributo variante */}
                   {product.customAttributes.filter(a => a.allowVariants && a.options?.length > 0).map(attr => (
                     <div key={attr.key} className="mb-2">
-                      <strong>{attr.name}:</strong>{' '}
+                      <strong style={{ color: '#861515' }}>{attr.name}:</strong>{' '}
                       <select
                         value={selectedOptions[attr.key] || ''}
                         onChange={e => {
@@ -513,10 +529,10 @@ const ProductDetail = () => {
                         {product.hasActiveDiscount && product.discountedPrice && product.originalPrice ? (
                           <>
                             <div className="d-flex align-items-center gap-2 mb-1">
-                              <h3 className="text-primary mb-0">
+                              <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                                 €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2)}
                                 <small className="text-muted">/{product.unit}</small>
-                              </h3>
+                              </span>
                               <Badge bg="danger" className="ms-2">
                                 -{product.discountPercentage}%
                               </Badge>
@@ -528,10 +544,10 @@ const ProductDetail = () => {
                             </div>
                           </>
                         ) : (
-                          <h3 className="text-primary mb-0">
+                          <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                             €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
                             <small className="text-muted">/{product.unit}</small>
-                          </h3>
+                          </span>
                         )}
                       </div>
                       {(() => {
@@ -560,10 +576,10 @@ const ProductDetail = () => {
                     {product.hasActiveDiscount && product.discountedPrice && product.originalPrice ? (
                       <>
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <h3 className="text-primary mb-0">
+                          <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                             €{product.discountedPrice.toFixed(2)}
                             <small className="text-muted">/{product.unit}</small>
-                          </h3>
+                          </span>
                           <Badge bg="danger" className="ms-2">
                             -{product.discountPercentage}%
                           </Badge>
@@ -575,10 +591,10 @@ const ProductDetail = () => {
                         </div>
                       </>
                     ) : (
-                      <h3 className="text-primary mb-0">
+                      <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                         €{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
                         <small className="text-muted">/{product.unit}</small>
-                      </h3>
+                      </span>
                     )}
                   </div>
                   {(() => {
@@ -602,7 +618,7 @@ const ProductDetail = () => {
           {product.description && (
             <Card className="mb-3">
               <Card.Body>
-                <h5>Descrizione</h5>
+                <h5 style={{ color: '#861515', fontWeight: 700 }}>Descrizione</h5>
                 <p>{product.description}</p>
               </Card.Body>
             </Card>
@@ -611,7 +627,7 @@ const ProductDetail = () => {
           {/* RECENSIONI */}
           <Card className="mb-3">
             <Card.Body>
-              <h5>Recensioni</h5>
+              <h5 style={{ color: '#861515', fontWeight: 700 }}>Recensioni</h5>
               {deleteSuccess && <Alert variant="success">{deleteSuccess}</Alert>}
               {editSuccess && <Alert variant="success">{editSuccess}</Alert>}
 
@@ -807,7 +823,7 @@ const ProductDetail = () => {
 
           {/* MESSAGGIO SE NON HA ACQUISTATO */}
           {user && !hasPurchased && (
-            <Alert variant="info">
+            <Alert variant="info" style={{ background: '#fff', border: 'none', color: '#004b75', fontWeight: 500 }}>
               Puoi lasciare una recensione solo dopo aver acquistato questo prodotto.
             </Alert>
           )}
@@ -817,6 +833,7 @@ const ProductDetail = () => {
             <Button
               variant="primary"
               size="lg"
+              className="btn-custom-cart"
               disabled={
                 (Array.isArray(product.variants) && product.variants.length > 0)
                   ? !(selectedVariant && selectedVariant.stock > 0 && product.isActive)
@@ -843,9 +860,9 @@ const ProductDetail = () => {
             >
               {(Array.isArray(product.variants) && product.variants.length > 0)
                 ? (selectedVariant && selectedVariant.stock > 0 && product.isActive
-                    ? '🚀 Acquista Ora (Mò Stess!)'
-                    : '🚀 Acquista Ora (Mò Stess!)')
-                : (product.stock > 0 && product.isActive ? '🚀 Acquista Ora (Mò Stess!)' : 'Non disponibile')}
+                    ? '🌶️ Acquista Ora (Mò Stess!)'
+                    : '🌶️ Acquista Ora (Mò Stess!)')
+                  : (product.stock > 0 && product.isActive ? '🌶️ Acquista Ora (Mò Stess!)' : 'Non disponibile')}
             </Button>
           </div>
         </Col>

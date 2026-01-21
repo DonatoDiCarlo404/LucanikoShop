@@ -4,7 +4,8 @@ import { getPublicVendorProfile, getAllVendors } from '../controllers/vendorCont
 const router = express.Router();
 
 // Rotte pubbliche
-router.get('/', getAllVendors);
+router.get('/all', getAllVendors); // Lista tutti i venditori approvati
+router.get('/', getAllVendors);    // Alias per retrocompatibilità
 router.get('/:id', getPublicVendorProfile);
 
 export default router;

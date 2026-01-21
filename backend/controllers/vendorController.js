@@ -6,7 +6,7 @@ import { User, Product } from '../models/index.js';
 export const getPublicVendorProfile = async (req, res) => {
   try {
     const vendor = await User.findById(req.params.id).select(
-      'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings'
+      'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories'
     );
 
     if (!vendor) {
@@ -22,7 +22,10 @@ export const getPublicVendorProfile = async (req, res) => {
       seller: vendor._id, 
       isActive: true
     })
-      .select('name description price images category stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit')
+      .populate('category', 'name')
+      .populate('subcategory', 'name')
+      .populate('seller', 'name businessName')
+      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit isActive variants originalPrice ivaPercent seller')
       .sort('-createdAt')
       .limit(50);
 
@@ -48,7 +51,9 @@ export const getPublicVendorProfile = async (req, res) => {
         socialLinks: vendor.socialLinks,
         isApproved: vendor.isApproved,
         memberSince: vendor.createdAt,
-        shopSettings: vendor.shopSettings
+        shopSettings: vendor.shopSettings,
+        news: vendor.news,
+        businessCategories: vendor.businessCategories
       },
       products,
       stats: {
@@ -70,11 +75,24 @@ export const getAllVendors = async (req, res) => {
     const vendors = await User.find({ 
       role: 'seller', 
       isApproved: true 
-    }).select('name businessName businessDescription avatar createdAt');
+    }).select('name businessName ragioneSociale businessDescription logo storeAddress businessCategories createdAt');
+
+    // Formatta i dati per includere la città e le categorie
+    const formattedVendors = vendors.map(vendor => ({
+      _id: vendor._id,
+      name: vendor.name,
+      businessName: vendor.businessName,
+      ragioneSociale: vendor.ragioneSociale,
+      businessDescription: vendor.businessDescription,
+      logo: vendor.logo,
+      city: vendor.storeAddress?.city || '',
+      businessCategories: vendor.businessCategories || [],
+      memberSince: vendor.createdAt
+    }));
 
     res.json({
-      count: vendors.length,
-      vendors
+      count: formattedVendors.length,
+      vendors: formattedVendors
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

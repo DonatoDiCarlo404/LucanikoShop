@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
-import { Card, Container, Button } from 'react-bootstrap';
+import { useState } from 'react';
+import { Card, Container, Carousel } from 'react-bootstrap';
 import './CategoriesCarousel.css';
 
 const categoryCards = [
@@ -64,38 +64,6 @@ const categoryCards = [
 const CategoriesCarouselArrows = () => {
   const navigate = useNavigate();
   const [imageErrors, setImageErrors] = useState({});
-  const carouselRef = useRef(null);
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Scorrimento automatico più veloce
-  useEffect(() => {
-    const carousel = carouselRef.current;
-    if (!carousel || isPaused) return;
-
-    let lastScrollLeft = carousel.scrollLeft;
-    let stableCount = 0;
-
-    const scroll = () => {
-      if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
-        carousel.scrollLeft = 0;
-      } else {
-        carousel.scrollLeft += 4;
-      }
-      // Stabilizzazione: se il carosello non si muove per 3 cicli, ferma lo scroll
-      if (carousel.scrollLeft === lastScrollLeft) {
-        stableCount++;
-        if (stableCount > 3) {
-          setIsPaused(true);
-        }
-      } else {
-        stableCount = 0;
-        lastScrollLeft = carousel.scrollLeft;
-      }
-    };
-
-    const interval = setInterval(scroll, 10);
-    return () => clearInterval(interval);
-  }, [isPaused]);
 
   const handleCategoryClick = (categoryName) => {
     navigate(`/products?category=${encodeURIComponent(categoryName)}`);
@@ -105,93 +73,65 @@ const CategoriesCarouselArrows = () => {
     setImageErrors(prev => ({ ...prev, [categoryId]: true }));
   };
 
-  const handleScrollLeft = () => {
-    setIsPaused(true);
-    const carousel = carouselRef.current;
-    if (carousel) {
-      carousel.scrollLeft -= 300;
-    }
-    setTimeout(() => setIsPaused(false), 600); // Pausa lo scorrimento automatico per 600ms
-  };
-
-  const handleScrollRight = () => {
-    setIsPaused(true);
-    const carousel = carouselRef.current;
-    if (carousel) {
-      carousel.scrollLeft += 300;
-    }
-    setTimeout(() => setIsPaused(false), 600); // Pausa lo scorrimento automatico per 600ms
-  };
+  // Suddividi le card in gruppi da 4
+  const chunkedCards = [];
+  for (let i = 0; i < categoryCards.length; i += 4) {
+    chunkedCards.push(categoryCards.slice(i, i + 4));
+  }
 
   return (
-    <div className="categories-carousel-container" style={{ position: 'relative' }}>
+    <div className="categories-carousel-container">
       <Container>
-        <h3 className="text-center mb-4" style={{ fontWeight: 600, color: '#7c4d1e' }}>Esplora le Categorie</h3>
+        <h3 className="text-center mb-4" style={{ fontWeight: 600, color: '#004b75' }}>Esplora le Categorie</h3>
       </Container>
-      <Button 
-        variant="light" 
-        className="carousel-arrow left" 
-        style={{ position: 'absolute', left: 0, top: '50%', zIndex: 2, transform: 'translateY(-50%)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-        onClick={handleScrollLeft}
-      >
-        <span style={{ fontSize: '2rem', color: '#764ba2' }}>&#8592;</span>
-      </Button>
-      <div 
-        className="categories-carousel" 
-        ref={carouselRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        style={{ scrollbarWidth: 'none' }}
-      >
-        {[...categoryCards, ...categoryCards].map((cat, index) => (
-          <div key={`${cat.id}-${index}`} className="carousel-card-wrapper">
-            <Card
-              className="h-100 shadow-sm category-card"
-              style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-              onClick={() => handleCategoryClick(cat.name)}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {!imageErrors[cat.id] ? (
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  style={{ height: 200, width: '100%', objectFit: 'cover', background: '#f8f9fa' }}
-                  onError={() => handleImageError(cat.id)}
-                />
-              ) : (
-                <div
-                  style={{
-                    height: 200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    fontSize: '3rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {cat.name.charAt(0).toUpperCase()}
+      <Carousel interval={5000} indicators={true} controls={true} pause="hover">
+        {chunkedCards.map((group, idx) => (
+          <Carousel.Item key={idx}>
+            <div className="d-flex justify-content-center align-items-stretch w-100">
+              {group.map(cat => (
+                <div key={cat.id} className="carousel-card-wrapper">
+                  <Card
+                    className="h-100 shadow-sm category-card"
+                    style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                    onClick={() => handleCategoryClick(cat.name)}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    {!imageErrors[cat.id] ? (
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        style={{ height: 200, width: '100%', objectFit: 'cover', background: '#f8f9fa' }}
+                        onError={() => handleImageError(cat.id)}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          height: 200,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: 'white',
+                          fontSize: '3rem',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {cat.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <Card.Body className="text-center p-3">
+                      <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#861515' }}>
+                        {cat.name}
+                      </Card.Title>
+                    </Card.Body>
+                  </Card>
                 </div>
-              )}
-              <Card.Body className="text-center p-3">
-                <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                  {cat.name}
-                </Card.Title>
-              </Card.Body>
-            </Card>
-          </div>
+              ))}
+            </div>
+          </Carousel.Item>
         ))}
-      </div>
-      <Button 
-        variant="light" 
-        className="carousel-arrow right" 
-        style={{ position: 'absolute', right: 0, top: '50%', zIndex: 2, transform: 'translateY(-50%)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-        onClick={handleScrollRight}
-      >
-        <span style={{ fontSize: '2rem', color: '#764ba2' }}>&#8594;</span>
-      </Button>
+      </Carousel>
     </div>
   );
 };

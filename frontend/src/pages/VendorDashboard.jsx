@@ -28,6 +28,9 @@ const VendorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
 
+  // Tab state for color switching
+  const [activeTab, setActiveTab] = useState('orders');
+
   // Modal per aggiornamento stato ordine
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -393,7 +396,7 @@ const VendorDashboard = () => {
   return (
     <Container className="mt-4 mb-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>📊 Dashboard Venditore</h2>
+          <h2 style={{ color: '#004b75' }}>📊 Dashboard Venditore</h2>
         <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
           <i className="bi bi-person-badge me-2"></i>
           Profilo Aziendale
@@ -440,8 +443,8 @@ const VendorDashboard = () => {
       )}
 
       {/* Tabs per ordini e prodotti */}
-      <Tabs defaultActiveKey="orders" className="mb-3">
-        <Tab eventKey="orders" title={`Ordini Ricevuti (${orders.length})`}>
+      <Tabs defaultActiveKey="orders" className="mb-3" onSelect={setActiveTab} activeKey={activeTab}>
+        <Tab eventKey="orders" title={<span style={{color: activeTab === 'orders' ? '#861515' : '#004b75'}}>{`Ordini Ricevuti (${orders.length})`}</span>}>
           <Card>
             <Card.Body>
               {orders.length === 0 ? (
@@ -512,7 +515,7 @@ const VendorDashboard = () => {
           </Card>
         </Tab>
 
-        <Tab eventKey="products" title={`I Miei Prodotti (${products.length})`}>
+        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#861515' : '#004b75'}}>{`I Miei Prodotti (${products.length})`}</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -612,7 +615,7 @@ const VendorDashboard = () => {
           </Card>
         </Tab>
 
-        <Tab eventKey="discounts" title={`Sconti e Coupon (${discounts.length})`}>
+        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#861515' : '#004b75'}}>{`Sconti e Coupon (${discounts.length})`}</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -728,7 +731,7 @@ const VendorDashboard = () => {
         </Tab>
 
         {stats && (
-          <Tab eventKey="stats" title="Statistiche Dettagliate">
+          <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#861515' : '#004b75'}}>Statistiche Dettagliate</span>}>
             <Card>
               <Card.Body>
                 <h5 className="mb-4">Riepilogo Ordini per Stato</h5>

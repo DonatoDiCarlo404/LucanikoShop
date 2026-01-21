@@ -13,10 +13,27 @@ const ShopPage = () => {
   const [error, setError] = useState('');
   const [shopData, setShopData] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [subcategories, setSubcategories] = useState([]);
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+
+  console.log('🔵 ShopPage renderizzata, sellerId:', sellerId);
+  console.log('🔵 shopData:', shopData);
+  console.log('🔵 subcategories:', subcategories);
 
   useEffect(() => {
+    console.log('🟢 useEffect loadShopData eseguito');
     loadShopData();
   }, [sellerId]);
+
+  useEffect(() => {
+    console.log('🟡 useEffect loadSubcategories eseguito, shopData:', shopData);
+    if (shopData?.vendor?.businessCategories) {
+      console.log('🟡 Chiamando loadSubcategories...');
+      loadSubcategories();
+    } else {
+      console.log('🟡 Nessun businessCategories, shopData?.vendor?.businessCategories:', shopData?.vendor?.businessCategories);
+    }
+  }, [shopData]);
 
   const loadShopData = async () => {
     try {
@@ -33,6 +50,48 @@ const ShopPage = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSubcategories = async () => {
+    try {
+      const businessCategories = shopData.vendor.businessCategories;
+      console.log('📦 businessCategories del venditore:', businessCategories);
+      
+      if (!businessCategories || businessCategories.length === 0) {
+        console.log('⚠️ Nessuna businessCategories trovata');
+        setSubcategories([]);
+        return;
+      }
+
+      // Carica tutte le categorie dal backend
+      const res = await fetch('http://localhost:5000/api/categories');
+      if (!res.ok) {
+        throw new Error('Errore caricamento categorie');
+      }
+      const allCategories = await res.json();
+      console.log('📚 Tutte le categorie:', allCategories.length);
+
+      // Filtra le macrocategorie che corrispondono a businessCategories
+      const relevantParents = allCategories.filter(
+        cat => !cat.parent && businessCategories.includes(cat.name)
+      );
+      console.log('🏷️ Macrocategorie rilevanti:', relevantParents);
+
+      // Estrai tutte le sottocategorie di queste macrocategorie
+      const subs = [];
+      relevantParents.forEach(parent => {
+        const children = allCategories.filter(cat => 
+          cat.parent && cat.parent.toString() === parent._id.toString()
+        );
+        console.log(`   ↳ Sottocategorie di "${parent.name}":`, children.length);
+        subs.push(...children);
+      });
+
+      console.log('✅ Sottocategorie totali caricate:', subs.length, subs.map(s => s.name));
+      setSubcategories(subs);
+    } catch (err) {
+      console.error('❌ Errore caricamento sottocategorie:', err);
     }
   };
 
@@ -59,10 +118,54 @@ const ShopPage = () => {
   }
 
   const { vendor, products, stats } = shopData;
-  // Filtra prodotti per nome
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  
+  // Normalizza i prodotti per assicurare compatibilità con ProductCard
+  const normalizedProducts = products.map(p => ({
+    ...p,
+    // Assicura che category sia un oggetto con name, o una stringa
+    category: typeof p.category === 'object' && p.category?.name 
+      ? p.category.name 
+      : (typeof p.category === 'string' ? p.category : 'N/A'),
+    // NON forzare price se non definito, lascialo undefined per permettere a ProductCard di usare variants
+    price: typeof p.price === 'number' ? p.price : undefined,
+    // Assicura che stock sia un numero
+    stock: typeof p.stock === 'number' ? p.stock : 0,
+    // Assicura che isActive sia boolean (default true se non specificato)
+    isActive: typeof p.isActive === 'boolean' ? p.isActive : true,
+    // Assicura variants
+    variants: Array.isArray(p.variants) ? p.variants : [],
+    // Assicura rating e numReviews
+    rating: typeof p.rating === 'number' ? p.rating : 0,
+    numReviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+    // Assicura seller per mostrare nome azienda
+    seller: p.seller || vendor,
+  }));
+  
+  // Filtra prodotti per nome e sottocategoria
+  console.log('🔍 Filtro - selectedSubcategory:', selectedSubcategory);
+  console.log('🔍 Filtro - normalizedProducts:', normalizedProducts.map(p => ({ 
+    name: p.name, 
+    subcategory: p.subcategory,
+    subcategoryType: typeof p.subcategory,
+    subcategoryId: typeof p.subcategory === 'object' ? p.subcategory?._id : p.subcategory
+  })));
+  
+  const filteredProducts = normalizedProducts.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSubcategory = !selectedSubcategory || 
+      (p.subcategory && 
+       (typeof p.subcategory === 'object' 
+         ? p.subcategory._id === selectedSubcategory 
+         : p.subcategory === selectedSubcategory));
+    
+    if (selectedSubcategory) {
+      console.log(`   → Prodotto "${p.name}": matchesSubcategory=${matchesSubcategory}, subcategory=`, p.subcategory);
+    }
+    
+    return matchesSearch && matchesSubcategory;
+  });
+  
+  console.log('🔍 Filtro - filteredProducts:', filteredProducts.length);
 
   // Proprietario autenticato?
   const isOwner = user && user._id === vendor._id;
@@ -157,7 +260,7 @@ const ShopPage = () => {
               </Card>
               <Card className="border-0 bg-white">
                 <Card.Body className="text-center">
-                  <h3 className="text-primary mb-0">{stats.totalProducts}</h3>
+                  <h3 className="mb-0" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
                   <p className="text-muted mb-0">Prodotti Disponibili</p>
                 </Card.Body>
               </Card>
@@ -166,31 +269,142 @@ const ShopPage = () => {
         </Card.Body>
       </Card>
 
-
+      {/* NEWS AZIENDALE (loop continuo responsive, fix) */}
+      {vendor.news && (
+        <div className="news-banner-responsive" style={{
+          overflow: 'hidden',
+          height: '40px',
+          marginBottom: '1.5rem',
+          position: 'relative',
+          width: '100vw',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#fff',
+        }}>
+            <div className="news-banner-track" style={{
+              display: 'flex',
+              alignItems: 'center',
+              height: '48px',
+              whiteSpace: 'nowrap',
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              minWidth: '100vw',
+              animation: 'scrollNewsLoop 20s linear infinite',
+            }}>
+            <div className="news-banner-content" style={{
+              display: 'inline-flex',
+              minWidth: 'max-content',
+            }}>
+              <Alert variant="info" className="mb-0 p-2" style={{
+                borderLeft: '4px solid #0d6efd',
+                fontSize: '20px',
+                height: '48px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                paddingLeft: '1.2rem',
+                boxShadow: 'none',
+                border: 'none',
+                background: '#fff',
+                marginRight: '60px',
+              }}>
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#861515' }}></i>
+                <strong style={{ color: '#861515' }}>News:</strong>&nbsp;<span style={{ color: '#861515' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+              </Alert>
+            </div>
+            <div className="news-banner-content" style={{
+              display: 'inline-flex',
+              minWidth: 'max-content',
+            }}>
+                <Alert variant="info" className="mb-0 p-2" style={{
+                  borderLeft: '4px solid #0d6efd',
+                  fontSize: '20px',
+                  height: '48px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  paddingLeft: '1.2rem',
+                  boxShadow: 'none',
+                  border: 'none',
+                  background: '#fff',
+                  marginRight: '60px',
+                }}>
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#861515' }}></i>
+                <strong style={{ color: '#861515' }}>News:</strong>&nbsp;<span style={{ color: '#861515' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+              </Alert>
+            </div>
+          </div>
+          <style>{`
+            @keyframes scrollNewsLoop {
+              0% { transform: translateX(100vw); }
+              100% { transform: translateX(-100%); }
+            }
+            @media (max-width: 600px) {
+              .news-banner-responsive {
+                height: 44px !important;
+              }
+              .news-banner-track {
+                height: 44px !important;
+                animation-duration: 14s !important;
+              }
+              .alert-info {
+                font-size: 18px !important;
+                height: 44px !important;
+                padding-left: 1.2rem !important;
+              }
+            }
+          `}</style>
+        </div>
+      )}
 
       {/* Prodotti del Negozio */}
       <div className="mb-4">
-        <h3 className="mb-3">Prodotti di {vendor.businessName || vendor.name}</h3>
+        <h3 className="mb-3" style={{ color: '#004b75', fontWeight: 700 }}>Prodotti di {vendor.businessName || vendor.name}</h3>
         <div className="mb-3">
-            <div className="mb-4 d-flex justify-content-center">
-              <div style={{ maxWidth: 400, width: '100%' }}>
-                <div className="input-group shadow" style={{ borderRadius: 10, border: '2px solid #0d6efd', overflow: 'hidden' }}>
-                  <span className="input-group-text bg-primary text-white" id="search-addon">
-                    <i className="bi bi-search"></i>
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Cerca prodotto per nome..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    style={{ fontSize: 18, padding: '0.75rem 1rem', border: 'none', boxShadow: 'none' }}
-                    aria-label="Cerca prodotto per nome"
-                    aria-describedby="search-addon"
-                  />
-                </div>
+          <div className="mb-4 d-flex flex-wrap justify-content-start align-items-center gap-3">
+            <div style={{ maxWidth: 300, width: '100%' }}>
+              <div className="input-group shadow" style={{ borderRadius: 10, border: '2px solid #004b75', overflow: 'hidden' }}>
+                <span className="input-group-text" id="search-addon" style={{ background: '#004b75', color: '#fff', border: 'none' }}>
+                  <i className="bi bi-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Cerca prodotto per nome..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  style={{ fontSize: 15, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
+                  aria-label="Cerca prodotto per nome"
+                  aria-describedby="search-addon"
+                />
               </div>
             </div>
+            {/* Dropdown Sottocategorie */}
+            {subcategories.length > 0 && (
+              <div style={{ minWidth: 220 }}>
+                <select
+                  className="form-select shadow"
+                  value={selectedSubcategory}
+                  onChange={e => setSelectedSubcategory(e.target.value)}
+                  style={{ 
+                    fontSize: 15, 
+                    padding: '0.5rem 2.5rem 0.5rem 1rem', // padding-right aumentato, padding-top/bottom come input
+                    border: '2px solid #004b75',
+                    borderRadius: 10,
+                    color: '#004b75',
+                    fontWeight: 500,
+                    height: '38px' // stessa altezza dell'input
+                  }}
+                >
+                  <option value="">Tutte le sottocategorie</option>
+                  {subcategories.map(sub => (
+                    <option key={sub._id} value={sub._id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
         {filteredProducts.length === 0 ? (
           <Alert variant="info">

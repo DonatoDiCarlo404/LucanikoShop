@@ -98,6 +98,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       maxlength: [500, 'La descrizione non può superare 500 caratteri']
     },
+    businessCategories: [{
+      type: String,
+      trim: true
+    }], // Macrocategorie di vendita per i seller
+    news: {
+      type: String,
+      maxlength: [80, 'La news non può superare 80 caratteri'],
+      default: ''
+    },
     logo: {
       url: String,
       public_id: String // Per Cloudinary

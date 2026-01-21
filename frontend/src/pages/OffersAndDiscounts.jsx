@@ -103,7 +103,7 @@ const OffersAndDiscounts = () => {
 
   return (
     <Container className="mt-4 mb-5">
-      <h2 className="mb-4">Offerte e Sconti (Sparagn e Cumbarisc)</h2>
+      <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>Offerte e Sconti (Sparagn e Cumbarisc)</h2>
       <Card className="mb-4">
         <Card.Body>
           <Form>

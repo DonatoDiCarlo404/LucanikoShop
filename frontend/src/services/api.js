@@ -68,6 +68,18 @@ export const authAPI = {
     });
     return handleResponse(response);
   },
+
+  updateVendorProfile: async (data, token) => {
+    const response = await fetch(`${API_URL}/auth/vendor-profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
 };
 
 // Products API

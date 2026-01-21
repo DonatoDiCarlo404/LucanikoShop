@@ -93,7 +93,7 @@ const Categories = () => {
 
   return (
     <Container className="mt-4 mb-5">
-      <h2 className="mb-4">Categorie</h2>
+      <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>Categorie</h2>
       <Row className="g-4">
         {categoryCards.map(cat => (
           <Col key={cat.id} xs={6} sm={4} md={3}>
@@ -133,7 +133,7 @@ const Categories = () => {
                 </div>
               )}
               <Card.Body className="text-center">
-                <Card.Title style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                <Card.Title style={{ fontSize: '1rem', fontWeight: 'bold', color: '#861515' }}>
                   {cat.name}
                 </Card.Title>
               </Card.Body>

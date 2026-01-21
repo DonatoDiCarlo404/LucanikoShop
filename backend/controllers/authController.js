@@ -135,6 +135,9 @@ export const register = async (req, res) => {
       if (vatNumber) userData.vatNumber = vatNumber;
       if (phoneNumber) userData.phone = phoneNumber;
       if (uniqueCode) userData.codiceSDI = uniqueCode;
+      if (selectedCategories && Array.isArray(selectedCategories)) {
+        userData.businessCategories = selectedCategories;
+      }
 
       // Indirizzo aziendale
       if (address || city || zipCode) {
@@ -321,7 +324,7 @@ export const getVendorProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
-      console.log('[getVendorProfile] User cardDetails:', user.cardDetails);
+      console.log('[DEBUG NEWS BACKEND] News caricata dal database:', user.news);
       res.json(user);
     } else {
       res.status(404).json({ message: 'Utente non trovato' });
@@ -336,13 +339,7 @@ export const getVendorProfile = async (req, res) => {
 // @access  Private/Seller
 export const updateVendorProfile = async (req, res) => {
   try {
-    // Log dei dati ricevuti dal frontend
-    console.log('📥 [BACKEND SAVE] Dati ricevuti dal frontend:', JSON.stringify(req.body?.shopSettings?.shipping?.shippingRates, null, 2));
-    if (req.body?.shopSettings?.shipping?.shippingRates) {
-      req.body.shopSettings.shipping.shippingRates.forEach((rate, i) => {
-        console.log(`📥 [BACKEND SAVE] Tariffa ${i} ricevuta - shippingOptions:`, rate.shippingOptions);
-      });
-    }
+    console.log('[DEBUG NEWS BACKEND] Body ricevuto:', { news: req.body.news });
 
     if (req.user.role !== 'seller' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Accesso negato. Solo venditori possono modificare il profilo aziendale.' });
@@ -376,6 +373,12 @@ export const updateVendorProfile = async (req, res) => {
     user.businessDescription = req.body.businessDescription || user.businessDescription;
     user.vatNumber = req.body.vatNumber || user.vatNumber;
     user.codiceSDI = req.body.codiceSDI || user.codiceSDI;
+
+    // Aggiorna news aziendale
+    if (req.body.news !== undefined) {
+      user.news = req.body.news;
+      console.log('[DEBUG NEWS BACKEND] News ricevuta e impostata:', req.body.news);
+    }
 
     // Aggiorna logo
     if (req.body.logo) {
@@ -455,8 +458,7 @@ export const updateVendorProfile = async (req, res) => {
 
     const updatedUser = await user.save();
 
-    // Log di cosa è stato salvato
-    console.log('💾 [BACKEND SAVE] Dati salvati nel database:', JSON.stringify(updatedUser?.shopSettings?.shipping?.shippingRates, null, 2));
+    console.log('[DEBUG NEWS BACKEND] News salvata nel database:', updatedUser.news);
     if (updatedUser?.shopSettings?.shipping?.shippingRates) {
       updatedUser.shopSettings.shipping.shippingRates.forEach((rate, i) => {
         console.log(`💾 [BACKEND SAVE] Tariffa ${i} salvata - shippingOptions:`, rate.shippingOptions);

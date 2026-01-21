@@ -35,7 +35,7 @@ const productSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      required: [true, 'Il prezzo è obbligatorio'],
+      required: [function() { return !this.hasVariants; }, 'Il prezzo è obbligatorio'],
       min: [0, 'Il prezzo non può essere negativo'],
       default: 0
     },

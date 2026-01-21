@@ -150,12 +150,12 @@ const Products = () => {
 
   return (
     <Container className="pt-2 pb-5">
-      <div className="text-center mb-4">
-        <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#7c4d1e', letterSpacing: 1 }}>
-          La Basilicata, tutta qui.
+      <div className="text-center mb-4 payoff-custom">
+        <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#861515', letterSpacing: 1 }}>
+          la Basilicata in un click!
         </span>
       </div>
-      <h2 className="mb-4">Catalogo Prodotti</h2>
+      <h2 className="mb-4" style={{ color: '#004b75' }}>Catalogo Prodotti</h2>
 
       {/* Filtri */}
       <Row className="mb-3">
@@ -232,7 +232,6 @@ const Products = () => {
             ))}
           </Form.Select>
         </Col>
-        {/* Campo ricerca prezzo min/max rimosso su richiesta */}
       </Row>
 
       {/* Ordinamento e Reset */}
@@ -256,7 +255,7 @@ const Products = () => {
           </Button>
         </Col>
         <Col md={4}>
-          <div className="text-muted pt-2">
+          <div className="pt-2" style={{ color: '#198754', fontWeight: 500 }}>
             <strong>{total}</strong> prodotti trovati
           </div>
         </Col>

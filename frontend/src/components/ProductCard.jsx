@@ -152,7 +152,9 @@ const ProductCard = ({ product }) => {
             fontSize: '1rem',
             height: '20px',
             overflow: 'hidden',
-            marginBottom: 4
+            marginBottom: 4,
+            fontWeight: 700,
+            color: '#004b75'
           }}
         >
           {product.name}
@@ -173,7 +175,7 @@ const ProductCard = ({ product }) => {
           </span>
         </div>
 
-        <Badge bg="secondary" className="mb-2 align-self-start">
+        <Badge className="mb-2 align-self-start badge-category-product">
           {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
         </Badge>
 
@@ -182,9 +184,9 @@ const ProductCard = ({ product }) => {
             <div>
               {product.hasActiveDiscount && product.originalPrice ? (
                 <>
-                  <h5 className="text-primary mb-0">
+                  <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                     €{product.discountedPrice?.toFixed(2) || '0.00'}
-                    <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>
                       /{product.unit}
                     </small>
                   </h5>
@@ -193,23 +195,18 @@ const ProductCard = ({ product }) => {
                   </small>
                 </>
               ) : typeof product.price === 'number' ? (
-                <h5 className="text-primary mb-0">
+                <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                   €{product.price.toFixed(2)}
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
                     /{product.unit}
                   </small>
                 </h5>
               ) : minVariantPrice !== null ? (
-                <h5 className="text-primary mb-0">
+                <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                   da €{minVariantPrice.toFixed(2)}
-                  <small className="text-muted" style={{ fontSize: '0.75rem' }}>
+                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
                     /{product.unit}
                   </small>
-                  {typeof product.ivaPercent === 'number' && (
-                    <span className="ms-2" style={{fontSize:'0.8rem', color:'#888'}}>
-                      IVA {product.ivaPercent}%
-                    </span>
-                  )}
                 </h5>
               ) : (
                 <h5 className="text-muted mb-0">
@@ -217,22 +214,17 @@ const ProductCard = ({ product }) => {
                 </h5>
               )}
             </div>
-            {typeof product.ivaPercent === 'number' && minVariantPrice === null && (
-              <div style={{fontSize:'0.8rem', color:'#888'}}>
-                IVA {product.ivaPercent}%
-              </div>
-            )}
 
             {(() => {
               const hasStock = (typeof product.stock === 'number' && product.stock > 0) || totalVariantStock > 0;
               const isAvailable = hasStock && product.isActive;
               if (!hasStock) {
-                return <Badge bg="danger">Esaurito</Badge>;
+                return <Badge className="badge-esaurito">Esaurito</Badge>;
               }
               return isAvailable ? (
-                <Badge bg="success">Disponibile</Badge>
+                <Badge className="badge-availability">Disponibile</Badge>
               ) : (
-                <Badge bg="secondary">Non disponibile</Badge>
+                <Badge className="badge-not-available">Non disponibile</Badge>
               );
             })()}
           </div>

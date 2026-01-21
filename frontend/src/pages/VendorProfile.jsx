@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { authAPI } from '../services/api';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Container,
@@ -87,6 +88,7 @@ const VendorProfile = () => {
 
   // State per gestione sconti
   const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState(null); // Nuovo stato per tracciare lo sconto in modifica
   const [discountForm, setDiscountForm] = useState({
     name: '',
     description: '',
@@ -102,6 +104,21 @@ const VendorProfile = () => {
     minPurchaseAmount: 0,
     maxDiscountAmount: null
   });
+
+  // State per News
+  const [newsText, setNewsText] = useState(() => localStorage.getItem('vendorNewsText') || '');
+  const [savedNews, setSavedNews] = useState(() => localStorage.getItem('vendorSavedNews') || '');
+  const [savingNews, setSavingNews] = useState(false);
+
+  // Aggiorna localStorage quando newsText cambia
+  useEffect(() => {
+    localStorage.setItem('vendorNewsText', newsText);
+  }, [newsText]);
+
+  // Aggiorna localStorage quando savedNews cambia
+  useEffect(() => {
+    localStorage.setItem('vendorSavedNews', savedNews);
+  }, [savedNews]);
 
   // State per form
   const [formData, setFormData] = useState({
@@ -598,8 +615,15 @@ const VendorProfile = () => {
         discountData.sellerId = sellerId;
       }
 
-      const res = await fetch('http://localhost:5000/api/discounts', {
-        method: 'POST',
+      // Determina se è creazione o modifica
+      const isEdit = !!editingDiscount;
+      const url = isEdit 
+        ? `http://localhost:5000/api/discounts/${editingDiscount._id}`
+        : 'http://localhost:5000/api/discounts';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
@@ -610,12 +634,13 @@ const VendorProfile = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Errore nella creazione dello sconto');
+        throw new Error(data.message || `Errore nella ${isEdit ? 'modifica' : 'creazione'} dello sconto`);
       }
 
-      setSuccess('Sconto creato con successo!');
+      setSuccess(`Sconto ${isEdit ? 'modificato' : 'creato'} con successo!`);
       setTimeout(() => setSuccess(''), 3000);
       setShowDiscountModal(false);
+      setEditingDiscount(null);
       
       // Reset form
       setDiscountForm({
@@ -644,6 +669,28 @@ const VendorProfile = () => {
   };
 
   // Elimina sconto
+  // Gestisce l'apertura del modal per modificare uno sconto
+  const handleEditDiscount = (discount) => {
+    setEditingDiscount(discount);
+    // Pre-popola il form con i dati dello sconto
+    setDiscountForm({
+      name: discount.name || '',
+      description: discount.description || '',
+      discountType: discount.discountType || 'percentage',
+      discountValue: discount.discountValue || 0,
+      applicationType: discount.applicationType || 'product',
+      products: discount.products?.map(p => typeof p === 'string' ? p : p._id) || [],
+      categories: discount.categories?.map(c => typeof c === 'string' ? c : c._id) || [],
+      couponCode: discount.couponCode || '',
+      startDate: discount.startDate ? new Date(discount.startDate).toISOString().split('T')[0] : '',
+      endDate: discount.endDate ? new Date(discount.endDate).toISOString().split('T')[0] : '',
+      usageLimit: discount.usageLimit || null,
+      minPurchaseAmount: discount.minPurchaseAmount || 0,
+      maxDiscountAmount: discount.maxDiscountAmount || null
+    });
+    setShowDiscountModal(true);
+  };
+
   const handleDeleteDiscount = async (discountId) => {
     if (!window.confirm('Sei sicuro di voler eliminare questo sconto?')) {
       return;
@@ -758,7 +805,7 @@ const VendorProfile = () => {
                 <div className="text-muted mb-2" style={{ fontSize: 15 }}>{profileData.businessDescription}</div>
               )}
               {/* Contatti */}
-              {profileData?.businessPhone && <div><strong>Telefono:</strong> <a href={`tel:${profileData.businessPhone}`}>{profileData.businessPhone}</a></div>}
+              {profileData?.businessPhone && <div><strong style={{color:'#004b75'}}>Telefono:</strong> <a href={`tel:${profileData.businessPhone}`}>{profileData.businessPhone}</a></div>}
               {/* Social */}
               {profileData?.socialLinks && (
                 <>
@@ -774,16 +821,16 @@ const VendorProfile = () => {
               )}
             </Col>
             <Col md={7}>
-              <h4 className="mb-1">{profileData?.businessName || 'Negozio'}</h4>
+              <h4 className="mb-1" style={{ color: '#861515' }}>{profileData?.businessName || 'Negozio'}</h4>
               {profileData?.ragioneSociale && (
-                <div className="text-muted" style={{ fontSize: 14 }}><strong>Ragione sociale:</strong> {profileData.ragioneSociale}</div>
+                <div className="text-muted" style={{ fontSize: 14 }}><strong style={{color:'#004b75'}}>Ragione sociale:</strong> {profileData.ragioneSociale}</div>
               )}
               <div>
-                {profileData?.vatNumber && <div><strong>P.IVA:</strong> {profileData.vatNumber}</div>}
-                {profileData?.codiceSDI && <div><strong>Codice SDI:</strong> {profileData.codiceSDI}</div>}
-                {profileData?.businessEmail && <div><strong>Email:</strong> <a href={`mailto:${profileData.businessEmail}`}>{profileData.businessEmail}</a></div>}
+                {profileData?.vatNumber && <div><strong style={{color:'#004b75'}}>P.IVA:</strong> {profileData.vatNumber}</div>}
+                {profileData?.codiceSDI && <div><strong style={{color:'#004b75'}}>Codice SDI:</strong> {profileData.codiceSDI}</div>}
+                {profileData?.businessEmail && <div><strong style={{color:'#004b75'}}>Email:</strong> <a href={`mailto:${profileData.businessEmail}`}>{profileData.businessEmail}</a></div>}
                 {profileData?.businessAddress && (
-                  <div><strong>Indirizzo sede legale:</strong> {[
+                  <div><strong style={{color:'#004b75'}}>Indirizzo sede legale:</strong> {[
                     profileData.businessAddress.street,
                     profileData.businessAddress.city,
                     profileData.businessAddress.state,
@@ -794,7 +841,7 @@ const VendorProfile = () => {
                 {/* Indirizzo punto vendita (opzionale, privato) */}
                 {profileData?.storeAddress &&
                   Object.values(profileData.storeAddress).some(v => typeof v === 'string' ? v.trim() : v && typeof v === 'object' && Object.values(v).some(x => x)) && (
-                    <div><strong>Indirizzo punto vendita:</strong> {[
+                    <div><strong style={{color:'#004b75'}}>Indirizzo punto vendita:</strong> {[
                       profileData.storeAddress.street,
                       profileData.storeAddress.city,
                       profileData.storeAddress.state,
@@ -804,7 +851,7 @@ const VendorProfile = () => {
                 )}
                 {/* Data di registrazione */}
                 {(profileData?.memberSince || profileData?.createdAt) && (
-                  <div><strong>Registrato su LucanikoShop:</strong> {new Date(profileData.memberSince || profileData.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                  <div><strong style={{color:'#004b75'}}>Registrato su LucanikoShop:</strong> {new Date(profileData.memberSince || profileData.createdAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                 )}
                 {/* Rateo recensioni ricevute */}
                 <div className="mt-4 text-end" style={{ fontSize: 15 }}>
@@ -814,7 +861,7 @@ const VendorProfile = () => {
                   <span className="text-muted ms-2">su {profileData?.reviewStats?.count || stats?.reviewCount || 0} recensioni</span>
                 </div>
                 {profileData?.bankAccount?.iban && (
-                  <div><strong>IBAN:</strong> {profileData.bankAccount.iban}</div>
+                  <div><strong style={{color:'#004b75'}}>IBAN:</strong> {profileData.bankAccount.iban}</div>
                 )}
               </div>
             </Col>
@@ -823,10 +870,20 @@ const VendorProfile = () => {
       </Card>
       {/* --- FINE SEZIONE PUBBLICA --- */}
 
+      {/* NEWS AZIENDALE (se presente) */}
+      {(() => {
+        return profileData?.news && (
+          <Alert variant="info" className="mb-4" style={{ fontSize: '15px', background: '#fff', color: '#861515', border: '2px solid #fff' }}>
+            <i className="bi bi-megaphone-fill me-2"></i>
+            <strong style={{ color: '#861515' }}>News:</strong> <span style={{ color: '#861515' }}>{profileData.news}</span>
+          </Alert>
+        );
+      })()}
+
       {/* --- SEZIONE PRODOTTI DEL VENDITORE RIMOSSA SU RICHIESTA --- */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2>👤 Profilo Aziendale</h2>
+          <h2 style={{ color: '#004b75' }}>👤 Profilo Aziendale</h2>
           <p className="text-muted">Gestisci le informazioni del tuo negozio</p>
         </div>
         {profileData && !profileData.isApproved && (
@@ -864,7 +921,7 @@ const VendorProfile = () => {
         className="mb-4"
       >
         {/* TAB INFORMAZIONI AZIENDA */}
-        <Tab eventKey="info" title="📋 Informazioni Azienda">
+        <Tab eventKey="info" title={<span style={{color: activeTab === 'info' ? '#861515' : '#004b75'}}>📋 Informazioni Azienda</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1104,7 +1161,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB CONTATTI E SOCIAL */}
-        <Tab eventKey="contacts" title="📞 Contatti e Social">
+        <Tab eventKey="contacts" title={<span style={{color: activeTab === 'contacts' ? '#861515' : '#004b75'}}>📞 Contatti e Social</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1291,8 +1348,61 @@ const VendorProfile = () => {
           </Card>
         </Tab>
 
+        {/* TAB NEWS */}
+        <Tab eventKey="news" title={<span style={{color: activeTab === 'news' ? '#861515' : '#004b75'}}>📰 News</span>}>
+          <Card>
+            <Card.Body>
+              <h5 className="mb-3">News aziendali</h5>
+              {/* Campo news con salvataggio locale */}
+              <Form onSubmit={async (e) => {
+                e.preventDefault();
+                setSavingNews(true);
+                setError('');
+                setSuccess('');
+                try {
+                  console.log('[DEBUG NEWS FRONTEND] Invio news al backend:', newsText);
+                  await authAPI.updateVendorProfile({ news: newsText }, user.token);
+                  console.log('[DEBUG NEWS FRONTEND] News salvata con successo');
+                  setSavedNews(newsText);
+                  // Ricarica il profilo per aggiornare profileData con la nuova news
+                  await loadProfile();
+                  console.log('[DEBUG NEWS FRONTEND] Profilo ricaricato dopo salvataggio news');
+                  setSuccess('News salvata con successo!');
+                  setTimeout(() => setSuccess(''), 2500);
+                } catch (err) {
+                  setError(err.message || 'Errore durante il salvataggio della news');
+                } finally {
+                  setSavingNews(false);
+                }
+              }}>
+                <Form.Group controlId="newsText">
+                  <Form.Label>Scrivi una news o comunicazione per i tuoi clienti (apparirà nel tuo shop).</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={4}
+                    placeholder="Es. Spedizione gratuita / Spedizione gratuita per ordini superiori a 50€ / Utilizza il codice coupon ESTATE26 per uno sconto del 10%..."
+                    maxLength={80}
+                    value={newsText}
+                    onChange={e => setNewsText(e.target.value)}
+                  />
+                  <Form.Text className="text-muted">Massimo 80 caratteri.</Form.Text>
+                </Form.Group>
+                <Button type="submit" variant="primary" className="mt-2" disabled={savingNews || !newsText.trim()}>
+                  {savingNews ? 'Salvataggio...' : 'Salva'}
+                </Button>
+                {error && (
+                  <div className="alert alert-danger mt-3 mb-0 py-2 px-3">{error}</div>
+                )}
+                {success && (
+                  <div className="alert alert-success mt-3 mb-0 py-2 px-3">{success}</div>
+                )}
+              </Form>
+            </Card.Body>
+          </Card>
+        </Tab>
+
         {/* TAB TUTTI I PRODOTTI */}
-        <Tab eventKey="products" title="📦 Tutti i Prodotti">
+        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#861515' : '#004b75'}}>📦 Tutti i Prodotti</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1464,7 +1574,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB GESTIONE SCONTI */}
-        <Tab eventKey="discounts" title="🎉 Sconti">
+        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#861515' : '#004b75'}}>🎉 Sconti</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1555,6 +1665,14 @@ const VendorProfile = () => {
                             <div className="d-flex gap-2">
                               <Button
                                 size="sm"
+                                variant="outline-primary"
+                                onClick={() => handleEditDiscount(discount)}
+                                title="Modifica"
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </Button>
+                              <Button
+                                size="sm"
                                 variant="outline-danger"
                                 onClick={() => handleDeleteDiscount(discount._id)}
                                 title="Elimina"
@@ -1574,7 +1692,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB METODI DI PAGAMENTO */}
-        <Tab eventKey="payments" title="💳 Pagamenti">
+        <Tab eventKey="payments" title={<span style={{color: activeTab === 'payments' ? '#861515' : '#004b75'}}>💳 Pagamenti</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1684,7 +1802,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB SPEDIZIONI */}
-        <Tab eventKey="shipping" title="📦 Spedizioni">
+        <Tab eventKey="shipping" title={<span style={{color: activeTab === 'shipping' ? '#861515' : '#004b75'}}>📦 Spedizioni</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1904,7 +2022,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB TERMINI E CONDIZIONI */}
-        <Tab eventKey="terms" title="📄 Termini e Condizioni">
+        <Tab eventKey="terms" title={<span style={{color: activeTab === 'terms' ? '#861515' : '#004b75'}}>📄 Termini e Condizioni</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -2235,7 +2353,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB ABBONAMENTO */}
-        <Tab eventKey="subscription" title="💳 Abbonamento">
+        <Tab eventKey="subscription" title={<span style={{color: activeTab === 'subscription' ? '#861515' : '#004b75'}}>💳 Abbonamento</span>}>
           <Card>
             <Card.Body>
               <h5 className="mb-4">Gestione Abbonamento</h5>
@@ -2373,7 +2491,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB STATISTICHE */}
-        <Tab eventKey="stats" title="📊 Statistiche">
+        <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#861515' : '#004b75'}}>📊 Statistiche</span>}>
           <Row>
             <Col md={3} className="mb-3">
               <Card className="text-center">
@@ -2460,7 +2578,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB AZIONI RAPIDE */}
-        <Tab eventKey="actions" title="⚡ Azioni Rapide">
+        <Tab eventKey="actions" title={<span style={{color: activeTab === 'actions' ? '#861515' : '#004b75'}}>⚡ Azioni Rapide</span>}>
           <Card>
             <Card.Body>
               <Row>
@@ -2959,9 +3077,27 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
       </Modal>
 
       {/* MODALE CREA SCONTO */}
-      <Modal show={showDiscountModal} onHide={() => setShowDiscountModal(false)} size="lg">
+      <Modal show={showDiscountModal} onHide={() => {
+        setShowDiscountModal(false);
+        setEditingDiscount(null);
+        setDiscountForm({
+          name: '',
+          description: '',
+          discountType: 'percentage',
+          discountValue: 0,
+          applicationType: 'product',
+          products: [],
+          categories: [],
+          couponCode: '',
+          startDate: '',
+          endDate: '',
+          usageLimit: null,
+          minPurchaseAmount: 0,
+          maxDiscountAmount: null
+        });
+      }} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Crea Nuovo Sconto</Modal.Title>
+          <Modal.Title>{editingDiscount ? 'Modifica Sconto' : 'Crea Nuovo Sconto'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleCreateDiscount}>
@@ -3248,10 +3384,10 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 {saving ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
-                    Creazione...
+                    {editingDiscount ? 'Salvataggio...' : 'Creazione...'}
                   </>
                 ) : (
-                  'Crea Sconto'
+                  editingDiscount ? 'Salva Modifiche' : 'Crea Sconto'
                 )}
               </Button>
             </div>

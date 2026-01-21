@@ -41,6 +41,7 @@ import HelpCenterVendor from './pages/HelpCenterVendor';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import BillingInfo from './pages/BillingInfo';
+import Partner from './pages/Partner';
 
 function AppContent() {
   const location = useLocation();
@@ -81,6 +82,7 @@ function AppContent() {
         <Route path="/checkout/cancel" element={<CheckoutCancel />} />
         <Route path="/offers" element={<OffersAndDiscounts />} />
         <Route path="/categories" element={<Categories />} />
+        <Route path="/partner" element={<Partner />} />
         <Route path="/billing-info" element={<BillingInfo />} />
 
         {/* Prodotti protetti (solo seller/admin) */}

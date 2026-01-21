@@ -145,7 +145,12 @@ const Login = () => {
                 onChange={e => setRememberMe(e.target.checked)}
               />
               <div className="text-end mt-1">
-                <Button variant="link" size="sm" className="p-0" onClick={() => setShowResetModal(true)}>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="p-0 btn-forgot-border" 
+                  onClick={() => setShowResetModal(true)}
+                >
                   Password dimenticata?
                 </Button>
               </div>

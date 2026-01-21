@@ -114,6 +114,9 @@ const Navbar = () => {
                 <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100 my-2">
                   Categorie
                 </Nav.Link>
+                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                  Partners
+                </Nav.Link>
                 {/* Esci sempre ultimo */}
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci
@@ -163,6 +166,9 @@ const Navbar = () => {
             </Nav.Link>
             <Nav.Link as={Link} to="/categories" className="d-none d-lg-inline">
               Categorie
+            </Nav.Link>
+            <Nav.Link as={Link} to="/partner" className="d-none d-lg-inline">
+              Partners
             </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
@@ -214,6 +220,9 @@ const Navbar = () => {
                 <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
                   Categorie
                 </Nav.Link>
+                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                  Partners
+                </Nav.Link>
                 <Nav.Link as={Link} to="/login" className="d-lg-none text-end w-100">
                   Accedi / Registrati
                 </Nav.Link>
@@ -230,6 +239,9 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
                   Categorie
+                </Nav.Link>
+                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                  Partner
                 </Nav.Link>
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci
