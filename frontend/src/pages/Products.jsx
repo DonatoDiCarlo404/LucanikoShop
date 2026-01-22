@@ -24,6 +24,22 @@ const Products = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [adminNews, setAdminNews] = useState([]);
+
+  // Carica le news attive all'avvio
+  useEffect(() => {
+    const loadNews = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/news');
+        if (!response.ok) throw new Error('Errore caricamento news');
+        const data = await response.json();
+        setAdminNews(data);
+      } catch (err) {
+        console.error('Errore caricamento news:', err);
+      }
+    };
+    loadNews();
+  }, []);
 
   // Inizializzazione: carica categorie e leggi parametri URL
   useEffect(() => {
@@ -155,6 +171,79 @@ const Products = () => {
           la Basilicata in un click!
         </span>
       </div>
+
+
+      {/* News Admin - stile identico a ShopPage.jsx */}
+      {adminNews.length > 0 && (
+        <div className="news-banner-responsive" style={{
+          overflow: 'hidden',
+          height: '40px',
+          marginBottom: '1.5rem',
+          position: 'relative',
+          width: '100%',
+          maxWidth: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
+          marginRight: 'calc(-50vw + 50%)',
+          background: '#fff',
+        }}>
+          <div className="news-banner-track" style={{
+            display: 'flex',
+            alignItems: 'center',
+            height: '48px',
+            whiteSpace: 'nowrap',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            minWidth: '100vw',
+            animation: 'scrollNewsLoop 20s linear infinite',
+          }}>
+            {adminNews.map(news => (
+              <div className="news-banner-content" key={news._id} style={{
+                display: 'inline-flex',
+                minWidth: 'max-content',
+              }}>
+                <Alert variant="info" className="mb-0 p-2" style={{
+                  borderLeft: '4px solid #0d6efd',
+                  fontSize: '20px',
+                  height: '48px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  paddingLeft: '1.2rem',
+                  boxShadow: 'none',
+                  border: 'none',
+                  background: '#fff',
+                  marginRight: '60px',
+                }}>
+                  <i className="bi bi-megaphone-fill me-2" style={{ color: '#004b75' }}></i>
+                  <strong style={{ color: '#004b75' }}>News:</strong>&nbsp;
+                  <span style={{ color: '#004b75' }}>{news.content}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                </Alert>
+              </div>
+            ))}
+          </div>
+          <style>{`
+            @keyframes scrollNewsLoop {
+              0% { transform: translateX(100vw); }
+              100% { transform: translateX(-100%); }
+            }
+            @media (max-width: 600px) {
+              .news-banner-responsive {
+                height: 44px !important;
+              }
+              .news-banner-track {
+                height: 44px !important;
+                animation-duration: 14s !important;
+              }
+              .alert-info {
+                font-size: 18px !important;
+                height: 44px !important;
+                padding-left: 1.2rem !important;
+              }
+            }
+          `}</style>
+        </div>
+      )}
+
       <h2 className="mb-4" style={{ color: '#004b75' }}>Catalogo Prodotti</h2>
 
       {/* Filtri */}
@@ -280,9 +369,10 @@ const Products = () => {
         <Row className="mt-4">
           <Col className="d-flex justify-content-center align-items-center gap-3">
             <Button
-              variant="outline-primary"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+                variant="outline-primary"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="pagination-btn"
             >
               ← Precedente
             </Button>
@@ -290,9 +380,10 @@ const Products = () => {
               Pagina <strong>{page}</strong> di <strong>{pages}</strong>
             </span>
             <Button
-              variant="outline-primary"
-              disabled={page >= pages}
-              onClick={() => setPage(page + 1)}
+                variant="outline-primary"
+                disabled={page >= pages}
+                onClick={() => setPage(page + 1)}
+                className="pagination-btn"
             >
               Successiva →
             </Button>

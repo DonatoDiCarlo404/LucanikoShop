@@ -1,0 +1,12 @@
+.footer-legal {
+  display: block;
+}
+
+@media (max-width: 576px) {
+  .footer-legal {
+    margin-left: 1.2rem;
+    margin-right: 1.2rem;
+    text-align: center;
+    word-break: break-word;
+  }
+}

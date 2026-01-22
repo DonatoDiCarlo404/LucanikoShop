@@ -40,7 +40,7 @@ const OrderTracking = () => {
     const badges = {
       pending: { variant: 'secondary', text: 'In Attesa' },
       processing: { variant: 'info', text: 'In Preparazione' },
-      shipped: { variant: 'primary', text: 'Spedito' },
+      shipped: { variant: 'custom-shipped', text: 'Spedito' },
       delivered: { variant: 'success', text: 'Consegnato' },
       cancelled: { variant: 'danger', text: 'Cancellato' }
     };
@@ -109,7 +109,7 @@ const OrderTracking = () => {
         <i className="bi bi-arrow-left"></i> Torna agli ordini
       </Button>
 
-      <h2 className="mb-4">
+      <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>
         <i className="bi bi-truck"></i> Tracking Ordine #{order._id.slice(-6).toUpperCase()}
       </h2>
 
@@ -118,15 +118,26 @@ const OrderTracking = () => {
         <Card.Body>
           <Row className="align-items-center">
             <Col md={8}>
-              <h5>Stato Spedizione</h5>
-              <Badge bg={statusBadge.variant} className="fs-6 mb-3">
-                {statusBadge.text}
-              </Badge>
-              <ProgressBar 
-                now={progress} 
-                variant={statusBadge.variant}
+              <h5 style={{ color: '#004b75', fontWeight: 700 }}>Stato Spedizione</h5>
+              {statusBadge.text === 'Spedito' ? (
+                <Badge style={{ backgroundColor: '#004b75', color: '#fff' }} className="fs-6 mb-3">
+                  {statusBadge.text}
+                </Badge>
+              ) : (
+                <Badge bg={statusBadge.variant} className="fs-6 mb-3">
+                  {statusBadge.text}
+                </Badge>
+              )}
+              <ProgressBar
+                now={progress}
+                variant={statusBadge.text === 'Spedito' ? undefined : statusBadge.variant}
                 label={`${progress}%`}
-                style={{ height: '25px' }}
+                style={statusBadge.text === 'Spedito' ? { height: '25px', backgroundColor: '#cce0ef' } : { height: '25px' }}
+                animated={statusBadge.text === 'Spedito'}
+                striped={statusBadge.text === 'Spedito'}
+                className={statusBadge.text === 'Spedito' ? 'custom-shipped-bar' : ''}
+                // Per "Spedito" la barra sarà blu matrice
+                // Per altri status, colore di default
               />
             </Col>
             <Col md={4} className="text-center">
@@ -163,7 +174,7 @@ const OrderTracking = () => {
       {order.trackingInfo && (order.trackingInfo.trackingNumber || order.trackingInfo.carrier) && (
         <Card className="mb-4">
           <Card.Body>
-            <h5><i className="bi bi-info-circle"></i> Informazioni Spedizione</h5>
+            <h5 style={{ color: '#004b75', fontWeight: 700 }}><i className="bi bi-info-circle"></i> Informazioni Spedizione</h5>
             <Row className="mt-3">
               {order.trackingInfo.carrier && (
                 <Col md={6}>
@@ -203,7 +214,7 @@ const OrderTracking = () => {
       {/* Indirizzo di spedizione */}
       <Card className="mb-4">
         <Card.Body>
-          <h5><i className="bi bi-geo-alt"></i> Indirizzo di Spedizione</h5>
+          <h5 style={{ color: '#004b75', fontWeight: 700 }}><i className="bi bi-geo-alt"></i> Indirizzo di Spedizione</h5>
           <address className="mt-3">
             {order.shippingAddress.street}<br />
             {order.shippingAddress.zipCode} {order.shippingAddress.city}, {order.shippingAddress.state}<br />
@@ -216,12 +227,12 @@ const OrderTracking = () => {
       {/* Prodotti nell'ordine */}
       <Card>
         <Card.Body>
-          <h5><i className="bi bi-cart"></i> Prodotti Ordinati</h5>
+          <h5 style={{ color: '#004b75', fontWeight: 700 }}><i className="bi bi-cart"></i> Prodotti Ordinati</h5>
           {order.items.map((item, index) => (
             <div key={index} className="d-flex align-items-center border-bottom py-3">
-              {item.product?.images?.[0] && (
+              {item.product?.images?.[0]?.url && (
                 <img
-                  src={item.product.images[0]}
+                  src={item.product.images[0].url}
                   alt={item.name}
                   style={{ width: '60px', height: '60px', objectFit: 'cover' }}
                   className="me-3 rounded"

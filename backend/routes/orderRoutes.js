@@ -14,6 +14,41 @@ import {
 import { protect } from '../middlewares/auth.js';
 import Order from '../models/Order.js';
 
+// 🔧 DEBUG ENDPOINT - Rimuovere in produzione
+router.get('/debug/all', protect, async (req, res) => {
+  try {
+    console.log('🔍 [DEBUG] Richiesta debug ordini');
+    console.log('🔍 [DEBUG] User ID richiedente:', req.user._id);
+    
+    // Prendi tutti gli ordini (ultimi 10)
+    const allOrders = await Order.find().limit(10).sort({ createdAt: -1 });
+    console.log('🔍 [DEBUG] Totale ordini nel DB (ultimi 10):', allOrders.length);
+    
+    // Cerca ordini per questo specifico user
+    const userOrders = await Order.find({ buyer: req.user._id });
+    console.log('🔍 [DEBUG] Ordini per questo user:', userOrders.length);
+    
+    res.json({
+      userOrders: userOrders,
+      allOrdersSample: allOrders.map(o => ({
+        id: o._id,
+        buyer: o.buyer,
+        buyerType: typeof o.buyer,
+        buyerString: o.buyer.toString(),
+        userIdString: req.user._id.toString(),
+        match: o.buyer.toString() === req.user._id.toString(),
+        isPaid: o.isPaid,
+        total: o.totalPrice,
+        createdAt: o.createdAt
+      })),
+      requestingUserId: req.user._id.toString()
+    });
+  } catch (error) {
+    console.error('❌ [DEBUG] Errore:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Route per verificare se l'utente ha acquistato un prodotto
 router.get('/check-purchased/:productId', protect, async (req, res) => {
   try {

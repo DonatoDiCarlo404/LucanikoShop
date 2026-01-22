@@ -72,37 +72,53 @@ export const getReviewsByProduct = async (req, res) => {
   }
 };
 
-// POST nuova recensione
+// POST nuova recensione o aggiorna recensione automatica
 export const createReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
 
-    // già recensito?
-    const alreadyReviewed = await Review.findOne({
+    // Verifica se esiste già una recensione
+    const existingReview = await Review.findOne({
       product: req.params.productId,
       user: req.user._id
     });
-
-    if (alreadyReviewed) {
-      return res.status(400).json({ message: 'Hai già recensito questo prodotto' });
-    }
 
     const product = await Product.findById(req.params.productId);
     if (!product) {
       return res.status(404).json({ message: 'Prodotto non trovato' });
     }
 
-    // Creazione recensione
-    const review = await Review.create({
-      product: req.params.productId,
-      user: req.user._id,
-      name: req.user.name,
-      rating,
-      comment,
-      isVerified: true // È verificata proprio perché l'utente l'ha acquistato
-    });
+    let review;
 
-    // Aggiornamento rating
+    if (existingReview) {
+      // Se la recensione esistente è automatica (con commento predefinito), aggiornala
+      const isAutoReview = existingReview.comment === 'Recensione automatica: nessun feedback lasciato dall\'acquirente.';
+      
+      if (isAutoReview) {
+        // Aggiorna la recensione automatica con i dati dell'utente
+        existingReview.rating = rating;
+        existingReview.comment = comment;
+        await existingReview.save();
+        review = existingReview;
+        console.log('✅ [REVIEW] Recensione automatica aggiornata con feedback utente');
+      } else {
+        // Se è una recensione manuale già esistente, blocca
+        return res.status(400).json({ message: 'Hai già recensito questo prodotto' });
+      }
+    } else {
+      // Creazione nuova recensione
+      review = await Review.create({
+        product: req.params.productId,
+        user: req.user._id,
+        name: req.user.name,
+        rating,
+        comment,
+        isVerified: true // È verificata perché l'utente l'ha acquistato
+      });
+      console.log('✅ [REVIEW] Nuova recensione creata');
+    }
+
+    // Aggiornamento rating prodotto
     const allReviews = await Review.find({ product: req.params.productId });
     const numReviews = allReviews.length;
     const avgRating =

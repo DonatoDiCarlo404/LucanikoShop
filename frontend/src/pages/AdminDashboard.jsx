@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab, Form } from 'react-bootstrap';
 import { adminAPI, uploadVendorDocument } from '../services/api';
 // Espone la funzione uploadVendorDocument su window per uso inline
 window.uploadVendorDocument = uploadVendorDocument;
@@ -19,9 +19,17 @@ const AdminDashboard = () => {
   // Stato per i documenti allegati
   const [vendorDocs, setVendorDocs] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Stato per le News
+  const [adminNews, setAdminNews] = useState([]);
+  // Rimosso newsTitle
+  const [newsContent, setNewsContent] = useState('');
+  const [savingNews, setSavingNews] = useState(false);
+  const [editingNewsId, setEditingNewsId] = useState(null);
 
   useEffect(() => {
     loadData();
+    loadNews();
   }, []);
 
   const loadData = async () => {
@@ -108,6 +116,104 @@ const AdminDashboard = () => {
           ? { ...seller, subscriptionSuspended: !currentStatus }
           : seller
       ));
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  // Funzioni per gestione News
+  const loadNews = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/news/all', {
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAdminNews(data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento news:', err);
+    }
+  };
+
+  const handleSaveNews = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingNews(true);
+      const method = editingNewsId ? 'PUT' : 'POST';
+      const url = editingNewsId 
+        ? `http://localhost:5000/api/admin/news/${editingNewsId}`
+        : 'http://localhost:5000/api/admin/news';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ content: newsContent })
+      });
+
+      if (response.ok) {
+        alert(editingNewsId ? '✅ News aggiornata!' : '✅ News creata!');
+        setNewsContent('');
+        setEditingNewsId(null);
+        await loadNews();
+      } else {
+        const data = await response.json();
+        alert('❌ Errore: ' + data.message);
+      }
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    } finally {
+      setSavingNews(false);
+    }
+  };
+
+  const handleEditNews = (news) => {
+    setNewsContent(news.content);
+    setEditingNewsId(news._id);
+  };
+
+  const handleDeleteNews = async (newsId) => {
+    if (!confirm('Sei sicuro di voler eliminare questa news?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/news/${newsId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (response.ok) {
+        alert('✅ News eliminata!');
+        await loadNews();
+      } else {
+        const data = await response.json();
+        alert('❌ Errore: ' + data.message);
+      }
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  const handleToggleNewsActive = async (newsId, currentStatus) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/news/${newsId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        },
+        body: JSON.stringify({ isActive: !currentStatus })
+      });
+
+      if (response.ok) {
+        await loadNews();
+      }
     } catch (err) {
       alert('❌ Errore: ' + err.message);
     }
@@ -400,6 +506,110 @@ const AdminDashboard = () => {
                         </td>
                         <td>{new Date(seller.createdAt).toLocaleDateString('it-IT')}</td>
                         <td>{seller.subscriptionEndDate ? new Date(seller.subscriptionEndDate).toLocaleDateString('it-IT') : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+
+        {/* Tab News */}
+        <Tab eventKey="news" title={<span><i className="bi bi-megaphone text-info"></i> News</span>}>
+          <Card>
+            <Card.Header>
+              <h5><i className="bi bi-megaphone me-2"></i>Gestione News</h5>
+              <small className="text-muted">Le news attive verranno mostrate nella pagina Catalogo</small>
+            </Card.Header>
+            <Card.Body>
+              {/* Form creazione/modifica news */}
+              <Form onSubmit={handleSaveNews} className="mb-4 p-3 border rounded">
+                <h6>{editingNewsId ? 'Modifica News' : 'Crea Nuova News'}</h6>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contenuto</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    value={newsContent}
+                    onChange={(e) => setNewsContent(e.target.value)}
+                    placeholder="Contenuto della news (max 500 caratteri)"
+                    maxLength={500}
+                  />
+                  <Form.Text className="text-muted">
+                    {newsContent.length}/500 caratteri
+                  </Form.Text>
+                </Form.Group>
+                <div className="d-flex gap-2">
+                  <Button type="submit" variant="primary" disabled={savingNews}>
+                    {savingNews ? <Spinner size="sm" /> : (editingNewsId ? 'Aggiorna' : 'Crea')}
+                  </Button>
+                  {editingNewsId && (
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => {
+                        setEditingNewsId(null);
+                        setNewsContent('');
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                  )}
+                </div>
+              </Form>
+
+              {/* Lista news esistenti */}
+              <h6 className="mb-3">News Esistenti ({adminNews.length})</h6>
+              {adminNews.length === 0 ? (
+                <Alert variant="info">Nessuna news presente. Creane una!</Alert>
+              ) : (
+                <Table striped bordered hover responsive>
+                  <thead>
+                    <tr>
+                      <th>Contenuto</th>
+                      <th>Stato</th>
+                      <th>Creata il</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminNews.map(news => (
+                      <tr key={news._id}>
+                        <td>{news.content}</td>
+                        <td>
+                          <Badge bg={news.isActive ? 'success' : 'secondary'}>
+                            {news.isActive ? 'Attiva' : 'Inattiva'}
+                          </Badge>
+                        </td>
+                        <td>{new Date(news.createdAt).toLocaleDateString('it-IT')}</td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={news.isActive ? 'warning' : 'success'}
+                              onClick={() => handleToggleNewsActive(news._id, news.isActive)}
+                              title={news.isActive ? 'Disattiva' : 'Attiva'}
+                            >
+                              <i className={`bi bi-${news.isActive ? 'eye-slash' : 'eye'}`}></i>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="info"
+                              onClick={() => handleEditNews(news)}
+                              title="Modifica"
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleDeleteNews(news._id)}
+                              title="Elimina"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

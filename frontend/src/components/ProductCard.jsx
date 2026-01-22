@@ -1,4 +1,5 @@
 import { Card, Badge, Carousel } from 'react-bootstrap';
+import './ProductCard.css';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
@@ -62,7 +63,17 @@ const ProductCard = ({ product }) => {
   return (
     <Card
       style={{ cursor: 'pointer', height: '100%', position: 'relative' }}
-      onClick={() => navigate(`/products/${product._id}`)}
+      onClick={e => {
+        // Se il click è su una freccia del carosello, non aprire dettaglio
+        if (
+          e.target.closest('.carousel-control-prev') ||
+          e.target.closest('.carousel-control-next')
+        ) {
+          e.stopPropagation();
+          return;
+        }
+        navigate(`/products/${product._id}`);
+      }}
       className="h-100 shadow-sm hover-shadow"
     >
       {/* Cuore wishlist in alto a sinistra, solo se utente autenticato */}
@@ -117,16 +128,18 @@ const ProductCard = ({ product }) => {
       )}
       
       {product.images && product.images.length > 0 ? (
-        <Carousel interval={2500}
+        <Carousel
+          interval={2500}
           indicators={product.images.length > 1}
           controls={product.images.length > 1}
+          className="product-card-carousel"
         >
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
               <img
                 src={img.url}
                 alt={product.name}
-                style={{ height: '280px', width: '100%', objectFit: 'cover' }}
+                className="product-card-img"
               />
             </Carousel.Item>
           ))}
@@ -146,8 +159,8 @@ const ProductCard = ({ product }) => {
       )}
 
       <Card.Body className="d-flex flex-column">
-
         <Card.Title
+          className="product-card-title"
           style={{
             fontSize: '1rem',
             height: '20px',
@@ -166,18 +179,24 @@ const ProductCard = ({ product }) => {
           </div>
         )}
 
-        <div className="d-flex align-items-center mb-2 justify-content-between">
-          <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
-            {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
-          </span>
-          <span className="text-muted small" style={{ marginLeft: 4 }}>
-            {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews || 0})
-          </span>
-        </div>
+        {/* Mostra rating e numero recensioni solo se ci sono recensioni */}
+        {product.numReviews > 0 && (
+          <div className="d-flex align-items-center mb-2 justify-content-between">
+            <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
+              {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
+            </span>
+            <span className="text-muted small" style={{ marginLeft: 4 }}>
+              {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews})
+            </span>
+          </div>
+        )}
 
-        <Badge className="mb-2 align-self-start badge-category-product">
-          {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
-        </Badge>
+        <div className="d-flex flex-row flex-nowrap gap-2 mb-2 badge-category-row">
+          <Badge className="badge-category-product">
+            {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
+          </Badge>
+          {/* Se ci sono altre categorie, aggiungile qui come altri Badge */}
+        </div>
 
         <div className="mt-auto">
           <div className="d-flex justify-content-between align-items-center">

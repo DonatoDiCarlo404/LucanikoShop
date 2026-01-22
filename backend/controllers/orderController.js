@@ -33,13 +33,42 @@ export const filterOrders = async (req, res) => {
 // @access  Private
 export const getMyOrders = async (req, res) => {
     try {
+        console.log('\n📋 [GET_MY_ORDERS] ================ RICHIESTA ORDINI ================ ');
+        console.log('👤 [GET_MY_ORDERS] User ID:', req.user._id);
+        console.log('👤 [GET_MY_ORDERS] User email:', req.user.email);
+        
         const orders = await Order.find({ buyer: req.user._id })
             .populate('items.product', 'name images')
             .sort({ createdAt: -1 }); // Ordini più recenti prima
 
+        console.log('📦 [GET_MY_ORDERS] Ordini trovati:', orders.length);
+        if (orders.length > 0) {
+            orders.forEach((order, idx) => {
+                console.log(`  • Ordine ${idx + 1}:`, {
+                    id: order._id,
+                    buyer: order.buyer,
+                    isPaid: order.isPaid,
+                    total: order.totalPrice,
+                    items: order.items.length,
+                    createdAt: order.createdAt
+                });
+            });
+        } else {
+            console.log('⚠️ [GET_MY_ORDERS] Nessun ordine trovato per questo utente');
+            console.log('🔍 [GET_MY_ORDERS] Verifica manuale nel database...');
+            // Cerca qualsiasi ordine per debug
+            const allOrders = await Order.find().limit(5);
+            console.log('🔍 [GET_MY_ORDERS] Ultimi 5 ordini nel database:', allOrders.map(o => ({
+                id: o._id,
+                buyer: o.buyer,
+                buyerType: typeof o.buyer,
+                isPaid: o.isPaid
+            })));
+        }
+
         res.status(200).json(orders);
     } catch (error) {
-        console.error('Errore nel recupero degli ordini:', error);
+        console.error('❌ [GET_MY_ORDERS] Errore nel recupero degli ordini:', error);
         res.status(500).json({ message: error.message });
     }
 };

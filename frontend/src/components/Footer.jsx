@@ -1,5 +1,6 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import './Footer.css';
 
 const Footer = () => {
   return (
@@ -74,7 +75,7 @@ const Footer = () => {
       </Container>
 
       <div className="border-top py-3 text-center">
-        <small className="text-muted">
+        <small className="text-muted footer-legal">
           <span style={{ color: '#000' }}>
             © {new Date().getFullYear()} Inside di Di Pietro Vito
             {' '}

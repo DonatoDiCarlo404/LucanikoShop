@@ -119,6 +119,13 @@ export const createCheckoutSession = async (req, res) => {
         }
 
         // Prepara le opzioni per la sessione Stripe
+        console.log('📝 [CHECKOUT] Preparazione metadata...');
+        console.log('👤 [CHECKOUT] req.user:', req.user ? 'Present' : 'Missing');
+        if (req.user) {
+            console.log('👤 [CHECKOUT] req.user._id:', req.user._id);
+            console.log('👤 [CHECKOUT] req.user._id.toString():', req.user._id.toString());
+        }
+        
         const sessionOptions = {
             payment_method_types: ['card'],
             line_items: lineItems,
@@ -142,6 +149,12 @@ export const createCheckoutSession = async (req, res) => {
                 }))),
             },
         };
+        
+        console.log('📦 [CHECKOUT] Metadata preparati:', {
+            userId: sessionOptions.metadata.userId,
+            isGuest: sessionOptions.metadata.userId === 'guest',
+            itemsCount: cartItems.length
+        });
 
         // Per utenti registrati, usa customer_email per pre-compilare
         sessionOptions.customer_email = customerEmail;

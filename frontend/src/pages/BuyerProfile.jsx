@@ -116,16 +116,28 @@ const BuyerProfile = () => {
       setLoading(true);
       setError(null);
       try {
+        console.log('\n🔄 [BUYER_PROFILE] Caricamento dati profilo...');
+        console.log('👤 [BUYER_PROFILE] User ID:', user._id);
+        console.log('👤 [BUYER_PROFILE] User token:', user.token ? 'Present' : 'Missing');
+        
         const [ordersData, reviewsData, wishlistData] = await Promise.all([
           orderAPI.getMyOrders(token),
           reviewAPI.getMyReviews(token),
           wishlistAPI.getWishlist(token),
         ]);
+        
+        console.log('📦 [BUYER_PROFILE] Ordini ricevuti:', ordersData?.length || 0);
+        if (ordersData && ordersData.length > 0) {
+          console.log('📦 [BUYER_PROFILE] Primo ordine:', ordersData[0]);
+        }
+        console.log('⭐ [BUYER_PROFILE] Recensioni ricevute:', reviewsData?.length || 0);
+        console.log('❤️ [BUYER_PROFILE] Wishlist items:', wishlistData?.length || 0);
+        
         setOrders(ordersData || []);
         setReviews(reviewsData || []);
         setWishlist(wishlistData || []);
       } catch (err) {
-        console.error('Errore nel caricamento dei dati:', err);
+        console.error('❌ [BUYER_PROFILE] Errore nel caricamento dei dati:', err);
         setError('Errore nel caricamento dei dati.');
       } finally {
         setLoading(false);
@@ -230,7 +242,7 @@ const BuyerProfile = () => {
 
   return (
     <div className="container py-4">
-      <h2 className="mb-4">Il mio Profilo</h2>
+      <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>Il mio Profilo</h2>
 
       {/* Sezione nome/cognome */}
       <Card className="mb-4" style={{ maxWidth: 500 }}>
@@ -296,22 +308,22 @@ const BuyerProfile = () => {
         <Col md={4}>
           <Card className="mb-4">
             <Card.Body>
-              <Card.Title>Informazioni personali</Card.Title>
+              <Card.Title style={{ color: '#004b75', fontWeight: 700 }}>Informazioni personali</Card.Title>
               <ListGroup variant="flush">
                 <ListGroup.Item>
-                  <strong>Nome:</strong> {user.name || user.fullName || '-'}
+                  <strong style={{ color: '#004b75' }}>Nome:</strong> {user.name || user.fullName || '-'}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Email:</strong> {user.email}
+                  <strong style={{ color: '#004b75' }}>Email:</strong> {user.email}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Telefono:</strong> {user.phone || '-'}
+                  <strong style={{ color: '#004b75' }}>Telefono:</strong> {user.phone || '-'}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Ruolo:</strong> {user.role === 'buyer' || user.role === 'user' ? 'Acquirente' : user.role}
+                  <strong style={{ color: '#004b75' }}>Ruolo:</strong> {user.role === 'buyer' || user.role === 'user' ? 'Acquirente' : user.role}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Data registrazione:</strong>{' '}
+                  <strong style={{ color: '#004b75' }}>Data registrazione:</strong>{' '}
                   {user.memberSince
                     ? new Date(user.memberSince).toLocaleDateString()
                     : user.createdAt
@@ -319,20 +331,20 @@ const BuyerProfile = () => {
                     : '-'}
                 </ListGroup.Item>
                 <ListGroup.Item>
-                  <strong>Indirizzo di spedizione:</strong><br />
+                  <strong style={{ color: '#004b75' }}>Indirizzo di spedizione:</strong><br />
                   {user.address?.street && <>{user.address.street}, </>}
                   {user.address?.city && <>{user.address.city}, </>}
                   {user.address?.state && <>{user.address.state}, </>}
                   {user.address?.zipCode && <>{user.address.zipCode}, </>}
                   {user.address?.country && <>{user.address.country}</>}
-                  {user.address?.taxCode && <><br /><strong>CF:</strong> {user.address.taxCode}</>}
+                  {user.address?.taxCode && <><br /><strong style={{ color: '#004b75' }}>CF:</strong> {user.address.taxCode}</>}
                   {!(user.address?.street || user.address?.city || user.address?.state || user.address?.zipCode || user.address?.country) && <span className="text-muted">Non impostato</span>}
                 </ListGroup.Item>
                 {user.billingAddress?.street && (
                   <ListGroup.Item>
-                    <strong>Indirizzo di fatturazione:</strong><br />
+                    <strong style={{ color: '#004b75' }}>Indirizzo di fatturazione:</strong><br />
                     {user.billingAddress.street}, {user.billingAddress.city}, {user.billingAddress.state}, {user.billingAddress.zipCode}, {user.billingAddress.country}
-                    {user.billingAddress.taxCode && <><br /><strong>CF:</strong> {user.billingAddress.taxCode}</>}
+                    {user.billingAddress.taxCode && <><br /><strong style={{ color: '#004b75' }}>CF:</strong> {user.billingAddress.taxCode}</>}
                   </ListGroup.Item>
                 )}
               </ListGroup>
@@ -343,7 +355,7 @@ const BuyerProfile = () => {
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Password</h5>
+                <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Password</h5>
                 <Button size="sm" variant={editPassword ? 'secondary' : 'primary'} onClick={() => setEditPassword((v) => !v)}>
                   {editPassword ? 'Annulla' : 'Modifica'}
                 </Button>
@@ -377,7 +389,7 @@ const BuyerProfile = () => {
           <Card className="mb-4">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Indirizzi</h5>
+                <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Indirizzi</h5>
                 <Button size="sm" variant={editAddress ? 'secondary' : 'primary'} onClick={() => setEditAddress((v) => !v)}>
                   {editAddress ? 'Annulla' : 'Modifica'}
                 </Button>
@@ -563,31 +575,40 @@ const BuyerProfile = () => {
             <>
               <Card className="mb-4">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title style={{ color: '#004b75', fontWeight: 700 }}>
                     <i className="bi bi-bag-check me-2"></i>I miei acquisti
                   </Card.Title>
                   {orders.length === 0 ? (
                     <Alert variant="info">Nessun ordine trovato.</Alert>
                   ) : (
                     <ListGroup variant="flush">
-                      {orders.slice(0, 5).map((order) => (
-                        <ListGroup.Item key={order._id} className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>Ordine #{order._id.slice(-8)}</strong>
-                            <br />
-                            <small className="text-muted">
-                              {new Date(order.createdAt).toLocaleDateString()} - €{order.totalAmount || order.total}
-                            </small>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline-primary"
-                            onClick={() => navigate(`/orders/${order._id}`)}
-                          >
-                            Dettagli
-                          </Button>
-                        </ListGroup.Item>
-                      ))}
+                      {orders.slice(0, 5).map((order) => {
+                        // Prendi il nome del primo prodotto dell'ordine
+                        const firstProduct = order.items && order.items[0];
+                        const productName = firstProduct?.name || firstProduct?.product?.name || 'Prodotto';
+                        // Calcola il totale (preferisci totalPrice, poi total, poi somma items)
+                        const total = order.totalPrice ?? order.total ?? (order.items ? order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 0);
+                        return (
+                          <ListGroup.Item key={order._id} className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <strong>Ordine #{order._id.slice(-8)}</strong>
+                              <br />
+                              <span className="text-muted">{productName}</span>
+                              <br />
+                              <small className="text-muted">
+                                {new Date(order.createdAt).toLocaleDateString()} - €{total.toFixed(2)}
+                              </small>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => navigate(`/orders/${order._id}`)}
+                            >
+                              Dettagli
+                            </Button>
+                          </ListGroup.Item>
+                        );
+                      })}
                     </ListGroup>
                   )}
                   {orders.length > 5 && (
@@ -602,7 +623,7 @@ const BuyerProfile = () => {
 
               <Card className="mb-4">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title style={{ color: '#004b75', fontWeight: 700 }}>
                     <i className="bi bi-star-fill me-2"></i>Le mie recensioni
                   </Card.Title>
                   {reviews.length === 0 ? (
@@ -646,7 +667,7 @@ const BuyerProfile = () => {
 
               <Card className="mb-4">
                 <Card.Body>
-                  <Card.Title>
+                  <Card.Title style={{ color: '#004b75', fontWeight: 700 }}>
                     <i className="bi bi-heart-fill me-2"></i>Wishlist <Badge bg="secondary">{wishlist.length}</Badge>
                   </Card.Title>
                   {wishlist.length === 0 ? (

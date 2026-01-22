@@ -246,24 +246,26 @@ const ShopPage = () => {
               )}
             </Col>
             <Col md={5}>
-              <Card className="border-0 bg-white mb-2">
-                <Card.Body className="text-center">
-                  <div className="mb-2">
-                    <span style={{ color: '#FFD700', fontSize: '1.5em' }}>
-                      {'★'.repeat(Math.round(parseFloat(stats.avgRating)))}
-                      {'☆'.repeat(5 - Math.round(parseFloat(stats.avgRating)))}
-                    </span>
-                  </div>
-                  <h5>{stats.avgRating}/5.0</h5>
-                  <small className="text-muted">{stats.totalReviews} recensioni</small>
-                </Card.Body>
-              </Card>
-              <Card className="border-0 bg-white">
-                <Card.Body className="text-center">
-                  <h3 className="mb-0" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
-                  <p className="text-muted mb-0">Prodotti Disponibili</p>
-                </Card.Body>
-              </Card>
+              <div className="d-flex flex-row gap-2 flex-wrap d-md-block">
+                <Card className="border-0 bg-white mb-2 flex-fill" style={{ minWidth: 0 }}>
+                  <Card.Body className="text-center p-2">
+                    <div className="mb-2">
+                      <span style={{ color: '#FFD700', fontSize: '1.5em' }}>
+                        {'★'.repeat(Math.round(parseFloat(stats.avgRating)))}
+                        {'☆'.repeat(5 - Math.round(parseFloat(stats.avgRating)))}
+                      </span>
+                    </div>
+                    <h5 className="mb-1">{stats.avgRating}/5.0</h5>
+                    <small className="text-muted">{stats.totalReviews} recensioni</small>
+                  </Card.Body>
+                </Card>
+                <Card className="border-0 bg-white flex-fill" style={{ minWidth: 0 }}>
+                  <Card.Body className="d-flex flex-column justify-content-center align-items-center text-center p-2" style={{ minHeight: '100%' }}>
+                    <h3 className="mb-1" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
+                    <p className="text-muted mb-0">Prodotti Disponibili</p>
+                  </Card.Body>
+                </Card>
+              </div>
             </Col>
           </Row>
         </Card.Body>
@@ -276,9 +278,10 @@ const ShopPage = () => {
           height: '40px',
           marginBottom: '1.5rem',
           position: 'relative',
-          width: '100vw',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '100vw',
+          marginLeft: 'calc(-50vw + 50%)',
+          marginRight: 'calc(-50vw + 50%)',
           background: '#fff',
         }}>
             <div className="news-banner-track" style={{
@@ -360,7 +363,7 @@ const ShopPage = () => {
       <div className="mb-4">
         <h3 className="mb-3" style={{ color: '#004b75', fontWeight: 700 }}>Prodotti di {vendor.businessName || vendor.name}</h3>
         <div className="mb-3">
-          <div className="mb-4 d-flex flex-wrap justify-content-start align-items-center gap-3">
+          <div className="mb-4 d-flex flex-wrap justify-content-center align-items-center gap-3">
             <div style={{ maxWidth: 300, width: '100%' }}>
               <div className="input-group shadow" style={{ borderRadius: 10, border: '2px solid #004b75', overflow: 'hidden' }}>
                 <span className="input-group-text" id="search-addon" style={{ background: '#004b75', color: '#fff', border: 'none' }}>

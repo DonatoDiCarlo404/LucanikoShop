@@ -1,4 +1,4 @@
-import { User, Product } from '../models/index.js';
+import { User, Product, Review } from '../models/index.js';
 
 // @desc    Ottieni profilo pubblico venditore
 // @route   GET /api/vendors/:id
@@ -29,12 +29,17 @@ export const getPublicVendorProfile = async (req, res) => {
       .sort('-createdAt')
       .limit(50);
 
-    // Calcola statistiche pubbliche
+    // Calcola statistiche pubbliche dalle recensioni effettive
     const totalProducts = products.length;
-    const avgRating = products.length > 0
-      ? products.reduce((sum, p) => sum + (p.rating || 0), 0) / products.length
+    
+    // Ottieni tutte le recensioni dei prodotti del venditore
+    const productIds = products.map(p => p._id);
+    const reviews = await Review.find({ product: { $in: productIds } });
+    
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
       : 0;
-    const totalReviews = products.reduce((sum, p) => sum + (p.numReviews || 0), 0);
 
     res.json({
       vendor: {

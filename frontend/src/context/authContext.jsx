@@ -42,10 +42,10 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const data = await authAPI.login({ email, password });
-      
       localStorage.setItem('token', data.token);
-      setUser(data);
-      
+      // Recupera profilo completo
+      const userData = await authAPI.getProfile(data.token);
+      setUser({ ...userData, token: data.token });
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -58,18 +58,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const userData = { name, email, password, role };
-      
       // Aggiungi dati business solo se è un seller e sono stati forniti
       if (role === 'seller') {
         if (businessName) userData.businessName = businessName;
         if (vatNumber) userData.vatNumber = vatNumber;
       }
-      
       const data = await authAPI.register(userData);
-      
       localStorage.setItem('token', data.token);
-      setUser(data);
-      
+      // Recupera profilo completo
+      const profileData = await authAPI.getProfile(data.token);
+      setUser({ ...profileData, token: data.token });
       return { success: true };
     } catch (err) {
       setError(err.message);

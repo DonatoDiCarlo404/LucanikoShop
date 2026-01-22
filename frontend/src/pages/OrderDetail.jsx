@@ -85,7 +85,7 @@ const OrderDetail = () => {
         <Col lg={8}>
           <Card className="mb-4">
             <Card.Header>
-              <h5 className="mb-0">Ordine #{order._id.slice(-8)}</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Ordine #{order._id.slice(-8)}</h5>
             </Card.Header>
             <Card.Body>
               <Row className="mb-3">
@@ -103,7 +103,7 @@ const OrderDetail = () => {
 
           <Card className="mb-4">
             <Card.Header>
-              <h5 className="mb-0">Prodotti</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Prodotti</h5>
             </Card.Header>
             <Card.Body>
               <Table responsive>
@@ -144,7 +144,7 @@ const OrderDetail = () => {
         <Col lg={4}>
           <Card className="mb-4">
             <Card.Header>
-              <h5 className="mb-0">Riepilogo</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Riepilogo</h5>
             </Card.Header>
             <Card.Body>
               <ListGroup variant="flush">
@@ -170,7 +170,7 @@ const OrderDetail = () => {
 
           <Card className="mb-4">
             <Card.Header>
-              <h5 className="mb-0">Indirizzo di Spedizione</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Indirizzo di Spedizione</h5>
             </Card.Header>
             <Card.Body>
               <p className="mb-1">{order.shippingAddress.street}</p>
@@ -183,7 +183,7 @@ const OrderDetail = () => {
 
           <Card>
             <Card.Header>
-              <h5 className="mb-0">Pagamento</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Pagamento</h5>
             </Card.Header>
             <Card.Body>
               <p><strong>Metodo:</strong> {order.paymentMethod.toUpperCase()}</p>

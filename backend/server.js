@@ -22,6 +22,7 @@ import shopSettingsRoutes from './routes/shopSettingsRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use(passport.initialize());
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/admin/news', adminNewsRoutes); // DEVE essere PRIMA di /api/admin per evitare conflitti
 app.use('/api/admin', adminRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);

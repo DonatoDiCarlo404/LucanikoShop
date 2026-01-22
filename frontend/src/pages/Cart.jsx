@@ -295,7 +295,7 @@ const Cart = () => {
       <Row>
         <Col md={8}>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2>Il tuo Carrello</h2>
+            <h2 style={{ color: '#004b75', fontWeight: 700 }}>Il tuo Carrello</h2>
             <div>
               {/* ...rimosso Fix Prezzi... */}
               <Button variant="outline-danger" size="sm" onClick={clearCart}>
@@ -390,7 +390,7 @@ const Cart = () => {
         <Col md={4}>
           <Card className="sticky-top" style={{ top: '100px' }}>
             <Card.Header>
-              <h5 className="mb-0">Riepilogo Ordine</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Riepilogo Ordine</h5>
             </Card.Header>
             <Card.Body>
               <ListGroup variant="flush">
@@ -489,9 +489,9 @@ const Cart = () => {
                       <Button
                         variant="link"
                         size="sm"
-                        className="text-danger p-0 ms-2"
+                        className="p-0 ms-2 border-0 shadow-none remove-discount-x-mobile"
                         onClick={handleRemoveCoupon}
-                        style={{ textDecoration: 'none' }}
+                        style={{ textDecoration: 'none', border: 'none', boxShadow: 'none' }}
                       >
                         ✕
                       </Button>
@@ -588,8 +588,8 @@ const Cart = () => {
                         Accetto i{' '}
                         <Button
                           variant="link"
-                          className="p-0 text-decoration-underline"
-                          style={{ fontSize: 'inherit', verticalAlign: 'baseline' }}
+                          className="p-0 text-decoration-underline border-0 shadow-none"
+                          style={{ fontSize: 'inherit', verticalAlign: 'baseline', border: 'none', boxShadow: 'none' }}
                           onClick={(e) => {
                             e.preventDefault();
                             setShowTermsModal(true);
@@ -643,8 +643,8 @@ const Cart = () => {
 
       {/* Modale Termini e Condizioni Venditore */}
       <Modal show={showTermsModal} onHide={() => setShowTermsModal(false)} size="lg" scrollable>
-        <Modal.Header closeButton>
-          <Modal.Title>Termini e Condizioni del Venditore</Modal.Title>
+        <Modal.Header closeButton style={{ border: 'none', boxShadow: 'none' }}>
+          <Modal.Title style={{ border: 'none', boxShadow: 'none' }}>Termini e Condizioni del Venditore</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ whiteSpace: 'pre-wrap' }}>
           {vendorTerms.termsText || 'Termini e condizioni non disponibili.'}

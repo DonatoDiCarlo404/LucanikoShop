@@ -46,6 +46,11 @@ const VendorDashboard = () => {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState(null);
   const [categories, setCategories] = useState([]);
+  
+  // State per eliminazione prodotto
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [discountForm, setDiscountForm] = useState({
     name: '',
     description: '',
@@ -142,6 +147,42 @@ const VendorDashboard = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Gestione eliminazione prodotto
+  const handleDeleteProduct = (product) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    
+    setDeleting(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/products/${productToDelete._id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante l\'eliminazione del prodotto');
+      }
+
+      // Rimuovi il prodotto dalla lista locale
+      setProducts(products.filter(p => p._id !== productToDelete._id));
+      setShowDeleteModal(false);
+      setProductToDelete(null);
+      
+      // Opzionalmente potresti ricaricare i dati
+      // loadDashboardData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -601,8 +642,16 @@ const VendorDashboard = () => {
                               size="sm"
                               variant="outline-info"
                               onClick={() => navigate(`/products/${product._id}`)}
+                              className="me-2"
                             >
                               Visualizza
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-danger"
+                              onClick={() => handleDeleteProduct(product)}
+                            >
+                              Elimina
                             </Button>
                           </td>
                         </tr>
@@ -1098,6 +1147,30 @@ const VendorDashboard = () => {
             }
           >
             {updating ? 'Salvataggio...' : 'Salva Sconto'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal conferma eliminazione prodotto */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Conferma Eliminazione</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {productToDelete && (
+            <p>
+              Sei sicuro di voler eliminare il prodotto <strong>{productToDelete.name}</strong>?
+              <br />
+              <span className="text-danger">Questa azione non può essere annullata.</span>
+            </p>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={deleting}>
+            Annulla
+          </Button>
+          <Button variant="danger" onClick={confirmDeleteProduct} disabled={deleting}>
+            {deleting ? 'Eliminazione...' : 'Elimina'}
           </Button>
         </Modal.Footer>
       </Modal>

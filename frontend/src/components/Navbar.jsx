@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { adminAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
+import './Navbar.css';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -11,6 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingProductsCount, setPendingProductsCount] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -54,10 +56,15 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+    setExpanded(false);
+  };
+
+  const closeMenu = () => {
+    setExpanded(false);
   };
 
   return (
-    <BSNavbar bg="light" variant="light" expand="lg" sticky="top" style={{ zIndex: 1030 }}>
+    <BSNavbar bg="light" variant="light" expand="lg" sticky="top" style={{ zIndex: 1030 }} expanded={expanded} onToggle={setExpanded}>
       <Container>
         <BSNavbar.Brand as={Link} to="/">
           <img src="/lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
@@ -74,7 +81,7 @@ const Navbar = () => {
           <Nav.Link as={Link} to="/cart" className="d-inline-flex align-items-center me-2">
             <span><i className="bi bi-cart"></i></span>
             {cartCount > 0 && (
-              <Badge bg="danger" className="ms-2">
+              <Badge className="ms-2 cart-badge-mobile">
                 {cartCount}
               </Badge>
             )}
@@ -86,35 +93,59 @@ const Navbar = () => {
             {/* altri link seller/admin qui sotto */}
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
-                <Nav.Link as={Link} to="/vendor/dashboard" className="text-start">
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/vendor/dashboard'); }}
+                >
                   <span>
                     <i className="bi bi-graph-up"></i> Dashboard Venditore
                   </span>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/my-products" className="text-start">
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/my-products'); }}
+                >
                   <span>
                     <i className="bi bi-bag-check"></i> I miei prodotti
                   </span>
                 </Nav.Link>
-                <Nav.Link as={Link} to="/products/new" className="text-start">
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/products/new'); }}
+                >
                   <span>
                     <i className="bi bi-bag-plus"></i> Nuovo prodotto
                   </span>
                 </Nav.Link>
                 {/* Voci aggiuntive solo mobile hamburger per venditore */}
-                <Nav.Link as={Link} to="/vendor/profile" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/vendor/profile'); }}
+                >
                   Profilo Aziendale
                 </Nav.Link>
-                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/products'); }}
+                >
                   Catalogo
                 </Nav.Link>
-                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/offers'); }}
+                >
                   Offerte e Sconti
                 </Nav.Link>
-                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100 my-2">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100 my-2" 
+                  onClick={() => { closeMenu(); navigate('/categories'); }}
+                >
                   Categorie
                 </Nav.Link>
-                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                >
                   Partners
                 </Nav.Link>
                 {/* Esci sempre ultimo */}
@@ -124,7 +155,7 @@ const Navbar = () => {
               </>
             )}
 
-            {isAuthenticated && user.role === 'admin' && (
+            {isAuthenticated && user.role === 'admin' && false && (
               <>
                 <Nav.Link as={Link} to="/vendor/dashboard" className="text-start">
                   <span><i className="bi bi-graph-up"></i> Dashboard Venditore</span>
@@ -149,11 +180,11 @@ const Navbar = () => {
             )}
           </Nav>
 
-          <Nav className="ms-auto align-items-center justify-content-end" style={{ minWidth: 400 }}>
+          <Nav className="ms-auto align-items-center justify-content-end">
             <Nav.Link as={Link} to="/cart" className="d-none d-lg-inline-flex align-items-center">
               <span><i className="bi bi-cart"></i></span>
               {cartCount > 0 && (
-                <Badge bg="danger" className="ms-2">
+                <Badge className="ms-2 cart-badge-desktop">
                   {cartCount}
                 </Badge>
               )}
@@ -197,6 +228,25 @@ const Navbar = () => {
                     <NavDropdown.Divider />
                   </>
                 )}
+                {(user.role === 'admin') && (
+                  <>
+                    <NavDropdown.Item onClick={() => navigate('/vendor/dashboard')}>
+                      <span><i className="bi bi-graph-up me-2"></i> Dashboard Venditore</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => navigate('/my-products')}>
+                      <span><i className="bi bi-kanban me-2"></i> Gestione prodotti</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => navigate('/admin/dashboard')}>
+                      <span><i className="bi bi-shield-lock me-2"></i> Dashboard Admin</span>
+                      {pendingCount > 0 && (
+                        <Badge bg="warning" className="ms-2">
+                          {pendingCount}
+                        </Badge>
+                      )}
+                    </NavDropdown.Item>
+                    <NavDropdown.Divider />
+                  </>
+                )}
                 <NavDropdown.Item onClick={handleLogout}>
                   <span><i className="bi bi-power me-2"></i> Esci</span>
                 </NavDropdown.Item>
@@ -211,19 +261,34 @@ const Navbar = () => {
             {/* Mobile hamburger: solo link pubblici per utenti non autenticati */}
             {!isAuthenticated && (
               <Nav className="d-lg-none w-100 text-center">
-                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/products'); }}
+                >
                   Catalogo
                 </Nav.Link>
-                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/offers'); }}
+                >
                   Offerte e Sconti
                 </Nav.Link>
-                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/categories'); }}
+                >
                   Categorie
                 </Nav.Link>
-                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                >
                   Partners
                 </Nav.Link>
-                <Nav.Link as={Link} to="/login" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/login'); }}
+                >
                   Accedi / Registrati
                 </Nav.Link>
               </Nav>
@@ -231,16 +296,33 @@ const Navbar = () => {
             {/* Mobile hamburger: link per acquirente loggato */}
             {isAuthenticated && (user.role === 'buyer' || user.role === 'user' || user.role === 'acquirente') && (
               <Nav className="d-lg-none w-100 text-center">
-                <Nav.Link as={Link} to="/products" className="d-lg-none text-end w-100">
+                <div className="mb-2" style={{ fontWeight: 600, color: '#004b75', fontSize: '1.1rem' }}>
+                  <span style={{ display: 'block', textAlign: 'left', marginLeft: '0.5rem' }}>
+                    Ciao, {user.name ? user.name.split(' ')[0] : ''}
+                  </span>
+                </div>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/products'); }}
+                >
                   Catalogo
                 </Nav.Link>
-                <Nav.Link as={Link} to="/offers" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/offers'); }}
+                >
                   Offerte e Sconti
                 </Nav.Link>
-                <Nav.Link as={Link} to="/categories" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/categories'); }}
+                >
                   Categorie
                 </Nav.Link>
-                <Nav.Link as={Link} to="/partner" className="d-lg-none text-end w-100">
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                >
                   Partner
                 </Nav.Link>
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">

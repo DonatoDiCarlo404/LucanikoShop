@@ -18,6 +18,7 @@ import {
 } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
 import DefaultShippingRateInput from './DefaultShippingRateInput';
+import './VendorProfile.css';
 
 const VendorProfile = () => {
   const { user } = useAuth();
@@ -439,64 +440,57 @@ const VendorProfile = () => {
     }
   };
 
-  // Carica statistiche
+  // Carica statistiche e recensioni come in ShopPage.jsx
   const loadStats = async () => {
     try {
-      // Carica statistiche
-      const statsRes = await fetch('http://localhost:5000/api/orders/vendor/stats', {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
-      });
-
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
+      // Carica prodotti del venditore
+      let productsUrl = 'http://localhost:5000/api/products/seller/my-products';
+      let vendorId = user._id;
+      if (user.role === 'admin' && sellerId) {
+        productsUrl = 'http://localhost:5000/api/admin/products';
+        vendorId = sellerId;
       }
+      const productsRes = await fetch(productsUrl, {
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      let vendorProducts = [];
+      if (productsRes.ok) {
+        const allProducts = await productsRes.json();
+        vendorProducts = Array.isArray(allProducts)
+          ? (user.role === 'admin' && sellerId
+              ? allProducts.filter(p => p.seller?._id === vendorId || p.seller === vendorId)
+              : allProducts)
+          : [];
+        setProducts(vendorProducts);
+      }
+
+      // Carica tutte le recensioni dei prodotti del venditore
+      const productIds = vendorProducts.map(p => p._id);
+      let allReviews = [];
+      for (const pid of productIds) {
+        const res = await fetch(`http://localhost:5000/api/reviews/${pid}`);
+        if (res.ok) {
+          const reviews = await res.json();
+          allReviews = allReviews.concat(reviews);
+        }
+      }
+      const totalReviews = allReviews.length;
+      const avgRating = totalReviews > 0 ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
+
+      // Aggiorna stats per il rateo recensioni
+      setStats({
+        reviewAvg: avgRating,
+        reviewCount: totalReviews
+      });
 
       // Carica ordini recenti
       const ordersRes = await fetch('http://localhost:5000/api/orders/vendor/received', {
-        headers: {
-          Authorization: `Bearer ${user.token}`
-        }
+        headers: { Authorization: `Bearer ${user.token}` }
       });
-
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
-        setOrders(ordersData.slice(0, 5)); // Solo ultimi 5
+        setOrders(ordersData.slice(0, 5));
       }
-
-      // Carica prodotti - se admin visualizza venditore specifico, carica i suoi prodotti
-      let productsUrl = 'http://localhost:5000/api/products/seller/my-products';
-      
-      // Se admin sta visualizzando profilo di un venditore specifico, carica i suoi prodotti
-      if (user.role === 'admin' && sellerId) {
-        // Recupera tutti i prodotti e filtra per venditore
-        const allProductsRes = await fetch('http://localhost:5000/api/admin/products', {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        });
-        
-        if (allProductsRes.ok) {
-          const allProducts = await allProductsRes.json();
-          const vendorProducts = allProducts.filter(p => p.seller?._id === sellerId || p.seller === sellerId);
-          setProducts(vendorProducts);
-        }
-      } else {
-        // Venditore visualizza i propri prodotti
-        const productsRes = await fetch(productsUrl, {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        });
-
-        if (productsRes.ok) {
-          const productsData = await productsRes.json();
-          setProducts(productsData);
-        }
-      }
-
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     }
@@ -918,7 +912,7 @@ const VendorProfile = () => {
           params.set('tab', k);
           setSearchParams(params);
         }}
-        className="mb-4"
+        className="mb-4 vendor-tabs-custom"
       >
         {/* TAB INFORMAZIONI AZIENDA */}
         <Tab eventKey="info" title={<span style={{color: activeTab === 'info' ? '#861515' : '#004b75'}}>📋 Informazioni Azienda</span>}>

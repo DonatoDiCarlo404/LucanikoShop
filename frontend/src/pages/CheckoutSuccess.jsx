@@ -1,10 +1,20 @@
 import { Container, Card, Button } from 'react-bootstrap';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useCart } from '../context/CartContext';
 
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  const { clearCart, removeCoupon } = useCart();
+
+  useEffect(() => {
+    clearCart();
+    removeCoupon();
+    // Svuota anche il localStorage guest (fallback)
+    localStorage.removeItem('cart_guest');
+  }, []);
 
   return (
     <Container className="py-5">

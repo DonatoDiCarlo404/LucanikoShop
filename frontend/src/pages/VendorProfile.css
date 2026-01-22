@@ -1,0 +1,21 @@
+.vendor-tabs-custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 576px) {
+  .vendor-tabs-custom .nav-item {
+    flex: 0 0 48%;
+    max-width: 48%;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+  .vendor-tabs-custom .nav-link {
+    font-size: 1rem;
+    padding: 0.5rem 0.2rem;
+    border-radius: 8px;
+    min-width: 0;
+    word-break: break-word;
+  }
+}

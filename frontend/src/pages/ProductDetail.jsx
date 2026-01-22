@@ -664,10 +664,13 @@ const ProductDetail = () => {
 
                       {/* Pulsante modifica */}
                       {user && r.user?._id === user._id && !editingReview && (() => {
+                        // Permetti la modifica solo se non è già stata modificata una volta
                         const created = new Date(r.createdAt);
+                        const updated = new Date(r.updatedAt);
                         const now = new Date();
                         const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-                        if (diffDays <= 30) {
+                        const alreadyEdited = r.updatedAt && r.updatedAt !== r.createdAt;
+                        if (diffDays <= 30 && !alreadyEdited) {
                           return (
                             <Button
                               variant="outline-primary"
@@ -677,6 +680,12 @@ const ProductDetail = () => {
                             >
                               Modifica
                             </Button>
+                          );
+                        } else if (alreadyEdited) {
+                          return (
+                            <div className="text-muted mt-2" style={{ fontSize: '0.9em' }}>
+                              Modifica già effettuata
+                            </div>
                           );
                         } else {
                           return (
@@ -710,68 +719,35 @@ const ProductDetail = () => {
                       {/* FORM modifica */}
                       {editingReview && editingReview._id === r._id && (
                         <form onSubmit={handleEditSubmit} className="mt-2">
-                          {/* VARIANTI: Selezione e prezzo dinamico */}
-                          <Card className="mb-3">
-                            <Card.Body>
-                              {Array.isArray(product.variants) && product.variants.length > 0 && product.customAttributes ? (
-                                <>
-                                  {/* Selettori per ogni attributo variante */}
-                                  {product.customAttributes.filter(a => a.allowVariants && a.options?.length > 0).map(attr => (
-                                    <div key={attr.key} className="mb-2">
-                                      <strong>{attr.name}:</strong>{' '}
-                                      <select
-                                        value={selectedOptions[attr.key] || ''}
-                                        onChange={e => setSelectedOptions(opts => ({ ...opts, [attr.key]: e.target.value }))}
-                                        style={{ minWidth: 120 }}
-                                      >
-                                        <option value="">Seleziona...</option>
-                                        {attr.options.map(opt => (
-                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  ))}
-                                  {/* Prezzo e disponibilità variante selezionata */}
-                                  {selectedVariant ? (
-                                    <div className="d-flex justify-content-between align-items-center mt-3">
-                                      <h3 className="text-primary mb-0">
-                                        €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
-                                        <small className="text-muted">/{product.unit}</small>
-                                      </h3>
-                                      {selectedVariant.stock > 0 ? (
-                                        <Badge bg="success">✓ Disponibile</Badge>
-                                      ) : (
-                                        <Badge bg="danger">✗ Esaurito</Badge>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="d-flex justify-content-between align-items-center mt-3">
-                                      <h5 className="text-muted mb-0">Seleziona una variante</h5>
-                                      <Badge bg="secondary">—</Badge>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="d-flex justify-content-between">
-                                  <h3 className="text-primary mb-0">
-                                    €{Number(product.price).toFixed(2)}
-                                    <small className="text-muted">/{product.unit}</small>
-                                    {typeof product.ivaPercent === 'number' && (
-                                      <span className="ms-2" style={{fontSize:'0.9rem', color:'#888'}}>
-                                        IVA {product.ivaPercent}% (
-                                        €{(Number(product.price) * (product.ivaPercent/(100+product.ivaPercent))).toFixed(2)} )
-                                      </span>
-                                    )}
-                                  </h3>
-                                  {product.stock > 0 ? (
-                                    <Badge bg="success">✓ Disponibile</Badge>
-                                  ) : (
-                                    <Badge bg="danger">✗ Esaurito</Badge>
-                                  )}
-                                </div>
-                              )}
-                            </Card.Body>
-                          </Card>
+                          <div className="mb-2">
+                            <label>Rating:</label>
+                            <select
+                              className="ms-2"
+                              value={editRating}
+                              onChange={e => setEditRating(Number(e.target.value))}
+                            >
+                              {[5, 4, 3, 2, 1].map(n => (
+                                <option key={n} value={n}>{n}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <textarea
+                            className="form-control mb-2"
+                            rows={2}
+                            value={editComment}
+                            onChange={e => setEditComment(e.target.value)}
+                            placeholder="Scrivi un commento..."
+                            required
+                          />
+                          {editError && <Alert variant="danger">{editError}</Alert>}
+                          <div className="d-flex gap-2">
+                            <Button type="submit" variant="primary" size="sm" disabled={editSubmitting}>
+                              {editSubmitting ? 'Salvataggio...' : 'Salva'}
+                            </Button>
+                            <Button type="button" variant="secondary" size="sm" onClick={handleCancelEdit}>
+                              Annulla
+                            </Button>
+                          </div>
                         </form>
                       )}
                     </ListGroup.Item>

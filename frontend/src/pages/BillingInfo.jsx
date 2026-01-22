@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Container, Card, Button, Form, Modal } from 'react-bootstrap';
+import { Container, Card, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
@@ -21,8 +21,8 @@ const BillingInfo = () => {
   const [billingRegion, setBillingRegion] = useState('');
   // Stato per indirizzo di spedizione alternativo
   const [useAltShipping, setUseAltShipping] = useState(false);
-  // Stato per il modale di riepilogo
-  const [showSummary, setShowSummary] = useState(false);
+  // Stato per il caricamento del checkout
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Popola automaticamente i dati di fatturazione se utente loggato
   useEffect(() => {
@@ -67,12 +67,10 @@ const BillingInfo = () => {
   }, [user]);
 
   // Handler per invio dati
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowSummary(true);
-  };
-
-  const handleProceedToCheckout = async () => {
+    setIsProcessing(true);
+    
     try {
       // Estrai l'email corretta dal formData in base al tipo di acquirente
       const customerEmail = formData.buyerType === 'azienda' 
@@ -96,6 +94,7 @@ const BillingInfo = () => {
     } catch (error) {
       console.error('Errore durante il checkout:', error);
       toast.error('Errore durante il checkout. Riprova.');
+      setIsProcessing(false);
     }
   };
 
@@ -646,48 +645,14 @@ const BillingInfo = () => {
 
             {/* Qui verranno aggiunti i campi */}
 
-            <Button variant="primary" type="submit">
-              Continua
+            <Button 
+              variant="primary" 
+              type="submit"
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Reindirizzamento in corso...' : 'Continua al Pagamento'}
             </Button>
           </Form>
-
-          {/* Modale riepilogo dati fatturazione */}
-          <Modal show={showSummary} onHide={() => setShowSummary(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Riepilogo dati di Fatturazione/Spedizione</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              {/* Riepilogo dinamico dei dati inseriti */}
-              <ul className="list-unstyled">
-                {Object.entries(formData).map(([key, value], idx, arr) => {
-                  if (key === 'buyerType') return null;
-                  // Inserisci una riga di separazione tra dati principali e indirizzo alternativo
-                  if (key === 'altDestinatario' && value) {
-                    return [
-                      <hr key="sep-alt" className="my-2" />,
-                      <li key={key}><strong>{'Destinatario'}:</strong> {value}</li>
-                    ];
-                  }
-                  if (key.startsWith('alt') && value) {
-                    // Rimuovi il prefisso 'alt' e formatta la label
-                    const label = key.replace(/^alt/, '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
-                    return <li key={key}><strong>{label}:</strong> {value}</li>;
-                  }
-                  return value ? (
-                    <li key={key}><strong>{key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> {value}</li>
-                  ) : null;
-                })}
-              </ul>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowSummary(false)}>
-                Modifica
-              </Button>
-              <Button variant="primary" onClick={handleProceedToCheckout}>
-                Conferma e procedi al pagamento
-              </Button>
-            </Modal.Footer>
-          </Modal>
         </Card.Body>
       </Card>
     </Container>
