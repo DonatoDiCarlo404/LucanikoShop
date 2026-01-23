@@ -261,7 +261,6 @@ git push -u origin main
 3. Click "Raw Editor" e incolla (sostituisci con i tuoi valori):
 
 ```
-MONGODB_URI=mongodb+srv://lucaniko_admin:TUA_PASSWORD@cluster0.xxxxx.mongodb.net/lucanikoshop
 JWT_SECRET=IL_JWT_GENERATO_SOPRA
 CLOUDINARY_CLOUD_NAME=tuo_cloud_name
 CLOUDINARY_API_KEY=tua_api_key
