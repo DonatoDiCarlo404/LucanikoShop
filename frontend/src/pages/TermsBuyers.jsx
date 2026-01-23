@@ -11,7 +11,7 @@ const points = [
   },
   {
     title: "3) Registrazione e acquisti",
-    text: `L’Acquirente può registrarsi o acquistare come ospite (quando disponibile).\nL’Acquirente garantisce che i dati inseriti sono veritieri e aggiornati.\nLe credenziali sono personali; l’Acquirente è responsabile dell’uso del proprio account.`
+    text: `L’Acquirente può registrarsi o acquistare come ospite (quando disponibile).\nL’Acquirente garantisce che i dati inseriti sono veritieri e aggiornati.\nLe credenziali sono personali; l’Acquirente è responsabile dell’uso del proprio account.\n Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.`
   },
   {
     title: "4) Informazioni su prodotti e prezzi",

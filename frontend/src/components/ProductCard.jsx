@@ -241,9 +241,15 @@ const ProductCard = ({ product }) => {
                 return <Badge className="badge-esaurito">Esaurito</Badge>;
               }
               return isAvailable ? (
-                <Badge className="badge-availability">Disponibile</Badge>
+                <>
+                  <Badge className="badge-availability d-none d-sm-inline">Disponibile</Badge>
+                  <Badge className="badge-availability d-inline d-sm-none">Disp.</Badge>
+                </>
               ) : (
-                <Badge className="badge-not-available">Non disponibile</Badge>
+                <>
+                  <Badge className="badge-not-available d-none d-sm-inline">Non disponibile</Badge>
+                  <Badge className="badge-not-available d-inline d-sm-none">Non Disp.</Badge>
+                </>
               );
             })()}
           </div>

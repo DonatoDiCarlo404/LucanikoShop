@@ -103,7 +103,10 @@ const OffersAndDiscounts = () => {
 
   return (
     <Container className="mt-4 mb-5">
-      <h2 className="mb-2" style={{ color: '#004b75', fontWeight: 700 }}>Offerte e Sconti</h2>
+      <div className="d-flex align-items-center mb-2">
+        <h2 style={{ color: '#004b75', fontWeight: 700, marginBottom: 0 }}>Offerte e Sconti</h2>
+        <span className="ms-2 d-none d-md-inline" style={{ fontSize: '1.1rem', color: '#861515', fontWeight: 500 }}>(Sparagn e Cumbarisc)</span>
+      </div>
       <div className="d-block d-md-none mb-3" style={{ fontSize: '1.1rem', color: '#861515', fontWeight: 500 }}>
         (Sparagn e Cumbarisc)
       </div>

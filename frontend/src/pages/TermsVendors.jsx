@@ -10,8 +10,8 @@ const points = [
 		text: `Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop).\nIl Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.).\nLucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura.\nPer la categoria di vendita CIBI E BEVANDE è obbligatorio offrire su questo marketplace solo prodotti Lucani. Tutti i prodotti non Lucani saranno rimossi senza alcun avviso e potrebbe comportare l'esclusione del venditore da Lucaniko Shop.`
 	},
 	{
-		title: "3) Abbonamenti e attivazione",
-		text: `Piano di adesione 2026 (come da offerta in piattaforma):\n- €150 + IVA / 1 anno\n- €250 + IVA / 2 anni\n- €350 + IVA / 3 anni\nL'accesso è attivato dopo:\n- approvazione della richiesta\n- pagamento effettuato online\n- emissione fattura da parte di INSIDE DI DI PIETRO VITO\nIl venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico.`
+		title: "3) Piano di Adesione e attivazione",
+		text: `Piano di Adesione 2026 (come da offerta in piattaforma):\n- €250 (IVA inclusa) / 1 anno\n- €390 (IVA inclusa) / 2 anni\n- €510 (IVA inclusa) / 3 anni\nINCLUDE:\n- Registrazione e accesso alla piattaforma\n- Onboarding e formazione iniziale\n- Supporto operativo \n- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news)\nL'accesso è attivato dopo:\n- approvazione della richiesta\n- pagamento effettuato online\n- emissione fattura da parte di INSIDE DI DI PIETRO VITO\nIl venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico. \nPrivacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.`
 	},
 	{
 		title: "4) Commissioni sulle vendite e pagamenti",
@@ -39,7 +39,7 @@ const points = [
 	},
 	{
 		title: "10) Sospensione e cessazione",
-		text: `Lucaniko Shop può sospendere o disattivare l'account venditore (anche senza preavviso nei casi gravi) in caso di:\n- violazioni normative o dei presenti Termini\n- contestazioni ripetute, frodi, prodotti vietati\n- inadempimenti gravi nella gestione ordini/resi\nIl Venditore può recedere dall'adesione secondo le modalità indicate; gli importi dell'abbonamento già pagati possono essere non rimborsabili salvo obblighi di legge o diversa previsione contrattuale.`
+		text: `Lucaniko Shop può sospendere o disattivare l'account venditore (anche senza preavviso nei casi gravi) in caso di:\n- violazioni normative o dei presenti Termini\n- contestazioni ripetute, frodi, prodotti vietati\n- inadempimenti gravi nella gestione ordini/resi\nIl Venditore può recedere dall'adesione secondo le modalità indicate; gli importi del Piano di Adesione già pagati possono essere non rimborsabili salvo obblighi di legge o diversa previsione contrattuale.`
 	},
 	{
 		title: "11) Trattamento dati: ruoli e responsabilità",

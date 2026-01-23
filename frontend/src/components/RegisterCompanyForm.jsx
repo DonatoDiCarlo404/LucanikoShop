@@ -224,13 +224,13 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         <Form.Text className="text-muted">Seleziona una o più categorie dal menu.</Form.Text>
       </Form.Group>
       <Form.Group className="mb-3" controlId="subscription">
-        <Form.Label>Scegli abbonamento, (ZERO COMMISSIONI) <span style={{color: 'red'}}>*</span></Form.Label>
+        <Form.Label>Scegli Piano di Adesione (ZERO COMMISSIONI) <span style={{color: 'red'}}>*</span></Form.Label>
         <Form.Select value={subscription} onChange={e => setSubscription(e.target.value)} required>
-          <option value="1anno">1 Anno: €150 + iva</option>
-          <option value="2anni">2 Anni: €250 + iva</option>
-          <option value="3anni">3 Anni: €350 + iva</option>
+          <option value="1anno">1 Anno: €250 (IVA inclusa)</option>
+          <option value="2anni">2 Anni: €390 (IVA inclusa)</option>
+          <option value="3anni">3 Anni: €510 (IVA inclusa)</option>
         </Form.Select>
-        <Form.Text className="text-muted">Seleziona la durata dell'abbonamento.</Form.Text>
+        <Form.Text className="text-muted">Seleziona la durata del piano di adesione.</Form.Text>
       </Form.Group>
       <Form.Group className="mb-3" controlId="acceptTerms">
         <Form.Check
@@ -292,7 +292,7 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         <ol>
           <li><b>Oggetto e definizioni</b><br />Il presente documento disciplina l’adesione delle aziende (“Venditori”) al marketplace Lucaniko Shop e l’utilizzo degli strumenti messi a disposizione per la vendita ai consumatori finali.</li>
           <li><b>Requisiti di ammissione</b><br />Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop).<br />Il Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.).<br />Lucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura.</li>
-          <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €150 + IVA / 1 anno<br />- €250 + IVA / 2 anni<br />- €350 + IVA / 3 anni<br />L’accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d’identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico.</li>
+          <li><b>Piano di Adesione e attivazione</b><br />Piano di Adesione 2026 (come da offerta in piattaforma):<br />- €250 (IVA inclusa) / 1 anno<br />- €390 (IVA inclusa) / 2 anni<br />- €510 (IVA inclusa) / 3 anni<br />INCLUDE:<br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo<br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news)<br />L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico.</li>
           <li><b>Commissioni sulle vendite e pagamenti</b><br />- Nessuna commissione di marketplace, salvo diverso accordo.<br />- I pagamenti sono gestiti tramite Stripe: il Venditore deve creare/configurare il proprio account Stripe e completare eventuali verifiche (KYC/AML).<br />- Stripe accredita direttamente al Venditore gli importi delle vendite al netto delle commissioni Stripe e di eventuali trattenute richieste da Stripe.</li>
           <li><b>Obblighi del Venditore (prodotti, conformità e leggi)</b><br />Il Venditore è l’unico responsabile di:<br />- veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)<br />- conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)<br />- disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)<br />- gestione resi, recesso, rimborsi, garanzia e assistenza post-vendita<br />- gestione spedizioni e consegne<br />Lucaniko Shop non garantisce esclusiva di prodotto nè di prezzo. Più venditori possono offrire prodotti uguali o simili anche a prezzi differenti.<br />È vietato vendere prodotti illegali, contraffatti, pericolosi o soggetti a restrizioni non gestibili sulla Piattaforma.</li>
           <li><b>Spedizioni</b><br />Il Venditore imposta aree servite, tempi, corrieri e costi.<br />Il Venditore è responsabile di imballaggio, integrità e tracciamento.</li>

@@ -35,8 +35,30 @@ const PORT = process.env.PORT || 5000;
 // Stripe ha bisogno del raw body per verificare la firma
 app.use('/api/webhook', webhookRoutes);
 
-// Middleware
-app.use(cors());
+// Middleware CORS configurato per produzione
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173', // Dev locale
+  'http://localhost:3000'  // Dev locale alternativo
+].filter(Boolean);
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permetti richieste senza origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS blocked request from: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 import { renewExpiredSubscriptions } from './utils/subscriptionUtils.js';
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -75,18 +97,7 @@ mongoose.connect(process.env.MONGODB_URI)
         console.error('❌ Errore nel controllo sconti:', error);
       });
     
-    // Programma il controllo degli sconti ogni ora
-    setInterval(() => {
-      updateExpiredDiscounts()
-        .then(result => {
-          console.log(`🔄 Controllo sconti orario: ${result.expired} scaduti, ${result.activated} attivati`);
-        })
-        .catch(error => {
-          console.error('❌ Errore nel controllo sconti orario:', error);
-        });
-    }, 60 * 60 * 1000); // Ogni ora
-  })
-  .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
+    // Esegui il controllo degli abbonamenti all'avvio
     renewExpiredSubscriptions()
       .then(result => {
         console.log(`✅ Rinnovo abbonamenti: ${result.renewed} rinnovati`);
@@ -97,16 +108,20 @@ mongoose.connect(process.env.MONGODB_URI)
       .catch(error => {
         console.error('❌ Errore rinnovo abbonamenti:', error);
       });
-
-app.get('/', (req, res) => {
-  res.json({ message: 'Benvenuto in LucanikoShop API' });
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
-});
-
-// Rotta NOT FOUND
+    
+    // Programma il controllo degli sconti ogni ora
+    setInterval(() => {
+      updateExpiredDiscounts()
+        .then(result => {
+          console.log(`🔄 Controllo sconti orario: ${result.expired} scaduti, ${result.activated} attivati`);
+        })
+        .catch(error => {
+          console.error('❌ Errore nel controllo sconti orario:', error);
+        });
+    }, 60 * 60 * 1000); // Ogni ora
+    
+    // Programma il controllo degli abbonamenti ogni ora
+    setInterval(() => {
       renewExpiredSubscriptions()
         .then(result => {
           console.log(`🔄 Rinnovo abbonamenti orario: ${result.renewed} rinnovati`);
@@ -117,6 +132,19 @@ app.get('/api/health', (req, res) => {
         .catch(error => {
           console.error('❌ Errore rinnovo abbonamenti orario:', error);
         });
+    }, 60 * 60 * 1000); // Ogni ora
+  })
+  .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Benvenuto in LucanikoShop API' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is running' });
+});
+
+// Rotta NOT FOUND
 app.use(notFound);
 
 // Middleware gestione errori

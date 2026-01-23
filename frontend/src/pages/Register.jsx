@@ -10,11 +10,11 @@ import StripePaymentForm from '../components/StripePaymentForm';
 // Chiave pubblica Stripe
 const stripePromise = loadStripe('pk_test_51SS11yRcLktP33tcvW9XbFOfI3b9jyL4pumGnEiGVfIYhr0wtKZybKrmMNApfcrUaLxSwN0spQBeTLqt6KHeqFZO00clKGog92');
 
-// Calcolo importi con IVA 22%
+// Prezzi Piano di Adesione 2026 (IVA inclusa)
 const SUBSCRIPTION_PRICES = {
-  '1anno': { base: 150, withVAT: 183 },
-  '2anni': { base: 250, withVAT: 305 },
-  '3anni': { base: 350, withVAT: 427 }
+  '1anno': { base: 250, withVAT: 250 },
+  '2anni': { base: 390, withVAT: 390 },
+  '3anni': { base: 510, withVAT: 510 }
 };
 
 const Register = () => {
@@ -40,6 +40,8 @@ const Register = () => {
   const [subscription, setSubscription] = useState('1anno');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [acceptTermsBuyer, setAcceptTermsBuyer] = useState(false);
+  const [showTermsModalBuyer, setShowTermsModalBuyer] = useState(false);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [paymentMethodId, setPaymentMethodId] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -117,6 +119,11 @@ const Register = () => {
       return;
     }
 
+    if (role === 'buyer' && !acceptTermsBuyer) {
+      setError('Devi accettare i Termini & Condizioni Acquirente di Lucaniko Shop');
+      return;
+    }
+
     if (role === 'seller' && !paymentCompleted) {
       setError('Devi completare il pagamento prima di registrarti');
       return;
@@ -136,16 +143,7 @@ const Register = () => {
     setLoading(true);
 
     const fullName = `${firstName} ${lastName}`.trim();
-    const result = await register({
-      firstName,
-      lastName,
-      name: fullName, // retrocompatibilità
-      email,
-      password,
-      role,
-      businessName,
-      vatNumber
-    });
+    const result = await register(fullName, email, password, role, businessName, vatNumber);
 
     if (result.success) {
       if (role === 'seller') {
@@ -414,7 +412,7 @@ const Register = () => {
                   </Form.Group>
 
                   <Form.Group className="mb-3" controlId="subscription">
-                    <Form.Label>Scegli abbonamento (ZERO COMMISSIONI) <span style={{color: 'red'}}>*</span></Form.Label>
+                    <Form.Label>Scegli Piano di Adesione (ZERO COMMISSIONI) <span style={{color: 'red'}}>*</span></Form.Label>
                     <Form.Select 
                       value={subscription} 
                       onChange={e => {
@@ -425,11 +423,11 @@ const Register = () => {
                       required
                       disabled={paymentCompleted}
                     >
-                      <option value="1anno">1 Anno: €150 + IVA = €183,00</option>
-                      <option value="2anni">2 Anni: €250 + IVA = €305,00</option>
-                      <option value="3anni">3 Anni: €350 + IVA = €427,00</option>
+                      <option value="1anno">1 Anno: €250 (IVA inclusa)</option>
+                      <option value="2anni">2 Anni: €390 (IVA inclusa)</option>
+                      <option value="3anni">3 Anni: €510 (IVA inclusa)</option>
                     </Form.Select>
-                    <Form.Text className="text-muted">Seleziona la durata dell'abbonamento. IVA al 22% inclusa.</Form.Text>
+                    <Form.Text className="text-muted">Seleziona la durata del piano di adesione. IVA inclusa nel prezzo.</Form.Text>
                   </Form.Group>
 
                   <Form.Group className="mb-3" controlId="acceptTerms">
@@ -464,21 +462,51 @@ const Register = () => {
               )}
 
               {role === 'buyer' && (
-                <Button 
-                  variant="primary" 
-                  type="submit" 
-                  className="w-100 mb-3" 
-                  disabled={loading}
-                >
-                  {loading ? 'Caricamento...' : 'Registrati'}
-                </Button>
+                <>
+                  <Form.Group className="mb-3" controlId="acceptTermsBuyer">
+                    <Form.Check
+                      type="checkbox"
+                      label={
+                        <span>
+                          Accetto i{' '}
+                          <span
+                            style={{ textDecoration: 'underline', color: '#007bff', cursor: 'pointer' }}
+                            role="button"
+                            tabIndex={0}
+                            onClick={e => {
+                              e.preventDefault();
+                              setShowTermsModalBuyer(true);
+                            }}
+                            onKeyPress={e => {
+                              if (e.key === 'Enter' || e.key === ' ') setShowTermsModalBuyer(true);
+                            }}
+                          >
+                            Termini &amp; Condizioni Acquirente di Lucaniko Shop
+                          </span>
+                          {' '}<span style={{color: 'red'}}>*</span>
+                        </span>
+                      }
+                      checked={acceptTermsBuyer}
+                      onChange={e => setAcceptTermsBuyer(e.target.checked)}
+                      required
+                    />
+                  </Form.Group>
+                  <Button 
+                    variant="primary" 
+                    type="submit" 
+                    className="w-100 mb-3" 
+                    disabled={loading}
+                  >
+                    {loading ? 'Caricamento...' : 'Registrati'}
+                  </Button>
+                </>
               )}
             </Form>
 
             {/* Form di pagamento FUORI dal form principale per evitare nidificazione */}
             {role === 'seller' && acceptTerms && (
               <div className="mb-3 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '0.375rem', border: '1px solid #dee2e6' }}>
-                <h5 className="mb-3">Pagamento Abbonamento</h5>
+                <h5 className="mb-3">Pagamento Piano di Adesione</h5>
                 {paymentCompleted ? (
                   <Alert variant="success">
                     <i className="bi bi-check-circle-fill me-2"></i>
@@ -561,7 +589,7 @@ const Register = () => {
             <li><b>Oggetto e definizioni</b><br />Il presente documento disciplina l'adesione delle aziende ("Venditori") al marketplace Lucaniko Shop e l'utilizzo degli strumenti messi a disposizione per la vendita ai consumatori finali.</li>
             <li><b>Requisiti di ammissione</b><br />Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop).<br />Il Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.).<br />Lucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura.</li>
             <li><b>Per la categoria di vendita CIBI E BEVANDE è <br />obbligatorio offrire su questo marketplace solo prodotti Lucani. Tutti i prodotti non Lucani saranno rimossi senza alcun avviso e potrebbe comportare l'esclusione del venditore da Lucaniko Shop.</b></li>
-            <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €150 + IVA / 1 anno<br />- €250 + IVA / 2 anni<br />- €350 + IVA / 3 anni<br />L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico.</li>
+            <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €250 (IVA Inclusa) / 1 anno<br />- €390 (IVA Inclusa) / 2 anni<br />- €510 (IVA Inclusa) / 3 anni <br /> <b>INCLUDE:</b><br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo <br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news) L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico. <br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
             <li><b>Commissioni sulle vendite e pagamenti</b><br />- Nessuna commissione di marketplace, salvo diverso accordo.<br />- I pagamenti sono gestiti tramite Stripe: il Venditore deve creare/configurare il proprio account Stripe e completare eventuali verifiche (KYC/AML).<br />- Stripe accredita direttamente al Venditore gli importi delle vendite al netto delle commissioni Stripe e di eventuali trattenute richieste da Stripe.</li>
             <li><b>Obblighi del Venditore (prodotti, conformità e leggi)</b><br />Il Venditore è l'unico responsabile di:<br />- veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)<br />- conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)<br />- disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)<br />- gestione resi, recesso, rimborsi, garanzia e assistenza post-vendita<br />- gestione spedizioni e consegne<br />Lucaniko Shop non garantisce esclusiva di prodotto nè di prezzo. Più venditori possono offrire prodotti uguali o simili anche a prezzi differenti.<br />È vietato vendere prodotti illegali, contraffatti, pericolosi o soggetti a restrizioni non gestibili sulla Piattaforma.</li>
             <li><b>Spedizioni</b><br />Il Venditore imposta aree servite, tempi, corrieri e costi.<br />Il Venditore è responsabile di imballaggio, integrità e tracciamento.</li>
@@ -572,11 +600,42 @@ const Register = () => {
             <li><b>Trattamento dati: ruoli e responsabilità</b><br />Lucaniko Shop è titolare dei dati necessari alla gestione della Piattaforma.<br />Il Venditore è titolare autonomo dei dati necessari alla gestione degli ordini (spedizione, fatturazione, assistenza).<br />Le parti si impegnano a trattare i dati nel rispetto del GDPR e a fornire informative e misure di sicurezza adeguate.</li>
             <li><b>Limitazione di responsabilità e manleva</b><br />Il Venditore manleva Lucaniko Shop da danni, sanzioni, reclami e pretese derivanti da:<br />prodotti non conformi o pericolosi<br />violazioni di legge (fiscali, consumatori, etichettatura)<br />violazioni di proprietà intellettuale<br />gestione ordini, spedizioni, resi e rimborsi</li>
             <li><b>Variazione Termini &amp; Condizioni</b><br />Lucaniko Shop si riserva il diritto di modificare i Termini &amp; Condizioni in qualsiasi momento con efficace immediata dalla pubblicazione sul sito</li>
-            <li><b>Legge applicabile e foro</b><br />Il rapporto è regolato dalla legge italiana. Foro competente di Potenza.</li>
+            <li><b>Legge applicabile e foro</b><br />Il rapporto è regolato dalla legge italiana. Foro competente di Potenza.</li>            
           </ol>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
+            Chiudi
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Termini & Condizioni Acquirenti */}
+      <Modal show={showTermsModalBuyer} onHide={() => setShowTermsModalBuyer(false)} size="lg" scrollable>
+        <Modal.Header closeButton>
+          <Modal.Title>Termini &amp; Condizioni – Acquirenti (Lucaniko Shop)</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{maxHeight: '70vh', overflowY: 'auto'}}>
+          <ol>
+            <li><b>Oggetto</b><br />Lucaniko Shop è un marketplace che consente agli utenti ("Acquirenti") di acquistare prodotti offerti da aziende terze ("Venditori") registrate sulla Piattaforma.</li>
+            <li><b>Ruolo di Lucaniko Shop</b><br />Lucaniko Shop non è il venditore dei prodotti, salvo diversa indicazione.<br />Il contratto di vendita si conclude direttamente tra Acquirente e Venditore.<br />Lucaniko Shop fornisce infrastruttura tecnica, vetrina e strumenti di pagamento/gestione ordini.</li>
+            <li><b>Registrazione e acquisti</b><br />L'Acquirente può registrarsi o acquistare come ospite (quando disponibile).<br />L'Acquirente garantisce che i dati inseriti sono veritieri e aggiornati.<br />Le credenziali sono personali; l'Acquirente è responsabile dell'uso del proprio account.<br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
+            <li><b>Informazioni su prodotti e prezzi</b><br />Le schede prodotto, disponibilità, conformità e descrizioni sono predisposte dal Venditore.<br />Immagini e colori possono differire dal reale.<br />I prezzi sono esposti in euro e includono/imputano IVA secondo quanto indicato dal Venditore.</li>
+            <li><b>Ordine e conclusione del contratto</b><br />L'ordine si considera effettuato quando l'Acquirente riceve conferma (email o area personale).<br />Il Venditore può rifiutare/annullare l'ordine per indisponibilità o cause legittime; in tal caso, l'Acquirente non subisce addebiti o riceve rimborso secondo i flussi di pagamento.</li>
+            <li><b>Spedizioni e consegna</b><br />Costi, tempi, aree servite e vettori sono stabiliti da ciascun Venditore.<br />L'Acquirente visualizza i costi di spedizione prima della conferma dell'ordine.<br />Eventuali ritardi del corriere o cause di forza maggiore non imputabili a Lucaniko Shop non generano responsabilità diretta della Piattaforma.</li>
+            <li><b>Pagamenti (Stripe)</b><br />I pagamenti sono elaborati tramite Stripe.<br />I metodi disponibili (carte, wallet, altri) possono variare per Paese e/o configurazione del Venditore.<br />L'addebito può essere immediato o secondo logiche del provider; l'importo viene trasferito al Venditore al netto delle commissioni del circuito.</li>
+            <li><b>Coupon e promozioni</b><br />I Venditori possono attivare coupon/sconti su prodotti, categorie o periodi.<br />Le promozioni possono essere soggette a condizioni (validità, quantità, categorie, cumulabilità).</li>
+            <li><b>Diritto di recesso (consumatori)</b><br />Se l'Acquirente è un "consumatore" ai sensi del D.Lgs. 206/2005 ("Codice del Consumo"), può esercitare il recesso entro 14 giorni dalla consegna, salvo eccezioni di legge (es. prodotti deperibili, sigillati aperti, personalizzati, ecc.).<br />La richiesta di recesso va inviata al Venditore tramite i canali indicati nella pagina del Venditore e/o tramite Centro Assistenza.<br />I costi di restituzione possono essere a carico dell'Acquirente salvo diversa indicazione del Venditore.<br />Il rimborso avviene secondo i tempi e le modalità previste dalla legge e dal Venditore.</li>
+            <li><b>Resi, rimborsi, prodotti difettosi e garanzia legale</b><br />La gestione di resi/rimborsi è in capo al Venditore.<br />Per prodotti difettosi o non conformi, si applica la garanzia legale di conformità (quando applicabile) e l'Acquirente deve contattare il Venditore.</li>
+            <li><b>Limitazione di responsabilità</b><br />Lucaniko Shop non risponde di:<br />qualità, conformità e sicurezza dei prodotti venduti da terzi<br />inadempimenti del Venditore<br />ritardi imputabili a corrieri o cause di forza maggiore<br />Resta fermo il rispetto delle norme inderogabili a tutela del consumatore.</li>
+            <li><b>Recensioni e contenuti degli utenti</b><br />L'Acquirente può lasciare recensioni o contenuti rispettosi e veritieri. È vietato pubblicare contenuti illeciti, offensivi, diffamatori o che violino diritti di terzi.</li>
+            <li><b>Assistenza e reclami</b><br />L'Acquirente, per qualsiasi genere di informazione sui prodotti in vendita, dovrà contattare esclusivamente il Venditore (i contatti di ciascun Venditore sono disponibili nel profilo).</li>
+            <li><b>Legge applicabile e foro</b><br />Il contratto è regolato dalla legge italiana. Per i consumatori, il foro competente è quello di Potenza.</li>
+            <li><b>Piattaforma ODR (solo consumatori UE)</b><br />Se applicabile, l'Acquirente può utilizzare la piattaforma europea ODR per la risoluzione online delle controversie.</li>
+          </ol>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowTermsModalBuyer(false)}>
             Chiudi
           </Button>
         </Modal.Footer>
