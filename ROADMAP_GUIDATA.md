@@ -38,14 +38,14 @@ FASE 6: Test Completo       → 30 minuti
 4. Completa pagamento
 
 ### Output atteso:
-- [ ] Dominio acquistato
-- [ ] Email conferma ricevuta
+- [ok] Dominio acquistato
+- [ok] Email conferma ricevuta
 
-**📝 Scrivi qui il dominio scelto:** ___________________________
+**📝 Scrivi qui il dominio scelto:** ____lucanikoshop.it_______________________
 
 **🛑 FERMATI QUI - Dimmi "CHECKPOINT 1.1 COMPLETATO" quando hai finito**
 
----
+--- fatto!
 
 ## ✅ CHECKPOINT 1.2 - MongoDB Atlas (15 min)
 
