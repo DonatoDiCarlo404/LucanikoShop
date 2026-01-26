@@ -10,7 +10,7 @@ export const uploadVendorDocument = async (vendorId, file) => {
 };
 import { createSession } from "react-router-dom";
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper per gestire le chiamate fetch
 const handleResponse = async (response) => {
