@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Form, Table, Badge, Spinner, Alert, InputGroup, Button } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
