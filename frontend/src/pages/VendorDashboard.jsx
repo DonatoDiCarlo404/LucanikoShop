@@ -16,6 +16,7 @@ import {
   Tab
 } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
+import { API_URL } from '../services/api';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -86,7 +87,7 @@ const VendorDashboard = () => {
   // Carica categorie
   const loadCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/categories');
+      const res = await fetch(`${API_URL}/categories`);
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
@@ -102,7 +103,7 @@ const VendorDashboard = () => {
       setError('');
 
       // Carica ordini ricevuti
-      const ordersRes = await fetch('http://localhost:5000/api/orders/vendor/received', {
+      const ordersRes = await fetch(`${API_URL}/orders/vendor/received`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -116,7 +117,7 @@ const VendorDashboard = () => {
       setOrders(ordersData);
 
       // Carica statistiche
-      const statsRes = await fetch('http://localhost:5000/api/orders/vendor/stats', {
+      const statsRes = await fetch(`${API_URL}/orders/vendor/stats`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -130,7 +131,7 @@ const VendorDashboard = () => {
       setStats(statsData);
 
       // Carica prodotti del venditore
-      const productsRes = await fetch('http://localhost:5000/api/products/seller/my-products', {
+      const productsRes = await fetch(`${API_URL}/products/seller/my-products`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -161,7 +162,7 @@ const VendorDashboard = () => {
     
     setDeleting(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${productToDelete._id}`, {
+      const response = await fetch(`${API_URL}/products/${productToDelete._id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -202,7 +203,7 @@ const VendorDashboard = () => {
       setUpdating(true);
       setUpdateError('');
 
-      const res = await fetch(`http://localhost:5000/api/orders/${selectedOrder._id}/status`, {
+      const res = await fetch(`${API_URL}/orders/${selectedOrder._id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -259,7 +260,7 @@ const VendorDashboard = () => {
   const loadDiscounts = async () => {
     try {
       setLoadingDiscounts(true);
-      const res = await fetch('http://localhost:5000/api/discounts', {
+      const res = await fetch(`${API_URL}/discounts`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -343,8 +344,8 @@ const VendorDashboard = () => {
       };
 
       const url = editingDiscount
-        ? `http://localhost:5000/api/discounts/${editingDiscount._id}`
-        : 'http://localhost:5000/api/discounts';
+        ? `${API_URL}/discounts/${editingDiscount._id}`
+        : `${API_URL}/discounts`;
 
       const method = editingDiscount ? 'PUT' : 'POST';
 
@@ -378,7 +379,7 @@ const VendorDashboard = () => {
     if (!window.confirm('Sei sicuro di voler eliminare questo sconto?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}`, {
+      const res = await fetch(`${API_URL}/discounts/${discountId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -399,7 +400,7 @@ const VendorDashboard = () => {
   // Toggle attivo/disattivo sconto
   const handleToggleDiscount = async (discountId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}/toggle`, {
+      const res = await fetch(`${API_URL}/discounts/${discountId}/toggle`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${user.token}`

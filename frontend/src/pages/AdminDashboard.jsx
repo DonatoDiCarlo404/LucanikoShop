@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab, Form } from 'react-bootstrap';
-import { adminAPI, uploadVendorDocument } from '../services/api';
+import { adminAPI, uploadVendorDocument, API_URL } from '../services/api';
 // Espone la funzione uploadVendorDocument su window per uso inline
 window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
@@ -144,8 +144,8 @@ const AdminDashboard = () => {
       setSavingNews(true);
       const method = editingNewsId ? 'PUT' : 'POST';
       const url = editingNewsId 
-        ? `http://localhost:5000/api/admin/news/${editingNewsId}`
-        : 'http://localhost:5000/api/admin/news';
+        ? `${API_URL}/admin/news/${editingNewsId}`
+        : `${API_URL}/admin/news`;
 
       const response = await fetch(url, {
         method,

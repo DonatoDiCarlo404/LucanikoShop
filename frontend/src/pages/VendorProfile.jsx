@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, API_URL } from '../services/api';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Container,
@@ -259,7 +259,7 @@ const VendorProfile = () => {
   // Carica documenti PDF del venditore
   const loadVendorDocuments = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/upload/vendor/${user._id}/list`, {
+      const res = await fetch(`${API_URL}/upload/vendor/${user._id}/list`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -281,8 +281,8 @@ const VendorProfile = () => {
 
       // Se admin e sellerId presente, carica profilo del venditore specifico
       const url = (user.role === 'admin' && sellerId) 
-        ? `http://localhost:5000/api/admin/sellers/${sellerId}`
-        : 'http://localhost:5000/api/auth/vendor-profile';
+        ? `${API_URL}/admin/sellers/${sellerId}`
+        : `${API_URL}/auth/vendor-profile`;
 
       const res = await fetch(url, {
         headers: {
@@ -409,8 +409,8 @@ const VendorProfile = () => {
     try {
       // Se admin visualizza venditore specifico, carica i suoi sconti
       const url = (user.role === 'admin' && sellerId)
-        ? `http://localhost:5000/api/discounts?sellerId=${sellerId}`
-        : 'http://localhost:5000/api/discounts';
+        ? `${API_URL}/discounts?sellerId=${sellerId}`
+        : `${API_URL}/discounts`;
 
       const res = await fetch(url, {
         headers: {
@@ -430,7 +430,7 @@ const VendorProfile = () => {
   // Carica categorie e sottocategorie
   const loadCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/categories');
+      const res = await fetch(`${API_URL}/categories`);
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
@@ -444,10 +444,10 @@ const VendorProfile = () => {
   const loadStats = async () => {
     try {
       // Carica prodotti del venditore
-      let productsUrl = 'http://localhost:5000/api/products/seller/my-products';
+      let productsUrl = `${API_URL}/products/seller/my-products`;
       let vendorId = user._id;
       if (user.role === 'admin' && sellerId) {
-        productsUrl = 'http://localhost:5000/api/admin/products';
+        productsUrl = `${API_URL}/admin/products`;
         vendorId = sellerId;
       }
       const productsRes = await fetch(productsUrl, {
@@ -468,7 +468,7 @@ const VendorProfile = () => {
       const productIds = vendorProducts.map(p => p._id);
       let allReviews = [];
       for (const pid of productIds) {
-        const res = await fetch(`http://localhost:5000/api/reviews/${pid}`);
+        const res = await fetch(`${API_URL}/reviews/${pid}`);
         if (res.ok) {
           const reviews = await res.json();
           allReviews = allReviews.concat(reviews);
@@ -484,7 +484,7 @@ const VendorProfile = () => {
       });
 
       // Carica ordini recenti
-      const ordersRes = await fetch('http://localhost:5000/api/orders/vendor/received', {
+      const ordersRes = await fetch(`${API_URL}/orders/vendor/received`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       if (ordersRes.ok) {
@@ -550,8 +550,8 @@ const VendorProfile = () => {
 
       // Se admin sta modificando profilo di un altro venditore, usa endpoint specifico
       const url = (user.role === 'admin' && sellerId)
-        ? `http://localhost:5000/api/admin/sellers/${sellerId}/profile`
-        : 'http://localhost:5000/api/auth/vendor-profile';
+        ? `${API_URL}/admin/sellers/${sellerId}/profile`
+        : `${API_URL}/auth/vendor-profile`;
 
       const res = await fetch(url, {
         method: 'PUT',
@@ -612,8 +612,8 @@ const VendorProfile = () => {
       // Determina se è creazione o modifica
       const isEdit = !!editingDiscount;
       const url = isEdit 
-        ? `http://localhost:5000/api/discounts/${editingDiscount._id}`
-        : 'http://localhost:5000/api/discounts';
+        ? `${API_URL}/discounts/${editingDiscount._id}`
+        : `${API_URL}/discounts`;
       const method = isEdit ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -691,7 +691,7 @@ const VendorProfile = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}`, {
+      const res = await fetch(`${API_URL}/discounts/${discountId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -714,7 +714,7 @@ const VendorProfile = () => {
   // Attiva/Disattiva sconto
   const handleToggleDiscount = async (discountId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/discounts/${discountId}/toggle`, {
+      const res = await fetch(`${API_URL}/discounts/${discountId}/toggle`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -735,7 +735,7 @@ const VendorProfile = () => {
   // Toggle disponibilità prodotto
   const handleToggleProductAvailability = async (productId, currentIsActive) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/products/${productId}`, {
+      const res = await fetch(`${API_URL}/products/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -996,7 +996,7 @@ const VendorProfile = () => {
                             const formDataUpload = new FormData();
                             formDataUpload.append('image', file);
                             try {
-                              const res = await fetch('http://localhost:5000/api/upload/product', {
+                              const res = await fetch(`${API_URL}/upload/product`, {
                                 method: 'POST',
                                 headers: { Authorization: `Bearer ${user.token}` },
                                 body: formDataUpload
@@ -2931,7 +2931,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
             e.preventDefault();
             try {
               setSaving(true);
-              const res = await fetch('http://localhost:5000/api/auth/vendor-profile', {
+              const res = await fetch(`${API_URL}/auth/vendor-profile`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Alert, Badge, Button } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
+import { API_URL } from '../services/api';
 
 const ShopPage = () => {
   const { sellerId } = useParams();
@@ -40,7 +41,7 @@ const ShopPage = () => {
       setLoading(true);
       setError('');
 
-      const res = await fetch(`http://localhost:5000/api/vendors/${sellerId}`);
+      const res = await fetch(`${API_URL}/vendors/${sellerId}`);
       if (!res.ok) {
         throw new Error('Negozio non trovato');
       }
@@ -65,7 +66,7 @@ const ShopPage = () => {
       }
 
       // Carica tutte le categorie dal backend
-      const res = await fetch('http://localhost:5000/api/categories');
+      const res = await fetch(`${API_URL}/categories`);
       if (!res.ok) {
         throw new Error('Errore caricamento categorie');
       }

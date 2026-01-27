@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Container, Form, Button, Card, Alert, InputGroup, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
+import { API_URL, API_BASE } from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '');
@@ -27,7 +28,7 @@ const Login = () => {
     setResetSent(false);
     try {
       // Chiamata API per invio email recupero password
-      const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: resetEmail })

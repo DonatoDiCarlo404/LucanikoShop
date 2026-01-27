@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../services/api';
 
 // Macrocategorie predefinite
 const MACROCATEGORIES = [
@@ -33,7 +34,7 @@ const Partner = () => {
   const loadVendors = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/vendors/all');
+      const res = await fetch(`${API_URL}/vendors/all`);
       
       if (!res.ok) {
         throw new Error('Errore nel caricamento dei partner');

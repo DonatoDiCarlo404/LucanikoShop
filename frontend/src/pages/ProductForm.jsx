@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Container, Form, Button, Card, Alert, Row, Col, Modal, Dropdown } from 'react-bootstrap';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
-import { productsAPI, uploadAPI, categoriesAPI } from '../services/api';
+import { productsAPI, uploadAPI, categoriesAPI, API_URL } from '../services/api';
 import VariantManager from '../components/VariantManager';
 
 const ProductForm = () => {
@@ -55,7 +55,7 @@ const ProductForm = () => {
 
   const loadVendorInfo = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/sellers/${sellerId}`, {
+      const res = await fetch(`${API_URL}/admin/sellers/${sellerId}`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -95,7 +95,7 @@ const ProductForm = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories/main');
+      const response = await fetch(`${API_URL}/categories/main`);
       if (!response.ok) {
         throw new Error('Errore nel caricamento delle categorie');
       }
@@ -111,7 +111,7 @@ const ProductForm = () => {
   // NUOVO: Carica sottocategorie per la categoria selezionata
   const loadSubcategories = async (categoryId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+      const response = await fetch(`${API_URL}/categories/${categoryId}/subcategories`);
       if (!response.ok) {
         throw new Error('Errore nel caricamento delle sottocategorie');
       }
@@ -126,7 +126,7 @@ const ProductForm = () => {
   // NUOVO: Carica attributi dinamici per categoria
   const loadCategoryAttributes = async (categoryId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/attributes`);
+      const response = await fetch(`${API_URL}/categories/${categoryId}/attributes`);
       const attrs = await response.json();
       setCategoryAttributes(attrs);
       
@@ -457,7 +457,7 @@ const ProductForm = () => {
               if (img.public_id) {
                 try {
                   const encodedPublicId = encodeURIComponent(img.public_id);
-                  await fetch(`http://localhost:5000/api/upload/${encodedPublicId}`, {
+                  await fetch(`${API_URL}/upload/${encodedPublicId}`, {
                     method: 'DELETE',
                     headers: {
                       'Authorization': `Bearer ${user.token}`,

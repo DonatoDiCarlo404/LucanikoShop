@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import SplashScreen from '../components/SplashScreen';
 import { Container, Row, Col, Spinner, Alert, Form, InputGroup, Button } from 'react-bootstrap';
 import { useSearchParams } from 'react-router-dom';
-import { productsAPI, categoriesAPI } from '../services/api';
+import { productsAPI, categoriesAPI, API_URL } from '../services/api';
 import ProductCard from '../components/ProductCard';
 
 const Products = () => {
@@ -30,7 +30,7 @@ const Products = () => {
   useEffect(() => {
     const loadNews = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/admin/news');
+        const response = await fetch(`${API_URL}/admin/news`);
         if (!response.ok) throw new Error('Errore caricamento news');
         const data = await response.json();
         setAdminNews(data);
@@ -63,7 +63,7 @@ const Products = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories/main');
+      const response = await fetch(`${API_URL}/categories/main`);
       const data = await response.json();
       setCategories(data);
     } catch (err) {
@@ -79,7 +79,7 @@ const Products = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+      const response = await fetch(`${API_URL}/categories/${categoryId}/subcategories`);
       const data = await response.json();
       setSubcategories(data);
     } catch (err) {

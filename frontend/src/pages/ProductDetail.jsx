@@ -14,7 +14,7 @@ import {
 } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
-import { productsAPI } from '../services/api';
+import { productsAPI, API_URL } from '../services/api';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 
@@ -106,7 +106,7 @@ const ProductDetail = () => {
       setDeleteSuccess('');
       setEditSuccess('');
 
-      const res = await fetch(`http://localhost:5000/api/reviews/${id}`);
+      const res = await fetch(`${API_URL}/reviews/${id}`);
       if (!res.ok) {
         throw new Error(`Errore caricamento recensioni: status ${res.status}`);
       }
@@ -163,7 +163,7 @@ const ProductDetail = () => {
       setSubmitting(true);
       setSubmitError('');
 
-      const res = await fetch(`http://localhost:5000/api/reviews/${id}`, {
+      const res = await fetch(`${API_URL}/reviews/${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ const ProductDetail = () => {
     try {
       setEditSubmitting(true);
 
-      const res = await fetch(`http://localhost:5000/api/reviews/${editingReview._id}`, {
+      const res = await fetch(`${API_URL}/reviews/${editingReview._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ const ProductDetail = () => {
     if (!window.confirm('Sei sicuro di voler eliminare questa recensione?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/reviews/${reviewId}`, {
+      const res = await fetch(`${API_URL}/reviews/${reviewId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user.token}`,
