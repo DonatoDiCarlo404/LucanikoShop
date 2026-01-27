@@ -4,7 +4,7 @@ import sgMail from '../config/sendgrid.js';
 export const sendWelcomeEmail = async (userEmail, userName) => {
   const msg = {
     to: userEmail,
-    from: 'donato.dicarlo404@gmail.com',
+    from: 'info@lucanikoshop.it',
     subject: 'Benvenuto su LucanikoShop!',
     text: `Ciao ${userName}, benvenuto su LucanikoShop! Siamo felici di averti con noi.`,
     html: `<strong>Ciao ${userName}</strong>,<br><br>Benvenuto su LucanikoShop! Siamo felici di averti con noi.<br><br>Buono shopping!`,
@@ -24,7 +24,7 @@ export const sendWelcomeEmail = async (userEmail, userName) => {
 export const sendPurchaseConfirmationEmail = async (userEmail, userName, orderDetails) => {
   const msg = {
     to: userEmail,
-    from: 'donato.dicarlo404@gmail.com',
+    from: 'ordini@lucanikoshop.it',
     subject: 'Conferma Acquisto - LucanikoShop',
     text: `Ciao ${userName}, il tuo ordine #${orderDetails.orderId} è stato confermato!\nTotale: €${orderDetails.total}\nIVA inclusa: €${orderDetails.iva}`,
     html: `<strong>Ciao ${userName}</strong>,<br><br>Il tuo ordine #${orderDetails.orderId} è stato confermato!<br>Totale: <b>€${orderDetails.total}</b><br>IVA inclusa: <b>€${orderDetails.iva}</b><br><br>Grazie per il tuo acquisto!`,
