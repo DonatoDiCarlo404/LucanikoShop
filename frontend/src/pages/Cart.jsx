@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Button, ListGroup, Alert, Badge, Form, Spinn
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
-import { checkoutAPI } from '../services/api';
+import { checkoutAPI, API_URL } from '../services/api';
 import { toast } from 'react-toastify';
 
 const Cart = () => {
@@ -67,7 +67,7 @@ const Cart = () => {
         headers.Authorization = `Bearer ${user.token}`;
       }
 
-      const res = await fetch('http://localhost:5000/api/orders/calculate-shipping', {
+      const res = await fetch(`${API_URL}/orders/calculate-shipping`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -142,7 +142,7 @@ const Cart = () => {
         const vendorId = cartItems[0]?.seller?._id || cartItems[0]?.seller;
         
         if (vendorId) {
-          const res = await fetch(`http://localhost:5000/api/vendors/${vendorId}`);
+          const res = await fetch(`${API_URL}/vendors/${vendorId}`);
           const data = await res.json();
           
           const vendorData = data.vendor || data;
@@ -214,7 +214,7 @@ const Cart = () => {
 
     try {
       // Verifica coupon tramite API
-      const res = await fetch('http://localhost:5000/api/discounts/validate-coupon', {
+      const res = await fetch(`${API_URL}/discounts/validate-coupon`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

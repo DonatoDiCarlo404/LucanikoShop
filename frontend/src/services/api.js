@@ -1,3 +1,9 @@
+import { createSession } from "react-router-dom";
+
+// Esporta API_URL per uso in altri file
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_BASE = API_URL.replace('/api', ''); // Per Google OAuth e altri endpoint non-api
+
 // Upload PDF venditore
 export const uploadVendorDocument = async (vendorId, file) => {
   const formData = new FormData();
@@ -8,13 +14,8 @@ export const uploadVendorDocument = async (vendorId, file) => {
   });
   return handleResponse(response);
 };
-import { createSession } from "react-router-dom";
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper per gestire le chiamate fetch
-// Trigger Vercel redeploy
-// Chore: detach railway from repo
 const handleResponse = async (response) => {
   const data = await response.json();
 

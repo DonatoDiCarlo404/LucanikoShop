@@ -97,7 +97,7 @@ const AdminDashboard = () => {
 
   const handleToggleRenewal = async (sellerId, currentStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/sellers/${sellerId}/subscription`, {
+      const res = await fetch(`${API_URL}/admin/sellers/${sellerId}/subscription`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +124,7 @@ const AdminDashboard = () => {
   // Funzioni per gestione News
   const loadNews = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/news/all', {
+      const response = await fetch(`${API_URL}/admin/news/all`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -181,7 +181,7 @@ const AdminDashboard = () => {
     if (!confirm('Sei sicuro di voler eliminare questa news?')) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/news/${newsId}`, {
+      const response = await fetch(`${API_URL}/admin/news/${newsId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user.token}`
@@ -202,7 +202,7 @@ const AdminDashboard = () => {
 
   const handleToggleNewsActive = async (newsId, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/news/${newsId}`, {
+      const response = await fetch(`${API_URL}/admin/news/${newsId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

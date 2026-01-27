@@ -72,16 +72,16 @@ FASE 6: Test Completo       → 30 minuti
    - Copia connection string: `mongodb+srv://lucaniko_admin:PASSWORD@...`
 
 ### Output atteso:
-- [ ] Cluster M10 attivo
-- [ ] Database user creato
-- [ ] IP whitelist configurato
-- [ ] Connection string copiato
+- [ok ] Cluster M10 attivo
+- [ok ] Database user creato
+- [ok ] IP whitelist configurato
+- [ok ] Connection string copiato
 
 **📝 Incolla connection string in CREDENTIALS_TEMPLATE.md**
 
 **🛑 FERMATI QUI - Dimmi "CHECKPOINT 1.2 COMPLETATO" quando hai finito**
 
----
+---fatto!
 
 ## ✅ CHECKPOINT 1.3 - Railway (5 min)
 
@@ -93,8 +93,8 @@ FASE 6: Test Completo       → 30 minuti
 5. Aggiungi carta di credito
 
 ### Output atteso:
-- [ ] Account Railway Pro attivo
-- [ ] Billing configurato
+- [ok ] Account Railway Pro attivo
+- [ok ] Billing configurato
 
 **🛑 FERMATI QUI - Dimmi "CHECKPOINT 1.3 COMPLETATO" quando hai finito**
 

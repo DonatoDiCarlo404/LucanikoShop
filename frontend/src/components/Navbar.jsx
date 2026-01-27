@@ -39,7 +39,7 @@ const Navbar = () => {
 
   const loadPendingProductsCount = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/products/pending/count', {
+      const res = await fetch(`${API_URL}/products/pending/count`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }

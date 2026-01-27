@@ -130,7 +130,7 @@ const ProductDetail = () => {
     if (!user) return setHasPurchased(false);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/check-purchased/${id}`, {
+      const res = await fetch(`${API_URL}/orders/check-purchased/${id}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
 

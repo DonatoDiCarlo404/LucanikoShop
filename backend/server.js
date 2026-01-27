@@ -47,6 +47,11 @@ app.use(cors({
     // Permetti richieste senza origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
+    // Permetti tutti i domini Vercel (*.vercel.app)
+    if (origin && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {

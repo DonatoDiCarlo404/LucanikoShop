@@ -23,7 +23,7 @@ const OffersAndDiscounts = () => {
   const fetchDiscountedProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/discounts/active-products');
+      const res = await fetch(`${API_URL}/discounts/active-products`);
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
@@ -40,7 +40,7 @@ const OffersAndDiscounts = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/categories/main');
+      const res = await fetch(`${API_URL}/categories/main`);
       const data = await res.json();
       setCategories(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -53,7 +53,7 @@ const OffersAndDiscounts = () => {
     setFilters(f => ({ ...f, category: categoryId, subcategory: '' }));
     if (categoryId) {
       try {
-        const res = await fetch(`http://localhost:5000/api/categories/${categoryId}/subcategories`);
+        const res = await fetch(`${API_URL}/categories/${categoryId}/subcategories`);
         const data = await res.json();
         setSubcategories(Array.isArray(data) ? data : []);
       } catch (err) {
