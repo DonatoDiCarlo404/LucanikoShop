@@ -41,7 +41,7 @@ function ComingSoon() {
   return (
     <div className="coming-soon-container">
       <div className="coming-soon-content">
-        <img src="/lucaniko shop 2-01.png" alt="Lucaniko Shop Logo" className="coming-soon-logo" />
+        <img src="/LucanikoShopPNG-01.png" alt="Lucaniko Shop Logo" className="coming-soon-logo" />
         <h1>🌶️ Stiamo arrivando</h1>
 
         {/* Pulsante discreto per mostrare il campo email */}

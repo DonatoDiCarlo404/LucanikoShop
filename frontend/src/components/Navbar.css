@@ -1,13 +1,13 @@
 @media (min-width: 992px) {
   .cart-badge-desktop {
-    background-color: #861515 !important;
+    background-color: #00bf63 !important;
     color: #fff !important;
     margin-left: 4px !important;
   }
 }
 @media (max-width: 576px) {
   .cart-badge-mobile {
-    background-color: #861515 !important;
+    background-color: #00bf63 !important;
     color: #fff !important;
     margin-left: 2px !important;
   }
@@ -19,4 +19,18 @@
 
 .navbar-toggler:focus {
   box-shadow: 0 0 0 0.25rem rgba(0, 75, 117, 0.25) !important;
+}
+
+.logonavbar {
+  max-height: 48px;
+  width: auto;
+  max-width: 220px;
+  height: auto;
+  transition: max-height 0.2s;
+}
+@media (max-width: 576px) {
+  .logonavbar {
+    max-height: 40px;
+    max-width: 160px;
+  }
 }

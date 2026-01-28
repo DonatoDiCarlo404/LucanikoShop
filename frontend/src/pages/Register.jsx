@@ -12,9 +12,9 @@ const stripePromise = loadStripe('pk_test_51SS11yRcLktP33tcvW9XbFOfI3b9jyL4pumGn
 
 // Prezzi Piano di Adesione 2026 (IVA inclusa)
 const SUBSCRIPTION_PRICES = {
-  '1anno': { base: 250, withVAT: 250 },
-  '2anni': { base: 390, withVAT: 390 },
-  '3anni': { base: 510, withVAT: 510 }
+  '1anno': { base: 299, withVAT: 299 },
+  '2anni': { base: 499, withVAT: 499 },
+  '3anni': { base: 599, withVAT: 599 }
 };
 
 const Register = () => {
@@ -423,9 +423,9 @@ const Register = () => {
                       required
                       disabled={paymentCompleted}
                     >
-                      <option value="1anno">1 Anno: €250 (IVA inclusa)</option>
-                      <option value="2anni">2 Anni: €390 (IVA inclusa)</option>
-                      <option value="3anni">3 Anni: €510 (IVA inclusa)</option>
+                      <option value="1anno">1 Anno: €299 (IVA inclusa)</option>
+                      <option value="2anni">2 Anni: €499 (IVA inclusa)</option>
+                      <option value="3anni">3 Anni: €599 (IVA inclusa)</option>
                     </Form.Select>
                     <Form.Text className="text-muted">Seleziona la durata del piano di adesione. IVA inclusa nel prezzo.</Form.Text>
                   </Form.Group>
@@ -589,7 +589,7 @@ const Register = () => {
             <li><b>Oggetto e definizioni</b><br />Il presente documento disciplina l'adesione delle aziende ("Venditori") al marketplace Lucaniko Shop e l'utilizzo degli strumenti messi a disposizione per la vendita ai consumatori finali.</li>
             <li><b>Requisiti di ammissione</b><br />Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop).<br />Il Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.).<br />Lucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura.</li>
             <li><b>Per la categoria di vendita CIBI E BEVANDE è <br />obbligatorio offrire su questo marketplace solo prodotti Lucani. Tutti i prodotti non Lucani saranno rimossi senza alcun avviso e potrebbe comportare l'esclusione del venditore da Lucaniko Shop.</b></li>
-            <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €250 (IVA Inclusa) / 1 anno<br />- €390 (IVA Inclusa) / 2 anni<br />- €510 (IVA Inclusa) / 3 anni <br /> <b>INCLUDE:</b><br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo <br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news) L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico. <br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
+            <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €299 (IVA Inclusa) / 1 anno<br />- €499 (IVA Inclusa) / 2 anni<br />- €599 (IVA Inclusa) / 3 anni <br /> <b>INCLUDE:</b><br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo <br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news) L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico. <br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
             <li><b>Commissioni sulle vendite e pagamenti</b><br />- Nessuna commissione di marketplace, salvo diverso accordo.<br />- I pagamenti sono gestiti tramite Stripe: il Venditore deve creare/configurare il proprio account Stripe e completare eventuali verifiche (KYC/AML).<br />- Stripe accredita direttamente al Venditore gli importi delle vendite al netto delle commissioni Stripe e di eventuali trattenute richieste da Stripe.</li>
             <li><b>Obblighi del Venditore (prodotti, conformità e leggi)</b><br />Il Venditore è l'unico responsabile di:<br />- veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)<br />- conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)<br />- disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)<br />- gestione resi, recesso, rimborsi, garanzia e assistenza post-vendita<br />- gestione spedizioni e consegne<br />Lucaniko Shop non garantisce esclusiva di prodotto nè di prezzo. Più venditori possono offrire prodotti uguali o simili anche a prezzi differenti.<br />È vietato vendere prodotti illegali, contraffatti, pericolosi o soggetti a restrizioni non gestibili sulla Piattaforma.</li>
             <li><b>Spedizioni</b><br />Il Venditore imposta aree servite, tempi, corrieri e costi.<br />Il Venditore è responsabile di imballaggio, integrità e tracciamento.</li>

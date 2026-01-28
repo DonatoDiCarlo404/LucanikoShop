@@ -113,8 +113,9 @@ const ProductCard = ({ product }) => {
       {/* Badge sconto in alto a destra */}
       {product.hasActiveDiscount && product.discountPercentage && (
         <Badge 
-          bg="danger" 
           style={{ 
+            backgroundColor: '#004b75', 
+            color: '#fff',
             position: 'absolute', 
             top: '10px', 
             right: '10px', 

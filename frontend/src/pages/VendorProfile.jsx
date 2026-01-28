@@ -809,13 +809,14 @@ const VendorProfile = () => {
                     {profileData.socialLinks?.tiktok && <a href={profileData.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="me-2" title="TikTok"><i className="bi bi-tiktok" style={{ fontSize: 22 }}></i></a>}
                     {profileData.businessWhatsapp && <a href={`https://wa.me/${profileData.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="me-2" title="WhatsApp"><i className="bi bi-whatsapp" style={{ fontSize: 22 }}></i></a>}
                     {profileData.website && <a href={profileData.website} target="_blank" rel="noopener noreferrer" className="me-2" title="Sito Web"><i className="bi bi-globe" style={{ fontSize: 22 }}></i></a>}
+                    <a href="#" onClick={(e) => { e.preventDefault(); const url = `${window.location.origin}/shop/${user._id}`; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo"><i className="bi bi-share" style={{ fontSize: 22 }}></i></a>
                   </div>
                   <div className="d-block d-md-none w-100" style={{ borderBottom: '1px solid #eee', margin: '12px 0' }}></div>
                 </>
               )}
             </Col>
             <Col md={7}>
-              <h4 className="mb-1" style={{ color: '#861515' }}>{profileData?.businessName || 'Negozio'}</h4>
+              <h4 className="mb-1" style={{ color: '#00bf63' }}>{profileData?.businessName || 'Negozio'}</h4>
               {profileData?.ragioneSociale && (
                 <div className="text-muted" style={{ fontSize: 14 }}><strong style={{color:'#004b75'}}>Ragione sociale:</strong> {profileData.ragioneSociale}</div>
               )}
@@ -867,9 +868,9 @@ const VendorProfile = () => {
       {/* NEWS AZIENDALE (se presente) */}
       {(() => {
         return profileData?.news && (
-          <Alert variant="info" className="mb-4" style={{ fontSize: '15px', background: '#fff', color: '#861515', border: '2px solid #fff' }}>
+          <Alert variant="info" className="mb-4" style={{ fontSize: '15px', background: '#fff', color: '#00bf63', border: '2px solid #fff' }}>
             <i className="bi bi-megaphone-fill me-2"></i>
-            <strong style={{ color: '#861515' }}>News:</strong> <span style={{ color: '#861515' }}>{profileData.news}</span>
+            <strong style={{ color: '#00bf63' }}>News:</strong> <span style={{ color: '#00bf63' }}>{profileData.news}</span>
           </Alert>
         );
       })()}
@@ -915,7 +916,7 @@ const VendorProfile = () => {
         className="mb-4 vendor-tabs-custom"
       >
         {/* TAB INFORMAZIONI AZIENDA */}
-        <Tab eventKey="info" title={<span style={{color: activeTab === 'info' ? '#861515' : '#004b75'}}>📋 Informazioni Azienda</span>}>
+        <Tab eventKey="info" title={<span style={{color: activeTab === 'info' ? '#00bf63' : '#004b75'}}>📋 Informazioni Azienda</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1155,7 +1156,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB CONTATTI E SOCIAL */}
-        <Tab eventKey="contacts" title={<span style={{color: activeTab === 'contacts' ? '#861515' : '#004b75'}}>📞 Contatti e Social</span>}>
+        <Tab eventKey="contacts" title={<span style={{color: activeTab === 'contacts' ? '#00bf63' : '#004b75'}}>📞 Contatti e Social</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1343,7 +1344,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB NEWS */}
-        <Tab eventKey="news" title={<span style={{color: activeTab === 'news' ? '#861515' : '#004b75'}}>📰 News</span>}>
+        <Tab eventKey="news" title={<span style={{color: activeTab === 'news' ? '#00bf63' : '#004b75'}}>📰 News</span>}>
           <Card>
             <Card.Body>
               <h5 className="mb-3">News aziendali</h5>
@@ -1396,7 +1397,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB TUTTI I PRODOTTI */}
-        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#861515' : '#004b75'}}>📦 Tutti i Prodotti</span>}>
+        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#00bf63' : '#004b75'}}>📦 Tutti i Prodotti</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1568,7 +1569,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB GESTIONE SCONTI */}
-        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#861515' : '#004b75'}}>🎉 Sconti</span>}>
+        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#00bf63' : '#004b75'}}>🎉 Sconti</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1686,7 +1687,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB METODI DI PAGAMENTO */}
-        <Tab eventKey="payments" title={<span style={{color: activeTab === 'payments' ? '#861515' : '#004b75'}}>💳 Pagamenti</span>}>
+        <Tab eventKey="payments" title={<span style={{color: activeTab === 'payments' ? '#00bf63' : '#004b75'}}>💳 Pagamenti</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -1796,7 +1797,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB SPEDIZIONI */}
-        <Tab eventKey="shipping" title={<span style={{color: activeTab === 'shipping' ? '#861515' : '#004b75'}}>📦 Spedizioni</span>}>
+        <Tab eventKey="shipping" title={<span style={{color: activeTab === 'shipping' ? '#00bf63' : '#004b75'}}>📦 Spedizioni</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -2016,7 +2017,7 @@ const VendorProfile = () => {
         </Tab>
 
         {/* TAB TERMINI E CONDIZIONI */}
-        <Tab eventKey="terms" title={<span style={{color: activeTab === 'terms' ? '#861515' : '#004b75'}}>📄 Termini e Condizioni</span>}>
+        <Tab eventKey="terms" title={<span style={{color: activeTab === 'terms' ? '#00bf63' : '#004b75'}}>📄 Termini e Condizioni</span>}>
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
@@ -2252,11 +2253,15 @@ La piattaforma Lucaniko Shop non è parte del contratto di vendita tra Venditore
 
 ⸻
 
-12. Protezione dei Dati Personali
+12. 12. Protezione dei dati personali
 
-I dati personali dell'Acquirente sono trattati dal Venditore nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR).
+I dati personali dell’Acquirente sono trattati nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR).
 
-Per maggiori informazioni, si rimanda all'informativa privacy del Venditore.
+Lucaniko Shop opera come titolare del trattamento per i dati raccolti e trattati nell’ambito del funzionamento della piattaforma (registrazione, gestione account, checkout, pagamenti, assistenza e servizi connessi).
+
+Il Venditore, limitatamente ai dati necessari per l’evasione dell’ordine, la spedizione dei prodotti, la gestione di resi, garanzie e obblighi fiscali, opera come titolare autonomo del trattamento, assumendosi ogni responsabilità prevista dalla normativa vigente.
+
+Per maggiori informazioni sulle modalità di trattamento dei dati personali, sui ruoli dei soggetti coinvolti e sui diritti dell’Acquirente, è possibile consultare l’Informativa Privacy di Lucaniko Shop, disponibile sulla piattaforma.
 
 ⸻
 
@@ -2347,7 +2352,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB ABBONAMENTO */}
-        <Tab eventKey="subscription" title={<span style={{color: activeTab === 'subscription' ? '#861515' : '#004b75'}}>💳 Abbonamento</span>}>
+        <Tab eventKey="subscription" title={<span style={{color: activeTab === 'subscription' ? '#00bf63' : '#004b75'}}>💳 Abbonamento</span>}>
           <Card>
             <Card.Body>
               <h5 className="mb-4">Gestione Abbonamento</h5>
@@ -2485,7 +2490,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB STATISTICHE */}
-        <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#861515' : '#004b75'}}>📊 Statistiche</span>}>
+        <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#00bf63' : '#004b75'}}>📊 Statistiche</span>}>
           <Row>
             <Col md={3} className="mb-3">
               <Card className="text-center">
@@ -2572,7 +2577,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
         </Tab>
 
         {/* TAB AZIONI RAPIDE */}
-        <Tab eventKey="actions" title={<span style={{color: activeTab === 'actions' ? '#861515' : '#004b75'}}>⚡ Azioni Rapide</span>}>
+        <Tab eventKey="actions" title={<span style={{color: activeTab === 'actions' ? '#00bf63' : '#004b75'}}>⚡ Azioni Rapide</span>}>
           <Card>
             <Card.Body>
               <Row>

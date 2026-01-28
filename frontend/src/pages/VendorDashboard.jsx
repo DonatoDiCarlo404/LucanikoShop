@@ -26,6 +26,8 @@ const VendorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [orders, setOrders] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchProduct, setSearchProduct] = useState("");
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
 
@@ -438,7 +440,7 @@ const VendorDashboard = () => {
   return (
     <Container className="mt-4 mb-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 style={{ color: '#004b75' }}>📊 Dashboard Venditore</h2>
+        <h2 style={{ color: '#004b75' }}>📊 Dashboard Venditore</h2>
         <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
           <i className="bi bi-person-badge me-2"></i>
           Profilo Aziendale
@@ -486,9 +488,17 @@ const VendorDashboard = () => {
 
       {/* Tabs per ordini e prodotti */}
       <Tabs defaultActiveKey="orders" className="mb-3" onSelect={setActiveTab} activeKey={activeTab}>
-        <Tab eventKey="orders" title={<span style={{color: activeTab === 'orders' ? '#861515' : '#004b75'}}>{`Ordini Ricevuti (${orders.length})`}</span>}>
+        <Tab eventKey="orders" title={<span style={{color: activeTab === 'orders' ? '#00bf63' : '#004b75'}}>{`Ordini Ricevuti (${orders.length})`}</span>}>
           <Card>
             <Card.Body>
+              <div className="mb-3" style={{maxWidth: 350}}>
+                <Form.Control
+                  type="text"
+                  placeholder="Cerca per nome o cognome cliente..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
               {orders.length === 0 ? (
                 <Alert variant="info">Nessun ordine ricevuto al momento.</Alert>
               ) : (
@@ -508,7 +518,19 @@ const VendorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map((order) => (
+                      {orders
+                        .filter(order => {
+                          const name = order.buyer?.name?.toLowerCase() || "";
+                          const surname = order.buyer?.surname?.toLowerCase() || "";
+                          const search = searchTerm.toLowerCase();
+                          return (
+                            name.includes(search) ||
+                            surname.includes(search) ||
+                            (name + " " + surname).includes(search) ||
+                            (surname + " " + name).includes(search)
+                          );
+                        })
+                        .map((order) => (
                         <tr key={order._id}>
                           <td><small>{order._id.slice(-8)}</small></td>
                           <td>{new Date(order.createdAt).toLocaleDateString('it-IT')}</td>
@@ -557,7 +579,7 @@ const VendorDashboard = () => {
           </Card>
         </Tab>
 
-        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#861515' : '#004b75'}}>{`I Miei Prodotti (${products.length})`}</span>}>
+        <Tab eventKey="products" title={<span style={{color: activeTab === 'products' ? '#00bf63' : '#004b75'}}>{`I Miei Prodotti (${products.length})`}</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -565,6 +587,15 @@ const VendorDashboard = () => {
                 <Button variant="success" onClick={() => navigate('/products/new')}>
                   + Nuovo Prodotto
                 </Button>
+              </div>
+
+              <div className="mb-3" style={{maxWidth: 350}}>
+                <Form.Control
+                  type="text"
+                  placeholder="Cerca per nome prodotto..."
+                  value={searchProduct}
+                  onChange={e => setSearchProduct(e.target.value)}
+                />
               </div>
 
               {products.length === 0 ? (
@@ -583,7 +614,9 @@ const VendorDashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((product) => (
+                      {products
+                        .filter(product => product.name.toLowerCase().includes(searchProduct.toLowerCase()))
+                        .map((product) => (
                         <tr key={product._id}>
                           <td>{product.name}</td>
                           <td>{
@@ -665,7 +698,7 @@ const VendorDashboard = () => {
           </Card>
         </Tab>
 
-        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#861515' : '#004b75'}}>{`Sconti e Coupon (${discounts.length})`}</span>}>
+        <Tab eventKey="discounts" title={<span style={{color: activeTab === 'discounts' ? '#00bf63' : '#004b75'}}>{`Sconti e Coupon (${discounts.length})`}</span>}>
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
@@ -781,7 +814,7 @@ const VendorDashboard = () => {
         </Tab>
 
         {stats && (
-          <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#861515' : '#004b75'}}>Statistiche Dettagliate</span>}>
+          <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#00bf63' : '#004b75'}}>Statistiche Dettagliate</span>}>
             <Card>
               <Card.Body>
                 <h5 className="mb-4">Riepilogo Ordini per Stato</h5>

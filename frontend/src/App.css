@@ -1,3 +1,15 @@
+/* Disabilita effetto hover/focus/active per bottoni modali termini e privacy in Cart.jsx */
+.no-hover-effect:hover,
+.no-hover-effect:focus,
+.no-hover-effect:active {
+  color: #004b75 !important;
+  background: none !important;
+  text-decoration: underline !important;
+  cursor: default !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
 footer a,
 footer a:visited,
 footer a:active {
@@ -22,7 +34,7 @@ a:hover,
 .link-matrix:hover,
 .social-link:hover,
 .footer-link:hover {
-  color: #861515 !important;
+  color: #00bf63 !important;
   text-decoration: underline;
 }
 /* Icone social Bootstrap/FontAwesome */
@@ -49,7 +61,7 @@ a:hover,
 .fa-whatsapp:hover,
 .fa-twitter:hover,
 .fa-linkedin:hover {
-  color: #861515 !important;
+  color: #00bf63 !important;
 }
 /* Badge custom per Disponibile */
 .badge-availability {
@@ -69,9 +81,9 @@ a:hover,
   color: #fff !important;
   font-weight: 500;
 }
-/* Badge categoria prodotto colore #861515 */
+/* Badge categoria prodotto colore #00bf63 */
 .badge-category-product {
-  background: #861515 !important;
+  background: #00bf63 !important;
   color: #fff !important;
   font-weight: 500;
 }
@@ -87,46 +99,46 @@ a:hover,
 /* Fix priorità per bottone custom carrello */
 .btn.btn-custom-cart {
   background-color: #fff !important;
-  border-color: #861515 !important;
-  color: #861515 !important;
+  border-color: #00bf63 !important;
+  color: #00bf63 !important;
 }
 .btn.btn-custom-cart:hover, .btn.btn-custom-cart:focus, .btn.btn-custom-cart:active {
-  background-color: rgba(134, 21, 21, 0.8) !important;
+  background-color: #00bf63 !important;
   color: #fff !important;
-  border-color: #861515 !important;
+  border-color: #00bf63 !important;
 }
-/* Bottone custom carrello con colore #861515 */
+/* Bottone custom carrello con colore #00bf63 */
 .btn-custom-cart {
   font-family: 'Inter', Arial, Helvetica, sans-serif !important;
   font-weight: 700 !important;
   background-color: #fff !important;
-  border-color: #861515 !important;
-  color: #861515 !important;
+  border-color: #00bf63 !important;
+  color: #00bf63 !important;
   transition: background 0.2s, color 0.2s;
 }
 .btn-custom-cart:hover, .btn-custom-cart:focus, .btn-custom-cart:active {
-  background-color: rgba(134, 21, 21, 0.8) !important;
+  background-color: #00bf63 !important;
   color: #fff !important;
-  border-color: #861515 !important;
+  border-color: #00bf63 !important;
 }
 /* Payoff custom background bianco */
 .payoff-custom {
   background: #fff !important;
 }
 
-/* Bottone Aggiungi al carrello con colore #861515 */
+/* Bottone Aggiungi al carrello con colore #00bf63 */
 .btn-add-cart {
   font-family: 'Inter', Arial, Helvetica, sans-serif !important;
   font-weight: 700 !important;
   background-color: #fff !important;
-  border-color: #861515 !important;
-  color: #861515 !important;
+  border-color: #00bf63 !important;
+  color: #00bf63 !important;
   transition: background 0.2s, color 0.2s;
 }
 .btn-add-cart:hover, .btn-add-cart:focus, .btn-add-cart:active {
   background-color: rgba(134, 21, 21, 0.8) !important;
   color: #fff !important;
-  border-color: #861515 !important;
+  border-color: #00bf63 !important;
 }
 
 .link-primary {
@@ -134,7 +146,7 @@ a:hover,
 }
 
 .link-primary:hover {
-  color: #861515 !important;
+  color: #00bf63 !important;
 }
 
 .text-decoration-color {
@@ -174,7 +186,7 @@ a:hover,
 .btn-forgot-border:hover, .btn-forgot-border:focus {
   border: none !important;
   background: none !important;
-  color: #861515 !important;
+  color: #00bf63 !important;
 }
 
 /* TITOLI */

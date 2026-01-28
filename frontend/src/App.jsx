@@ -46,7 +46,12 @@ import Partner from './pages/Partner';
 
 function AppContent() {
   const location = useLocation();
-  
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   // Pagine dove NON mostrare il carosello
   const hideCarouselPaths = ['/login', '/register', '/cart', '/categories', '/products/new'];
   const shouldShowCarousel = !hideCarouselPaths.includes(location.pathname) && !location.pathname.startsWith('/products/edit/');

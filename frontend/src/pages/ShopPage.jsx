@@ -233,6 +233,9 @@ const ShopPage = () => {
                         <i className="bi bi-tiktok"></i>
                       </a>
                     )}
+                    <a href="#" onClick={(e) => { e.preventDefault(); const url = window.location.href; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo">
+                      <i className="bi bi-share"></i>
+                    </a>
                   </div>
                 )}
               </div>
@@ -312,8 +315,8 @@ const ShopPage = () => {
                 background: '#fff',
                 marginRight: '60px',
               }}>
-                <i className="bi bi-megaphone-fill me-2" style={{ color: '#861515' }}></i>
-                <strong style={{ color: '#861515' }}>News:</strong>&nbsp;<span style={{ color: '#861515' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#00bf63' }}></i>
+                <strong style={{ color: '#00bf63' }}>News:</strong>&nbsp;<span style={{ color: '#00bf63' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
               </Alert>
             </div>
             <div className="news-banner-content" style={{
@@ -332,8 +335,8 @@ const ShopPage = () => {
                   background: '#fff',
                   marginRight: '60px',
                 }}>
-                <i className="bi bi-megaphone-fill me-2" style={{ color: '#861515' }}></i>
-                <strong style={{ color: '#861515' }}>News:</strong>&nbsp;<span style={{ color: '#861515' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#00bf63' }}></i>
+                <strong style={{ color: '#00bf63' }}>News:</strong>&nbsp;<span style={{ color: '#00bf63' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
               </Alert>
             </div>
           </div>

@@ -67,7 +67,7 @@ const Navbar = () => {
     <BSNavbar bg="light" variant="light" expand="lg" sticky="top" style={{ zIndex: 1030 }} expanded={expanded} onToggle={setExpanded}>
       <Container>
         <BSNavbar.Brand as={Link} to="/">
-          <img src="/lucaniko shop 2-01.png" alt="lucaniko shop" className='logonavbar' />
+          <img src="/Lucaniko Shop PNG solo testo-01.png" alt="lucaniko shop" className='logonavbar' />
         </BSNavbar.Brand>
         {/* Icona user e carrello sempre visibili, anche su mobile, PRIMA del menu hamburger */}
         <div className="d-lg-none ms-auto d-flex align-items-center">
@@ -212,8 +212,18 @@ const Navbar = () => {
                 align="end"
                 className="d-none d-lg-inline"
               >
-                {(user.role === 'seller') && (
+                {(user.role === 'seller' && user.isApproved) && (
                   <>
+                    <NavDropdown.Item onClick={() => navigate('/vendor/dashboard')}>
+                      <span><i className="bi bi-graph-up me-2"></i> Dashboard Venditore</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => navigate('/my-products')}>
+                      <span><i className="bi bi-bag-check me-2"></i> I miei prodotti</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Item onClick={() => navigate('/products/new')}>
+                      <span><i className="bi bi-bag-plus me-2"></i> Nuovo prodotto</span>
+                    </NavDropdown.Item>
+                    <NavDropdown.Divider />
                     <NavDropdown.Item onClick={() => navigate('/vendor/profile')}>
                       <span><i className="bi bi-person-badge me-2"></i> Profilo Aziendale</span>
                     </NavDropdown.Item>

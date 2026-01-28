@@ -133,7 +133,7 @@ const Categories = () => {
                 </div>
               )}
               <Card.Body className="text-center">
-                <Card.Title style={{ fontSize: '1rem', fontWeight: 'bold', color: '#861515' }}>
+                <Card.Title style={{ fontSize: '1rem', fontWeight: 'bold', color: '#00bf63' }}>
                   {cat.name}
                 </Card.Title>
               </Card.Body>

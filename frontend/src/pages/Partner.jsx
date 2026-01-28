@@ -197,9 +197,9 @@ const Partner = () => {
                 <h3 
                   className="mb-4 pb-2" 
                   style={{ 
-                    color: '#861515', 
+                    color: '#00bf63', 
                     fontWeight: 700, 
-                    borderBottom: '3px solid #861515' 
+                    borderBottom: '3px solid #00bf63' 
                   }}
                 >
                   {category}

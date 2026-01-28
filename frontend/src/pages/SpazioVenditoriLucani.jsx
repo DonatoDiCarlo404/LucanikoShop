@@ -31,9 +31,9 @@ const steps = [
 ];
 
 const plans = [
-  "€250 (IVA inclusa) / 1 anno",
-  "€390 (IVA inclusa) / 2 anni",
-  "€510 (IVA inclusa) / 3 anni"
+  "€299 (IVA inclusa) / 1 anno",
+  "€499 (IVA inclusa) / 2 anni",
+  "€599 (IVA inclusa) / 3 anni"
 ];
 
 const SpazioVenditoriLucani = () => (

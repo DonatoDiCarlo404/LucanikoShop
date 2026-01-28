@@ -56,7 +56,7 @@ const Footer = () => {
         {/* Quinta colonna centrata sotto */}
         <Row className="mt-1 justify-content-center">
           <Col xs={12} md={3} className="text-center">
-            <img src="/lucaniko shop 2-01.png" alt="Logo Altro" style={{ maxWidth: 250, marginBottom: 12 }} />
+            <img src="/Lucaniko Shop PNG solo testo-01.png" alt="Logo Altro" style={{ maxWidth: 250, marginBottom: 12 }} />
             <ul className="list-unstyled">
               <li>
                 <a href="https://www.instagram.com/lucaniko.it?igsh=cGlyaTNoNzc3cWEw" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>

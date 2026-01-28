@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Container, Carousel } from 'react-bootstrap';
 import './CategoriesCarousel.css';
 
@@ -64,6 +64,7 @@ const categoryCards = [
 const CategoriesCarouselArrows = () => {
   const navigate = useNavigate();
   const [imageErrors, setImageErrors] = useState({});
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 480);
 
   const handleCategoryClick = (categoryName) => {
     navigate(`/products?category=${encodeURIComponent(categoryName)}`);
@@ -73,10 +74,18 @@ const CategoriesCarouselArrows = () => {
     setImageErrors(prev => ({ ...prev, [categoryId]: true }));
   };
 
-  // Suddividi le card in gruppi da 4
+  // Aggiorna lo stato mobile al ridimensionamento
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 480);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // In mobile: 1 card per slide, altrimenti 4 card per slide
   const chunkedCards = [];
-  for (let i = 0; i < categoryCards.length; i += 4) {
-    chunkedCards.push(categoryCards.slice(i, i + 4));
+  const cardsPerSlide = isMobile ? 1 : 4;
+  for (let i = 0; i < categoryCards.length; i += cardsPerSlide) {
+    chunkedCards.push(categoryCards.slice(i, i + cardsPerSlide));
   }
 
   return (
@@ -121,7 +130,7 @@ const CategoriesCarouselArrows = () => {
                       </div>
                     )}
                     <Card.Body className="text-center p-3">
-                      <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#861515' }}>
+                      <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#00bf63' }}>
                         {cat.name}
                       </Card.Title>
                     </Card.Body>

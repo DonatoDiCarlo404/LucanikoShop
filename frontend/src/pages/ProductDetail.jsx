@@ -454,7 +454,7 @@ const ProductDetail = () => {
           {product.seller && (
             <Card className="mb-3">
               <Card.Body>
-                <h5 style={{ color: '#861515', fontWeight: 700 }}>Venduto da</h5>
+                <h5 style={{ color: '#00bf63', fontWeight: 700 }}>Venduto da</h5>
                 <ListGroup variant="flush">
                   <ListGroup.Item>
                     <strong>Azienda:</strong>{' '}
@@ -472,9 +472,9 @@ const ProductDetail = () => {
                       }}
                       onClick={() => navigate(`/shop/${product.seller._id}`)}
                       onMouseEnter={e => {
-                        e.currentTarget.style.color = '#861515';
-                        e.currentTarget.style.textDecorationColor = '#861515';
-                        e.currentTarget.style.WebkitTextDecorationColor = '#861515';
+                        e.currentTarget.style.color = '#00bf63';
+                        e.currentTarget.style.textDecorationColor = '#00bf63';
+                        e.currentTarget.style.WebkitTextDecorationColor = '#00bf63';
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.color = '#004b75';
@@ -507,7 +507,7 @@ const ProductDetail = () => {
                   {/* Selettori per ogni attributo variante */}
                   {product.customAttributes.filter(a => a.allowVariants && a.options?.length > 0).map(attr => (
                     <div key={attr.key} className="mb-2">
-                      <strong style={{ color: '#861515' }}>{attr.name}:</strong>{' '}
+                      <strong style={{ color: '#00bf63' }}>{attr.name}:</strong>{' '}
                       <select
                         value={selectedOptions[attr.key] || ''}
                         onChange={e => {
@@ -533,7 +533,7 @@ const ProductDetail = () => {
                                 €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2)}
                                 <small className="text-muted">/{product.unit}</small>
                               </span>
-                              <Badge bg="danger" className="ms-2">
+                              <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
                                 -{product.discountPercentage}%
                               </Badge>
                             </div>
@@ -580,7 +580,7 @@ const ProductDetail = () => {
                             €{product.discountedPrice.toFixed(2)}
                             <small className="text-muted">/{product.unit}</small>
                           </span>
-                          <Badge bg="danger" className="ms-2">
+                          <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
                             -{product.discountPercentage}%
                           </Badge>
                         </div>
@@ -618,7 +618,7 @@ const ProductDetail = () => {
           {product.description && (
             <Card className="mb-3">
               <Card.Body>
-                <h5 style={{ color: '#861515', fontWeight: 700 }}>Descrizione</h5>
+                <h5 style={{ color: '#00bf63', fontWeight: 700 }}>Descrizione</h5>
                 <p>{product.description}</p>
               </Card.Body>
             </Card>
@@ -627,7 +627,7 @@ const ProductDetail = () => {
           {/* RECENSIONI */}
           <Card className="mb-3">
             <Card.Body>
-              <h5 style={{ color: '#861515', fontWeight: 700 }}>Recensioni</h5>
+              <h5 style={{ color: '#00bf63', fontWeight: 700 }}>Recensioni</h5>
               {deleteSuccess && <Alert variant="success">{deleteSuccess}</Alert>}
               {editSuccess && <Alert variant="success">{editSuccess}</Alert>}
 
