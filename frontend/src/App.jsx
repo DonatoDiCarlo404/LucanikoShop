@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/authContext';
+import { AuthProvider, useAuth } from './context/authContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
@@ -24,6 +24,7 @@ import ShopPage from './pages/ShopPage';
 import Footer from './components/Footer';
 import Error from './pages/Error';
 import SplashScreen from './components/SplashScreen';
+import ComingSoon from './components/ComingSoon';
 import { useState, useEffect } from 'react';
 import BuyerProfile from './pages/BuyerProfile';
 import OffersAndDiscounts from './pages/OffersAndDiscounts';
@@ -129,11 +130,26 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3000); 
+    const timer = setTimeout(() => setShowSplash(false), 1000); 
     return () => clearTimeout(timer);
   }, []);
 
-  return showSplash ? <SplashScreen /> : (
+  // Mostra splash screen
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
+  // Check modalità manutenzione
+  const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
+  const hasBypass = sessionStorage.getItem('maintenance_bypass') === 'true';
+
+  // Se modalità manutenzione attiva e nessun bypass, mostra Coming Soon
+  if (isMaintenanceMode && !hasBypass) {
+    return <ComingSoon />;
+  }
+
+  // Mostra l'app normale
+  return (
     <AuthProvider>
       <CartProvider>
         <AppContent />

@@ -4,6 +4,23 @@ import { createSession } from "react-router-dom";
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 export const API_BASE = API_URL.replace('/api', ''); // Per Google OAuth e altri endpoint non-api
 
+// Helper per ottenere gli header con token (se disponibile)
+const getHeaders = (includeContentType = true) => {
+  const headers = {};
+  
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  // Aggiungi token se presente in localStorage
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
+};
+
 // Upload PDF venditore
 export const uploadVendorDocument = async (vendorId, file) => {
   const formData = new FormData();
@@ -90,13 +107,17 @@ export const productsAPI = {
   // Ottieni tutti i prodotti (con filtri)
   getAll: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_URL}/products?${queryString}`);
+    const response = await fetch(`${API_URL}/products?${queryString}`, {
+      headers: getHeaders(false)
+    });
     return handleResponse(response);
   },
 
   // Ottieni singolo prodotto
   getById: async (id) => {
-    const response = await fetch(`${API_URL}/products/${id}`);
+    const response = await fetch(`${API_URL}/products/${id}`, {
+      headers: getHeaders(false)
+    });
     return handleResponse(response);
   },
 
