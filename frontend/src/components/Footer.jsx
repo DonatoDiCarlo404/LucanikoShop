@@ -13,11 +13,13 @@ const Footer = () => {
             <h6 className="fw-bold text-dark mb-3">Compra</h6>
             <ul className="list-unstyled">
               <li><Link className="text-dark text-decoration-none" to="/login" onClick={() => window.scrollTo(0,0)}>Login/Registrati</Link></li>
-              <li><Link className="text-dark text-decoration-none" to="/help-center-buyers" onClick={() => window.scrollTo(0,0)}>Centro Assistenza Acquirenti</Link></li>
-              <li><Link className="text-dark text-decoration-none" to="/cancellation-policy" onClick={() => window.scrollTo(0,0)}>Spedizioni e Metodi di Pagamento</Link></li>
               <li><Link className="text-dark text-decoration-none" to="/categories" onClick={() => window.scrollTo(0,0)}>Categorie</Link></li>
               <li><Link className="text-dark text-decoration-none" to="/products" onClick={() => window.scrollTo(0,0)}>Prodotti</Link></li>
               <li><Link className="text-dark text-decoration-none" to="/offers" onClick={() => window.scrollTo(0,0)}>Offerte</Link></li>
+              <li><Link className="text-dark text-decoration-none" to="/negozi" onClick={() => window.scrollTo(0,0)}>Negozi</Link></li>
+              <li><Link className="text-dark text-decoration-none" to="/partners" onClick={() => window.scrollTo(0,0)}>Partners</Link></li>
+              <li><Link className="text-dark text-decoration-none" to="/help-center-buyers" onClick={() => window.scrollTo(0,0)}>Centro Assistenza Acquirenti</Link></li>
+              <li><Link className="text-dark text-decoration-none" to="/cancellation-policy" onClick={() => window.scrollTo(0,0)}>Spedizioni e Metodi di Pagamento</Link></li>
             </ul>
           </Col>
 

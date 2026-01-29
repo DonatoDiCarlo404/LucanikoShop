@@ -62,7 +62,14 @@ const ProductCard = ({ product }) => {
 
   return (
     <Card
-      style={{ cursor: 'pointer', height: '100%', position: 'relative' }}
+      style={{
+        cursor: 'pointer',
+        height: '100%',
+        position: 'relative',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)',
+        border: '2px solid transparent',
+        transition: 'all 0.3s ease'
+      }}
       onClick={e => {
         // Se il click è su una freccia del carosello, non aprire dettaglio
         if (
@@ -74,7 +81,17 @@ const ProductCard = ({ product }) => {
         }
         navigate(`/products/${product._id}`);
       }}
-      className="h-100 shadow-sm hover-shadow"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-8px)';
+        e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.16)';
+        e.currentTarget.style.borderColor = '#004b75';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)';
+        e.currentTarget.style.borderColor = 'transparent';
+      }}
+      className="h-100"
     >
       {/* Cuore wishlist in alto a sinistra, solo se utente autenticato */}
       {user && (
@@ -112,18 +129,7 @@ const ProductCard = ({ product }) => {
 
       {/* Badge sconto in alto a destra */}
       {product.hasActiveDiscount && product.discountPercentage && (
-        <Badge 
-          style={{ 
-            backgroundColor: '#004b75', 
-            color: '#fff',
-            position: 'absolute', 
-            top: '10px', 
-            right: '10px', 
-            zIndex: 10,
-            fontSize: '1rem',
-            padding: '8px 12px'
-          }}
-        >
+        <Badge className="badge-discount">
           -{product.discountPercentage}%
         </Badge>
       )}

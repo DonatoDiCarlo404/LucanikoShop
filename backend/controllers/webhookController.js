@@ -3,7 +3,7 @@ import Order from '../models/Order.js';
 import Review from '../models/Review.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
-import { sendPurchaseConfirmationEmail } from '../utils/emailTemplates.js';
+import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -154,11 +154,19 @@ export const handleStripeWebhook = async (req, res) => {
       try {
         const user = await User.findById(userId);
         if (user) {
-          await sendPurchaseConfirmationEmail(user.email, user.name, {
-            orderId: order._id,
-            total: order.totalPrice,
-            iva: order.taxPrice
-          });
+          // Prepara lista prodotti
+          const productsList = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
+          const totalAmount = `€${order.totalPrice.toFixed(2)}`;
+          const shippingAddress = `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`;
+          
+          await sendOrderConfirmationEmail(
+            user.email, 
+            user.name, 
+            order._id.toString(), 
+            productsList, 
+            totalAmount, 
+            shippingAddress
+          );
         }
       } catch (emailError) {
         console.error('Errore invio email conferma acquisto:', emailError);

@@ -255,9 +255,17 @@ export const login = async (req, res) => {
 // @access  Private
 export const getProfile = async (req, res) => {
   try {
+    console.log('📋 [GET PROFILE] Richiesta profilo per utente:', req.user._id);
     const user = await User.findById(req.user._id);
 
     if (user) {
+      console.log('✅ [GET PROFILE] Profilo trovato:', {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name
+      });
+      
       res.json({
         _id: user._id,
         name: user.name,
@@ -302,13 +310,26 @@ export const getProfile = async (req, res) => {
 // @access  Public
 export const googleCallback = async (req, res) => {
   try {
+    console.log('🔵 [GOOGLE AUTH] Callback ricevuto');
+    console.log('👤 [GOOGLE AUTH] Utente autenticato:', {
+      id: req.user._id,
+      email: req.user.email,
+      role: req.user.role,
+      name: req.user.name
+    });
+    
     // L'utente è già stato autenticato da Passport
     const token = generateToken(req.user._id);
+    console.log('🔑 [GOOGLE AUTH] Token generato:', token.substring(0, 20) + '...');
     
     // Reindirizza al frontend con il token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/auth/success?token=${token}`);
+    const redirectUrl = `${frontendUrl}/auth/success?token=${token}`;
+    console.log('↪️  [GOOGLE AUTH] Redirect a:', redirectUrl);
+    
+    res.redirect(redirectUrl);
   } catch (error) {
+    console.error('❌ [GOOGLE AUTH] Errore nel callback:', error);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/auth/error`);
   }

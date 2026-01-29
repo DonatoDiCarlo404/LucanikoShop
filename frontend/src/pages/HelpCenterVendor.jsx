@@ -1,6 +1,8 @@
-import { Container, Form, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Container, Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from '../context/authContext';
+import { API_URL } from '../services/api';
 
 const supportTopics = [
   "registrazione e configurazione del negozio",
@@ -11,6 +13,11 @@ const supportTopics = [
 ];
 
 const HelpCenterVendor = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     nome: "",
     azienda: "",
@@ -20,6 +27,29 @@ const HelpCenterVendor = () => {
     accettaPrivacy: false
   });
 
+  // Verifica se l'utente è autenticato e ha il ruolo corretto
+  if (!user) {
+    return (
+      <Container className="policy-container py-4">
+        <Alert variant="warning">
+          Devi essere autenticato per accedere al Centro Assistenza Venditori.
+          <br />
+          <Link to="/login">Accedi ora</Link>
+        </Alert>
+      </Container>
+    );
+  }
+
+  if (user.role !== 'seller' && user.role !== 'admin') {
+    return (
+      <Container className="policy-container py-4">
+        <Alert variant="danger">
+          Accesso negato. Il Centro Assistenza Venditori è riservato solo ai venditori e agli amministratori.
+        </Alert>
+      </Container>
+    );
+  }
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -28,23 +58,49 @@ const HelpCenterVendor = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.accettaPrivacy) {
-      alert("Devi accettare il trattamento dei dati personali per procedere.");
+      setError("Devi accettare il trattamento dei dati personali per procedere.");
       return;
     }
-    console.log("Form inviato:", formData);
-    // Qui andrebbe la logica per inviare i dati al backend
-    alert("Richiesta inviata con successo! Ti contatteremo al più presto.");
-    setFormData({
-      nome: "",
-      azienda: "",
-      email: "",
-      telefono: "",
-      descrizione: "",
-      accettaPrivacy: false
-    });
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/support/vendor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSuccess('Richiesta inviata con successo! Ti contatteremo al più presto.');
+        setFormData({
+          nome: "",
+          azienda: "",
+          email: "",
+          telefono: "",
+          descrizione: "",
+          accettaPrivacy: false
+        });
+      } else {
+        setError(data.message || 'Errore durante l\'invio della richiesta');
+      }
+    } catch (err) {
+      console.error('Errore invio richiesta supporto:', err);
+      setError('Errore di connessione. Riprova più tardi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +120,8 @@ const HelpCenterVendor = () => {
       <h5 className="mt-5 mb-3 text-center">Canali di contatto</h5>
       
       <h6 className="mt-4 mb-3 text-center">Modulo di contatto online per venditori</h6>
+      {success && <Alert variant="success" className="text-center">{success}</Alert>}
+      {error && <Alert variant="danger" className="text-center">{error}</Alert>}
       <Form onSubmit={handleSubmit} style={{ maxWidth: 600, margin: '0 auto' }} className="mb-5">
         <Form.Group className="mb-3" controlId="formNome">
           <Form.Label>Nome e Cognome *</Form.Label>
@@ -143,8 +201,15 @@ const HelpCenterVendor = () => {
         </Form.Group>
 
         <div className="text-center">
-          <Button variant="primary" type="submit">
-            Invia
+          <Button variant="primary" type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Invio in corso...
+              </>
+            ) : (
+              'Invia'
+            )}
           </Button>
         </div>
       </Form>

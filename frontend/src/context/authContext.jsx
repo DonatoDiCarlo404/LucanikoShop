@@ -19,19 +19,28 @@ export const AuthProvider = ({ children }) => {
   // Carica utente dal localStorage all'avvio
   useEffect(() => {
     const loadUser = async () => {
+      console.log('🔄 [AuthContext] Caricamento utente...');
       const token = localStorage.getItem('token');
+      console.log('🔑 [AuthContext] Token trovato:', token ? token.substring(0, 20) + '...' : 'NESSUNO');
       
       if (token) {
         try {
           const userData = await authAPI.getProfile(token);
+          console.log('✅ [AuthContext] Profilo caricato:', userData);
           setUser({ ...userData, token });
+          // Se l'utente è admin, imposta il bypass per la manutenzione
+          if (userData.role === 'admin') {
+            sessionStorage.setItem('maintenance_bypass', 'true');
+            console.log('🔓 [AuthContext] Bypass impostato per admin');
+          }
         } catch (err) {
-          console.error('Token non valido:', err);
+          console.error('❌ [AuthContext] Token non valido:', err);
           localStorage.removeItem('token');
         }
       }
       
       setLoading(false);
+      console.log('✅ [AuthContext] Caricamento completato');
     };
 
     loadUser();
@@ -46,6 +55,10 @@ export const AuthProvider = ({ children }) => {
       // Recupera profilo completo
       const userData = await authAPI.getProfile(data.token);
       setUser({ ...userData, token: data.token });
+      // Se l'utente è admin, imposta il bypass per la manutenzione
+      if (userData.role === 'admin') {
+        sessionStorage.setItem('maintenance_bypass', 'true');
+      }
       return { success: true };
     } catch (err) {
       setError(err.message);

@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
 import { checkoutAPI, API_URL } from '../services/api';
 import { toast } from 'react-toastify';
+import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
 
 const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -325,15 +326,15 @@ const Cart = () => {
 
                   <Col md={4}>
                     <h5 className="mb-1">{item.name}</h5>
-                    <Badge bg="secondary">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
+                    <Badge className="badge-category-product">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
                   </Col>
 
                   <Col md={2}>
                     {item.hasActiveDiscount && item.discountedPrice && item.originalPrice ? (
                       <>
                         <div className="d-flex align-items-center gap-1">
-                          <strong className="text-primary">€{item.discountedPrice.toFixed(2)}</strong>
-                          <Badge bg="danger" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                          <strong style={{ color: '#004b75' }}>€{item.discountedPrice.toFixed(2)}</strong>
+                          <Badge className="badge-discount-small">
                             -{item.discountPercentage}%
                           </Badge>
                         </div>
@@ -367,7 +368,7 @@ const Cart = () => {
                     <div className="mb-2">
                       {item.hasActiveDiscount && item.discountedPrice ? (
                         <>
-                          <strong className="text-primary">€{(item.discountedPrice * item.quantity).toFixed(2)}</strong>
+                          <strong style={{ color: '#004b75' }}>€{(item.discountedPrice * item.quantity).toFixed(2)}</strong>
                           <small className="d-block text-muted" style={{ textDecoration: 'line-through', fontSize: '0.8rem' }}>
                             €{(item.originalPrice * item.quantity).toFixed(2)}
                           </small>
@@ -507,7 +508,7 @@ const Cart = () => {
 
                 <ListGroup.Item className="d-flex justify-content-between">
                   <h5 className="mb-0">Totale</h5>
-                  <h5 className="mb-0 text-primary">€{finalTotal.toFixed(2)}</h5>
+                  <h5 className="mb-0" style={{ color: '#004b75' }}>€{finalTotal.toFixed(2)}</h5>
                 </ListGroup.Item>
               </ListGroup>
 
@@ -655,6 +656,25 @@ const Cart = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Caroselli prodotti suggeriti - mostrati solo se ci sono prodotti nel carrello */}
+      {cartItems && cartItems.length > 0 && (
+        <>
+          <SuggestedProductsCarousel 
+            cartItems={cartItems}
+            sameVendor={true}
+            title="🏪 Altri prodotti dello stesso venditore"
+            titleColor="#004b75"
+          />
+          
+          <SuggestedProductsCarousel 
+            cartItems={cartItems}
+            sameVendor={false}
+            title="✨ Prodotti simili da altre aziende lucane"
+            titleColor="#004b75"
+          />
+        </>
+      )}
 
       {/* Modale Termini e Condizioni Venditore */}
       <Modal show={showTermsModal} onHide={() => setShowTermsModal(false)} size="lg" scrollable>

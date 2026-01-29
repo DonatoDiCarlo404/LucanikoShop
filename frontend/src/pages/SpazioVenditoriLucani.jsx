@@ -23,11 +23,11 @@ const benefits = [
 ];
 
 const steps = [
-  "registrazione e inserimento dati aziendali",
+  "Registrazione e inserimento dati aziendali",
   "Pagamento online, verifica e approvazione",
-  "attivazione adesione",
-  "configurazione store e caricamento prodotti",
-  "vendite con pagamenti gestiti da Stripe"
+  "Attivazione adesione",
+  "Configurazione store e caricamento prodotti",
+  "Vendite con pagamenti gestiti da Stripe"
 ];
 
 const plans = [

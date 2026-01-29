@@ -87,8 +87,8 @@ a:hover,
   color: #fff !important;
   font-weight: 500;
 }
-/* Badge custom per Aziende Partner: colore matrice #004b75 */
-.badge-partner-count {
+/* Badge custom per Aziende Negozi: colore matrice #004b75 */
+.badge-negozi-count {
   background: #004b75 !important;
   color: #fff !important;
   font-weight: 600 !important;

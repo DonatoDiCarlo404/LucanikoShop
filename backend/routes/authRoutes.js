@@ -20,6 +20,10 @@ router.post('/login', loginLimiter, login);
 // Google OAuth
 router.get(
   '/google',
+  (req, res, next) => {
+    console.log('🟢 [AUTH ROUTE] Inizio autenticazione Google');
+    next();
+  },
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
     session: false 
@@ -28,9 +32,14 @@ router.get(
 
 router.get(
   '/google/callback',
+  (req, res, next) => {
+    console.log('🟢 [AUTH ROUTE] Callback Google ricevuto');
+    console.log('🔍 [AUTH ROUTE] Query params:', req.query);
+    next();
+  },
   passport.authenticate('google', { 
     session: false,
-    failureRedirect: 'http://localhost:3000/auth/error'
+    failureRedirect: `${process.env.FRONTEND_URL}/auth/error`
   }),
   googleCallback
 );

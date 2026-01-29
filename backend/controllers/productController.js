@@ -401,3 +401,52 @@ export const getPendingProductsCount = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Ottieni prodotti suggeriti basati sul carrello
+// @route   POST /api/products/suggested
+// @access  Public
+export const getSuggestedProducts = async (req, res) => {
+  try {
+    const { cartItems, sameVendor = true, limit = 8 } = req.body;
+
+    if (!cartItems || cartItems.length === 0) {
+      return res.json({ products: [] });
+    }
+
+    // Estrai categorie e venditori dal carrello
+    const categoryIds = [...new Set(cartItems.map(item => item.category?.toString() || item.category))];
+    const vendorIds = [...new Set(cartItems.map(item => item.seller?._id?.toString() || item.seller?.toString() || item.seller))];
+    const productIds = cartItems.map(item => item._id?.toString() || item._id);
+
+    // Costruisci query base
+    let query = {
+      _id: { $nin: productIds }, // Escludi prodotti già nel carrello
+      isActive: true // Solo prodotti attivi
+    };
+
+    // Se cerchiamo prodotti dello stesso venditore
+    if (sameVendor) {
+      query.seller = { $in: vendorIds };
+    } else {
+      // Prodotti di altri venditori
+      query.seller = { $nin: vendorIds };
+    }
+
+    // Filtra per categorie simili
+    if (categoryIds.length > 0 && categoryIds[0]) {
+      query.category = { $in: categoryIds };
+    }
+
+    // Recupera prodotti suggeriti
+    const products = await Product.find(query)
+      .populate('seller', 'businessName name')
+      .populate('category', 'name')
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    res.json({ products });
+  } catch (error) {
+    console.error('Errore recupero prodotti suggeriti:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

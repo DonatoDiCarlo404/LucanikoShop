@@ -39,7 +39,7 @@ const Navbar = () => {
 
   const loadPendingProductsCount = async () => {
     try {
-      const res = await fetch(`${API_URL}/products/pending/count`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/products/pending/count`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -144,7 +144,13 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
-                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                  onClick={() => { closeMenu(); navigate('/negozi'); }}
+                >
+                  Negozi
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partners'); }}
                 >
                   Partners
                 </Nav.Link>
@@ -198,7 +204,10 @@ const Navbar = () => {
             <Nav.Link as={Link} to="/categories" className="d-none d-lg-inline">
               Categorie
             </Nav.Link>
-            <Nav.Link as={Link} to="/partner" className="d-none d-lg-inline">
+            <Nav.Link as={Link} to="/negozi" className="d-none d-lg-inline">
+              Negozi
+            </Nav.Link>
+            <Nav.Link as={Link} to="/partners" className="d-none d-lg-inline">
               Partners
             </Nav.Link>
             {isAuthenticated ? (
@@ -291,9 +300,9 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
-                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                  onClick={() => { closeMenu(); navigate('/negozi'); }}
                 >
-                  Partners
+                  Negozi
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
@@ -331,9 +340,9 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
-                  onClick={() => { closeMenu(); navigate('/partner'); }}
+                  onClick={() => { closeMenu(); navigate('/negozi'); }}
                 >
-                  Partner
+                  Negozi
                 </Nav.Link>
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci

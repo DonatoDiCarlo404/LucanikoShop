@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab, Form } from 'react-bootstrap';
-import { adminAPI, uploadVendorDocument, API_URL } from '../services/api';
+import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab, Form, Modal } from 'react-bootstrap';
+import { adminAPI, uploadVendorDocument, API_URL, sponsorAPI, uploadAPI } from '../services/api';
 // Espone la funzione uploadVendorDocument su window per uso inline
 window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
@@ -27,9 +27,30 @@ const AdminDashboard = () => {
   const [savingNews, setSavingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState(null);
 
+  // Stato per gli Sponsor
+  const [sponsors, setSponsors] = useState([]);
+  const [showSponsorModal, setShowSponsorModal] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState(null);
+  const [sponsorFormData, setSponsorFormData] = useState({
+    name: '',
+    description: '',
+    city: '',
+    phone: '',
+    website: '',
+    logo: '',
+    tier: 'Support',
+    status: 'active'
+  });
+  const [savingSponsor, setSavingSponsor] = useState(false);
+  const [sponsorLogoFile, setSponsorLogoFile] = useState(null);
+  const [sponsorLogoPreview, setSponsorLogoPreview] = useState('');
+  const [showSponsorSuccessModal, setShowSponsorSuccessModal] = useState(false);
+  const [sponsorSuccessMessage, setSponsorSuccessMessage] = useState('');
+
   useEffect(() => {
     loadData();
     loadNews();
+    loadSponsors();
   }, []);
 
   const loadData = async () => {
@@ -202,18 +223,143 @@ const AdminDashboard = () => {
 
   const handleToggleNewsActive = async (newsId, currentStatus) => {
     try {
-      const response = await fetch(`${API_URL}/admin/news/${newsId}`, {
+      const response = await fetch(`${API_URL}/admin/news/${newsId}/toggle`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.token}`
-        },
-        body: JSON.stringify({ isActive: !currentStatus })
+        }
       });
 
       if (response.ok) {
         await loadNews();
+      } else {
+        const data = await response.json();
+        alert('❌ Errore: ' + data.message);
       }
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  // === GESTIONE SPONSOR ===
+  const loadSponsors = async () => {
+    try {
+      const data = await sponsorAPI.getAllSponsors(user.token);
+      setSponsors(data);
+    } catch (err) {
+      console.error('Errore caricamento sponsor:', err);
+    }
+  };
+
+  const handleOpenSponsorModal = (sponsor = null) => {
+    if (sponsor) {
+      setEditingSponsor(sponsor);
+      setSponsorFormData({
+        name: sponsor.name,
+        description: sponsor.description,
+        city: sponsor.city,
+        phone: sponsor.phone,
+        website: sponsor.website,
+        logo: sponsor.logo || '',
+        tier: sponsor.tier,
+        status: sponsor.status
+      });
+    } else {
+      setEditingSponsor(null);
+      setSponsorFormData({
+        name: '',
+        description: '',
+        city: '',
+        phone: '',
+        website: '',
+        logo: '',
+        tier: 'Support',
+        status: 'active'
+      });
+      setSponsorLogoFile(null);
+      setSponsorLogoPreview('');
+    }
+    setShowSponsorModal(true);
+  };
+
+  const handleCloseSponsorModal = () => {
+    setShowSponsorModal(false);
+    setEditingSponsor(null);
+    setSponsorFormData({
+      name: '',
+      description: '',
+      city: '',
+      phone: '',
+      website: '',
+      logo: '',
+      tier: 'Support',
+      status: 'active'
+    });
+    setSponsorLogoFile(null);
+    setSponsorLogoPreview('');
+  };
+
+  const handleSaveSponsor = async (e) => {
+    e.preventDefault();
+    
+    if (!sponsorFormData.name || !sponsorFormData.description || !sponsorFormData.city || 
+        !sponsorFormData.phone || !sponsorFormData.website) {
+      alert('Compila tutti i campi obbligatori');
+      return;
+    }
+
+    try {
+      setSavingSponsor(true);
+      
+      let logoUrl = sponsorFormData.logo;
+      
+      // Se c'è un nuovo file da caricare
+      if (sponsorLogoFile) {
+        const uploadResult = await uploadAPI.uploadProductImage(sponsorLogoFile, user.token);
+        logoUrl = uploadResult.url;
+      }
+      
+      const dataToSave = {
+        ...sponsorFormData,
+        logo: logoUrl
+      };
+      
+      if (editingSponsor) {
+        await sponsorAPI.updateSponsor(editingSponsor._id, dataToSave, user.token);
+        setSponsorSuccessMessage('Sponsor aggiornato con successo!');
+      } else {
+        await sponsorAPI.createSponsor(dataToSave, user.token);
+        setSponsorSuccessMessage('Sponsor creato con successo!');
+      }
+      
+      await loadSponsors();
+      handleCloseSponsorModal();
+      setShowSponsorSuccessModal(true);
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    } finally {
+      setSavingSponsor(false);
+    }
+  };
+
+  const handleDeleteSponsor = async (sponsorId) => {
+    if (!confirm('Sei sicuro di voler eliminare questo sponsor?')) return;
+
+    try {
+      await sponsorAPI.deleteSponsor(sponsorId, user.token);
+      alert('✅ Sponsor eliminato!');
+      await loadSponsors();
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  const handleToggleSponsorStatus = async (sponsorId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await sponsorAPI.updateSponsor(sponsorId, { status: newStatus }, user.token);
+      await loadSponsors();
     } catch (err) {
       alert('❌ Errore: ' + err.message);
     }
@@ -618,7 +764,289 @@ const AdminDashboard = () => {
             </Card.Body>
           </Card>
         </Tab>
+
+        {/* Tab Sponsor */}
+        <Tab eventKey="sponsors" title={<span><i className="bi bi-award text-warning"></i> Sponsor</span>}>
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5><i className="bi bi-award me-2"></i>Gestione Sponsor</h5>
+                <small className="text-muted">Gestisci gli sponsor della piattaforma</small>
+              </div>
+              <Button variant="primary" onClick={() => handleOpenSponsorModal()}>
+                <i className="bi bi-plus-circle me-2"></i>Aggiungi Sponsor
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              {sponsors.length === 0 ? (
+                <Alert variant="info">Nessuno sponsor presente</Alert>
+              ) : (
+                <Table striped bordered hover responsive>
+                  <thead>
+                    <tr>
+                      <th>Logo</th>
+                      <th>Nome</th>
+                      <th>Città</th>
+                      <th>Telefono</th>
+                      <th>Tier</th>
+                      <th>Status</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sponsors.map((sponsor) => (
+                      <tr key={sponsor._id}>
+                        <td>
+                          {sponsor.logo ? (
+                            <img 
+                              src={sponsor.logo} 
+                              alt={sponsor.name}
+                              style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+                            />
+                          ) : (
+                            <div style={{ width: '50px', height: '50px', backgroundColor: '#f0f0f0', borderRadius: '4px' }} />
+                          )}
+                        </td>
+                        <td><strong>{sponsor.name}</strong></td>
+                        <td>{sponsor.city}</td>
+                        <td>{sponsor.phone}</td>
+                        <td>
+                          <Badge bg={
+                            sponsor.tier === 'Main' ? 'danger' :
+                            sponsor.tier === 'Premium' ? 'warning' :
+                            sponsor.tier === 'Official' ? 'info' :
+                            'secondary'
+                          }>
+                            {sponsor.tier}
+                          </Badge>
+                        </td>
+                        <td>
+                          <Badge bg={sponsor.status === 'active' ? 'success' : 'secondary'}>
+                            {sponsor.status === 'active' ? 'Attivo' : 'Inattivo'}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleOpenSponsorModal(sponsor)}
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button
+                              variant={sponsor.status === 'active' ? 'outline-warning' : 'outline-success'}
+                              size="sm"
+                              onClick={() => handleToggleSponsorStatus(sponsor._id, sponsor.status)}
+                            >
+                              <i className={`bi bi-${sponsor.status === 'active' ? 'pause' : 'play'}`}></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteSponsor(sponsor._id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
       </Tabs>
+
+      {/* Modal Sponsor */}
+      <Modal show={showSponsorModal} onHide={handleCloseSponsorModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingSponsor ? 'Modifica Sponsor' : 'Nuovo Sponsor'}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSaveSponsor}>
+          <Modal.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Nome *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={sponsorFormData.name}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, name: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Città *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={sponsorFormData.city}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, city: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Descrizione *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={500}
+                value={sponsorFormData.description}
+                onChange={(e) => setSponsorFormData({ ...sponsorFormData, description: e.target.value })}
+                required
+              />
+              <Form.Text className="text-muted">
+                {sponsorFormData.description.length}/500 caratteri
+              </Form.Text>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Telefono *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={sponsorFormData.phone}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, phone: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Sito Web *</Form.Label>
+                  <Form.Control
+                    type="url"
+                    value={sponsorFormData.website}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, website: e.target.value })}
+                    placeholder="https://esempio.it"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Logo</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setSponsorLogoFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setSponsorLogoPreview(reader.result);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {(sponsorLogoPreview || sponsorFormData.logo) && (
+                <div className="mt-2 position-relative d-inline-block">
+                  <img 
+                    src={sponsorLogoPreview || sponsorFormData.logo} 
+                    alt="Preview" 
+                    style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain', border: '1px solid #ddd', borderRadius: 8 }}
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Rimuovi immagine"
+                    onClick={() => {
+                      setSponsorLogoFile(null);
+                      setSponsorLogoPreview('');
+                      setSponsorFormData({ ...sponsorFormData, logo: '' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      background: 'rgba(255,255,255,0.85)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 28,
+                      height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.12)'
+                    }}
+                  >
+                    <span style={{ color: '#d32f2f', fontSize: 20, fontWeight: 700, lineHeight: 1 }}>&times;</span>
+                  </button>
+                </div>
+              )}
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Livello *</Form.Label>
+                  <Form.Select
+                    value={sponsorFormData.tier}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, tier: e.target.value })}
+                    required
+                  >
+                    <option value="Main">Main</option>
+                    <option value="Premium">Premium</option>
+                    <option value="Official">Official</option>
+                    <option value="Support">Support</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Stato *</Form.Label>
+                  <Form.Select
+                    value={sponsorFormData.status}
+                    onChange={(e) => setSponsorFormData({ ...sponsorFormData, status: e.target.value })}
+                    required
+                  >
+                    <option value="active">Attivo</option>
+                    <option value="inactive">Inattivo</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseSponsorModal}>
+              Annulla
+            </Button>
+            <Button variant="primary" type="submit" disabled={savingSponsor}>
+              {savingSponsor ? 'Salvataggio...' : 'Salva'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Modal Successo Sponsor */}
+      <Modal show={showSponsorSuccessModal} onHide={() => setShowSponsorSuccessModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="bi bi-check-circle-fill text-success me-2"></i>
+            Operazione completata
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-0">{sponsorSuccessMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => setShowSponsorSuccessModal(false)}>
+            OK
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

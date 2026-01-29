@@ -423,3 +423,66 @@ export const reviewAPI = {
     return handleResponse(response);
   },
 };
+
+// Sponsor API
+export const sponsorAPI = {
+  // Get all active sponsors (public)
+  getSponsors: async () => {
+    const response = await fetch(`${API_URL}/sponsors`);
+    return handleResponse(response);
+  },
+
+  // Get all sponsors (admin)
+  getAllSponsors: async (token) => {
+    const response = await fetch(`${API_URL}/sponsors/admin/all`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Get single sponsor
+  getSponsorById: async (id) => {
+    const response = await fetch(`${API_URL}/sponsors/${id}`);
+    return handleResponse(response);
+  },
+
+  // Create sponsor (admin)
+  createSponsor: async (sponsorData, token) => {
+    const response = await fetch(`${API_URL}/sponsors`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(sponsorData),
+    });
+    return handleResponse(response);
+  },
+
+  // Update sponsor (admin)
+  updateSponsor: async (id, sponsorData, token) => {
+    const response = await fetch(`${API_URL}/sponsors/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(sponsorData),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete sponsor (admin)
+  deleteSponsor: async (id, token) => {
+    const response = await fetch(`${API_URL}/sponsors/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};
+

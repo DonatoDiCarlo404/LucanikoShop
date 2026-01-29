@@ -23,6 +23,8 @@ import vendorRoutes from './routes/vendorRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminNewsRoutes from './routes/adminNewsRoutes.js';
+import sponsorRoutes from './routes/sponsorRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
@@ -87,6 +89,8 @@ app.use('/api/shop-settings', shopSettingsRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/sponsors', sponsorRoutes);
+app.use('/api/support', supportRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

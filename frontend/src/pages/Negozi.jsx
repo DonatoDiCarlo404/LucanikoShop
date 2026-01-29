@@ -18,7 +18,7 @@ const MACROCATEGORIES = [
   'Sport, Hobby e Viaggi'
 ];
 
-const Partner = () => {
+const Negozi = () => {
   const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,7 @@ const Partner = () => {
       const res = await fetch(`${API_URL}/vendors/all`);
       
       if (!res.ok) {
-        throw new Error('Errore nel caricamento dei partner');
+        throw new Error('Errore nel caricamento dei negozi');
       }
 
       const data = await res.json();
@@ -63,8 +63,8 @@ const Partner = () => {
       setGroupedVendors(grouped);
       setError('');
     } catch (err) {
-      console.error('Errore caricamento partner:', err);
-      setError(err.message || 'Errore nel caricamento dei partner');
+      console.error('Errore caricamento negozi:', err);
+      setError(err.message || 'Errore nel caricamento dei negozi');
     } finally {
       setLoading(false);
     }
@@ -76,7 +76,7 @@ const Partner = () => {
         <Spinner animation="border" role="status">
           <span className="visually-hidden">Caricamento...</span>
         </Spinner>
-        <p className="mt-3">Caricamento partner...</p>
+        <p className="mt-3">Caricamento negozi...</p>
       </Container>
     );
   }
@@ -93,7 +93,7 @@ const Partner = () => {
     <Container className="py-5">
       <div className="mb-5 d-flex flex-wrap align-items-center justify-content-between" style={{ textAlign: 'left', gap: 16 }}>
         <div>
-          <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Partners</h1>
+          <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Negozi</h1>
           <p className="text-muted" style={{ fontSize: '1.1rem', textAlign: 'left', marginBottom: 0 }}>
             Scopri tutte le aziende lucane registrate su LucanikoShop
           </p>
@@ -106,7 +106,7 @@ const Partner = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Cerca negozio per nome..."
+              placeholder="Cerca negozio per nome o Città..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={{ fontSize: 14, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
@@ -169,7 +169,7 @@ const Partner = () => {
       {vendors.length === 0 ? (
         <Alert variant="info" className="text-center">
           <i className="bi bi-info-circle me-2"></i>
-          Nessun partner registrato al momento
+          Nessun negozio registrato al momento
         </Alert>
       ) : (
         <>
@@ -181,11 +181,13 @@ const Partner = () => {
             
             const categoryVendors = groupedVendors[category] || [];
             
-            // Filtra per nome azienda se c'è un termine di ricerca
+            // Filtra per nome azienda o città se c'è un termine di ricerca
             const filteredVendors = categoryVendors.filter(vendor => {
               if (!searchTerm) return true;
               const businessName = (vendor.businessName || vendor.name || '').toLowerCase();
-              return businessName.includes(searchTerm.toLowerCase());
+              const city = (vendor.city || '').toLowerCase();
+              const term = searchTerm.toLowerCase();
+              return businessName.includes(term) || city.includes(term);
             });
             
             if (filteredVendors.length === 0) {
@@ -209,21 +211,22 @@ const Partner = () => {
                   {filteredVendors.map(vendor => (
                     <Col key={vendor._id}>
                       <Card 
-                        className="h-100 shadow-sm"
+                        className="h-100"
                         style={{ 
                           cursor: 'pointer', 
                           transition: 'all 0.3s ease',
-                          border: '2px solid transparent'
+                          border: '2px solid transparent',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)'
                         }}
                         onClick={() => navigate(`/shop/${vendor._id}`)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-8px)';
-                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.15)';
+                          e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.16)';
                           e.currentTarget.style.borderColor = '#004b75';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12)';
+                          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)';
                           e.currentTarget.style.borderColor = 'transparent';
                         }}
                       >
@@ -313,4 +316,4 @@ const Partner = () => {
   );
 };
 
-export default Partner;
+export default Negozi;

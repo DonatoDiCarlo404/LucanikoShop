@@ -17,6 +17,7 @@ import { toast } from 'react-toastify';
 import { productsAPI, API_URL } from '../services/api';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
+import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
 
 
 const ProductDetail = () => {
@@ -843,6 +844,25 @@ const ProductDetail = () => {
           </div>
         </Col>
       </Row>
+
+      {/* Caroselli prodotti suggeriti - mostrati solo se il prodotto è caricato */}
+      {product && (
+        <>
+          <SuggestedProductsCarousel 
+            cartItems={[product]}
+            sameVendor={true}
+            title="🏪 Altri prodotti dello stesso venditore"
+            titleColor="#004b75"
+          />
+          
+          <SuggestedProductsCarousel 
+            cartItems={[product]}
+            sameVendor={false}
+            title="✨ Prodotti simili da altre aziende lucane"
+            titleColor="#004b75"
+          />
+        </>
+      )}
     </Container>
   );
 };

@@ -8,6 +8,7 @@ import {
   addProductImage,
   getMyProducts,
   getPendingProductsCount,
+  getSuggestedProducts,
 } from '../controllers/productController.js';
 import { protect, seller, admin } from '../middlewares/auth.js';
 
@@ -16,6 +17,7 @@ const router = express.Router();
 // Rotte pubbliche
 router.get('/', getProducts);
 router.get('/:id', getProductById);
+router.post('/suggested', getSuggestedProducts); // Nuova route per prodotti suggeriti
 
 // Rotta per contare prodotti in attesa (admin)
 router.get('/pending/count', protect, admin, getPendingProductsCount);
