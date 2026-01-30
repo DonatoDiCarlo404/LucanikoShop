@@ -1,3 +1,4 @@
+import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/authContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -149,9 +150,6 @@ function App() {
   // Check modalità manutenzione
   const isMaintenanceMode = import.meta.env.VITE_MAINTENANCE_MODE === 'true';
   const hasBypass = sessionStorage.getItem('maintenance_bypass') === 'true';
-
-  console.log('🔧 [App] Modalità manutenzione:', isMaintenanceMode);
-  console.log('🔑 [App] Bypass attivo:', hasBypass);
 
   // Se modalità manutenzione attiva e nessun bypass, mostra Coming Soon
   if (isMaintenanceMode && !hasBypass) {

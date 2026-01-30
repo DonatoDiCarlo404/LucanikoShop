@@ -51,7 +51,8 @@ const ProductForm = () => {
     if (user?.role === 'admin' && sellerId) {
       loadVendorInfo();
     }
-  }, [user, sellerId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // TEMPORANEO: eseguito solo una volta
 
   const loadVendorInfo = async () => {
     try {
@@ -87,11 +88,11 @@ const ProductForm = () => {
       loadCategoryAttributes(formData.category);
       loadSubcategories(formData.category);
     } else {
+      // Solo pulisci gli attributi caricati, non modificare formData
       setCategoryAttributes([]);
       setSubcategories([]);
-      setFormData(prev => ({ ...prev, attributes: [], hasVariants: false, variants: [], subcategory: '' }));
     }
-  }, [formData.category]);
+  }, [formData.category]); // Solo category, non tutto formData
 
   const loadCategories = async () => {
     try {
@@ -149,8 +150,6 @@ const ProductForm = () => {
   const loadProduct = async () => {
     try {
       const product = await productsAPI.getById(id);
-      console.log('📦 [PRODUCT LOAD] Prodotto ricevuto:', product);
-      console.log('📦 [PRODUCT LOAD] Weight del prodotto:', product.weight);
       
       // Carica attributi personalizzati per primi (servono per ricostruire i label)
       const customAttrs = product.customAttributes || [];
@@ -200,9 +199,7 @@ const ProductForm = () => {
         hasVariants: product.hasVariants || false,
         variants: reconstructedVariants
       };
-      console.log('📝 [PRODUCT LOAD] FormData impostato:', loadedFormData);
-      console.log('📝 [PRODUCT LOAD] Weight in formData:', loadedFormData.weight);
-      setFormData(loadedFormData);
+setFormData(loadedFormData);
       
       // Carica selezione attributi per varianti
       if (product.selectedVariantAttributes) {
@@ -223,9 +220,7 @@ const ProductForm = () => {
   };
 
   const handleChange = (e) => {
-    if (e.target.name === 'weight') {
-      console.log('✏️ [WEIGHT CHANGE] Nuovo valore weight:', e.target.value);
-    }
+  const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -422,20 +417,52 @@ const ProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('💾 [PRODUCT SAVE] Dati da salvare:', formData);
-    console.log('💾 [PRODUCT SAVE] Weight da salvare:', formData.weight);
+    setError('');
     
-    // Validazione prezzo: deve essere un numero valido > 0 se il prodotto non ha varianti
-    if (!formData.hasVariants) {
+    // Validazione campi obbligatori
+    if (!formData.name?.trim()) {
+      setError('Il nome del prodotto è obbligatorio');
+      return;
+    }
+    
+    if (!formData.description?.trim()) {
+      setError('La descrizione è obbligatoria');
+      return;
+    }
+    
+    if (!formData.category) {
+      setError('Seleziona una categoria');
+      return;
+    }
+    
+    // Validazione sottocategoria se ce ne sono
+    if (subcategories.length > 0 && !formData.subcategory) {
+      setError('Seleziona una sottocategoria');
+      return;
+    }
+    
+    // Validazione prezzo: deve essere un numero valido >= 0 se il prodotto non ha varianti con prezzi
+    if (!formData.hasVariants || !formData.variants.some(v => v.price > 0)) {
       const priceValue = parseFloat(formData.price);
       if (isNaN(priceValue) || priceValue < 0) {
         setError('Il prezzo deve essere un numero valido maggiore o uguale a 0');
-        setLoading(false);
         return;
       }
     }
     
-    setError('');
+    // Validazione IVA
+    const ivaValue = parseFloat(formData.ivaPercent);
+    if (isNaN(ivaValue) || ivaValue < 0 || ivaValue > 100) {
+      setError('La percentuale IVA deve essere un numero valido tra 0 e 100');
+      return;
+    }
+    
+    // Validazione immagini: almeno una immagine (normale o nelle varianti)
+    if (imageItems.length === 0 && !formData.variants.some(v => v.image)) {
+      setError('Carica almeno un\'immagine del prodotto');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -553,6 +580,7 @@ const ProductForm = () => {
           }
         }
       }
+      
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -564,6 +592,15 @@ const ProductForm = () => {
         }
       }, 1500);
     } catch (err) {
+      console.error('❌ [SUBMIT ERROR] ========================================');
+      console.error('❌ [ERROR] Tipo:', err.constructor.name);
+      console.error('❌ [ERROR] Messaggio:', err.message);
+      console.error('❌ [ERROR] Stack:', err.stack);
+      console.error('❌ [ERROR] Oggetto completo:', err);
+      if (err.response) {
+        console.error('❌ [ERROR] Response data:', err.response.data);
+        console.error('❌ [ERROR] Response status:', err.response.status);
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -731,7 +768,7 @@ const ProductForm = () => {
 
           {error && <Alert variant="danger">{error}</Alert>}
 
-          <Form onSubmit={handleSubmit}>
+          <Form noValidate onSubmit={handleSubmit}>
             <Row>
               <Col md={8}>
                 <Form.Group className="mb-3">
@@ -1289,6 +1326,8 @@ const ProductForm = () => {
       </Modal>
     </Container>
   );
-};
+}; // chiude ProductForm component
+}; // chiude const ProductForm = 
 
 export default ProductForm;
+

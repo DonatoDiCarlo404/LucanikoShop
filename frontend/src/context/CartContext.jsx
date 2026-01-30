@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from './authContext';
 
@@ -57,7 +57,7 @@ export const CartProvider = ({ children }) => {
   }, [cartItems, isLoaded, user?._id]);
 
     // Aggiungi prodotto al carrello
-  const addToCart = (product, quantity = 1) => {
+  const addToCart = useCallback((product, quantity = 1) => {
     setCartItems((prevItems) => {
       const getKey = (item) => item._id + (item.selectedVariantSku ? `__${item.selectedVariantSku}` : '');
       const newProductKey = getKey(product);
@@ -76,15 +76,15 @@ export const CartProvider = ({ children }) => {
 
       return newItems;
     });
-  };
+  }, []);
 
   // Rimuovi prodotto dal carrello
-  const removeFromCart = (productId) => {
+  const removeFromCart = useCallback((productId) => {
     setCartItems((prevItems) => prevItems.filter(item => item._id !== productId));
-  };
+  }, []);
 
   // Aggiorna quantità prodotto
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = useCallback((productId, quantity) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -97,37 +97,43 @@ export const CartProvider = ({ children }) => {
           : item
       )
     );
-  };
+  }, []);
 
   // Svuota carrello
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([]);
-  };
+  }, []);
 
   // Applica coupon
-  const applyCoupon = (coupon, discount) => {
+  const applyCoupon = useCallback((coupon, discount) => {
     setAppliedCoupon(coupon);
     setDiscountAmount(discount);
     localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
     localStorage.setItem('discountAmount', discount.toString());
-  };
+  }, []);
 
   // Rimuovi coupon
-  const removeCoupon = () => {
+  const removeCoupon = useCallback(() => {
     setAppliedCoupon(null);
     setDiscountAmount(0);
     localStorage.removeItem('appliedCoupon');
     localStorage.removeItem('discountAmount');
-  };
+  }, []);
 
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const cartCount = useMemo(() => 
+    cartItems.reduce((total, item) => total + item.quantity, 0),
+    [cartItems]
+  );
   
-  const cartTotal = cartItems.reduce((total, item) => {
-    const price = item.discountedPrice || item.originalPrice || item.price || 0;
-    return total + (price * item.quantity);
-  }, 0);
+  const cartTotal = useMemo(() => 
+    cartItems.reduce((total, item) => {
+      const price = item.discountedPrice || item.originalPrice || item.price || 0;
+      return total + (price * item.quantity);
+    }, 0),
+    [cartItems]
+  );
 
-  const value = {
+  const value = useMemo(() => ({
     cartItems,
     cartCount,
     cartTotal,
@@ -139,7 +145,7 @@ export const CartProvider = ({ children }) => {
     discountAmount,
     applyCoupon,
     removeCoupon,
-  };
+  }), [cartItems, cartCount, cartTotal, addToCart, removeFromCart, updateQuantity, clearCart, appliedCoupon, discountAmount, applyCoupon, removeCoupon]);
 
   return (
     <CartContext.Provider value={value}>

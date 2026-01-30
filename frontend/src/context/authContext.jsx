@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
@@ -19,35 +19,30 @@ export const AuthProvider = ({ children }) => {
   // Carica utente dal localStorage all'avvio
   useEffect(() => {
     const loadUser = async () => {
-      console.log('🔄 [AuthContext] Caricamento utente...');
       const token = localStorage.getItem('token');
-      console.log('🔑 [AuthContext] Token trovato:', token ? token.substring(0, 20) + '...' : 'NESSUNO');
       
       if (token) {
         try {
           const userData = await authAPI.getProfile(token);
-          console.log('✅ [AuthContext] Profilo caricato:', userData);
           setUser({ ...userData, token });
           // Se l'utente è admin, imposta il bypass per la manutenzione
           if (userData.role === 'admin') {
             sessionStorage.setItem('maintenance_bypass', 'true');
-            console.log('🔓 [AuthContext] Bypass impostato per admin');
           }
         } catch (err) {
-          console.error('❌ [AuthContext] Token non valido:', err);
+          console.error('Token non valido, rimozione in corso');
           localStorage.removeItem('token');
         }
       }
       
       setLoading(false);
-      console.log('✅ [AuthContext] Caricamento completato');
     };
 
     loadUser();
   }, []);
 
   // Login
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       setError(null);
       const data = await authAPI.login({ email, password });
@@ -64,10 +59,10 @@ export const AuthProvider = ({ children }) => {
       setError(err.message);
       return { success: false, error: err.message };
     }
-  };
+  }, []);
 
   // Register
-  const register = async (name, email, password, role = 'buyer', businessName = '', vatNumber = '') => {
+  const register = useCallback(async (name, email, password, role = 'buyer', businessName = '', vatNumber = '') => {
     try {
       setError(null);
       const userData = { name, email, password, role };
@@ -86,16 +81,16 @@ export const AuthProvider = ({ children }) => {
       setError(err.message);
       return { success: false, error: err.message };
     }
-  };
+  }, []);
 
   // Logout
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-  };
+  }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     setUser,
     loading,
@@ -104,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     isAuthenticated: !!user,
-  };
+  }), [user, loading, error]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
