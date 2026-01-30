@@ -14,11 +14,11 @@
     }
   }
 .carousel-indicators [data-bs-target] {
-  background-color: #00bf63;
+  background-color: #004b75;
   opacity: 0.7;
 }
 .carousel-indicators .active {
-  background-color: #00bf63;
+  background-color: #004b75;
   opacity: 1;
 }
 .carousel .carousel-item {

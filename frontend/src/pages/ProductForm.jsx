@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { Container, Form, Button, Card, Alert, Row, Col, Modal, Dropdown } from 'react-bootstrap';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
@@ -46,6 +47,9 @@ const ProductForm = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Estrai category con useMemo per evitare loop infinito
+  const selectedCategory = useMemo(() => formData.category, [formData.category]);
+
   // Se admin e sellerId presente, carica info venditore
   useEffect(() => {
     if (user?.role === 'admin' && sellerId) {
@@ -72,7 +76,10 @@ const ProductForm = () => {
 
   // Carica categorie (eseguito una sola volta all'avvio)
   useEffect(() => {
-    loadCategories();
+    if (categories.length === 0) {
+      loadCategories();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Carica prodotto se in modalità edit
@@ -80,19 +87,21 @@ const ProductForm = () => {
     if (isEditMode) {
       loadProduct();
     }
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isEditMode]);
 
   // NUOVO: Carica attributi quando cambia categoria
   useEffect(() => {
-    if (formData.category) {
-      loadCategoryAttributes(formData.category);
-      loadSubcategories(formData.category);
+    if (selectedCategory) {
+      loadCategoryAttributes(selectedCategory);
+      loadSubcategories(selectedCategory);
     } else {
       // Solo pulisci gli attributi caricati, non modificare formData
       setCategoryAttributes([]);
       setSubcategories([]);
     }
-  }, [formData.category]); // Solo category, non tutto formData
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]); // Solo selectedCategory, evita loop
 
   const loadCategories = async () => {
     try {
@@ -219,7 +228,6 @@ setFormData(loadedFormData);
     }
   };
 
-  const handleChange = (e) => {
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -731,9 +739,8 @@ setFormData(loadedFormData);
     }
   };
 
-
   return (
-    <Container className="py-5">
+    <Container className="py-5" style={{ minHeight: '100vh' }}>
       <Modal
         show={showSuccess}
         centered
@@ -1326,8 +1333,7 @@ setFormData(loadedFormData);
       </Modal>
     </Container>
   );
-}; // chiude ProductForm component
-}; // chiude const ProductForm = 
+};
 
-export default ProductForm;
+export default React.memo(ProductForm);
 

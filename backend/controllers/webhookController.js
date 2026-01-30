@@ -85,6 +85,8 @@ export const handleStripeWebhook = async (req, res) => {
       // Recupera utente per indirizzo salvato nel profilo
       const buyerUser = await User.findById(userId);
       console.log('👤 [WEBHOOK] Utente trovato:', buyerUser ? '✅' : '❌');
+      console.log('📍 [WEBHOOK] Stripe shippingAddress:', shippingAddress);
+      console.log('📍 [WEBHOOK] User address nel DB:', buyerUser?.address);
       
       // Utilizza indirizzo salvato nel profilo se Stripe non fornisce dati completi
       let finalShippingAddress = {

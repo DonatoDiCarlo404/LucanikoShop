@@ -130,7 +130,7 @@ const CategoriesCarouselArrows = () => {
                       </div>
                     )}
                     <Card.Body className="text-center p-3">
-                      <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#00bf63' }}>
+                      <Card.Title style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#004b75' }}>
                         {cat.name}
                       </Card.Title>
                     </Card.Body>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../services/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Row, Col, Badge, Button, Alert, Spinner, ProgressBar } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';

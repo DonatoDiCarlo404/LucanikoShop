@@ -322,6 +322,12 @@ const Navbar = () => {
                 </div>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/profile'); }}
+                >
+                  <i className="bi bi-person me-2"></i> Profilo
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/products'); }}
                 >
                   Catalogo
