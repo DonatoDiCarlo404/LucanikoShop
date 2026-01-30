@@ -9,7 +9,6 @@ import AuthSuccess from './pages/AuthSuccess';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import ProductForm from './pages/ProductForm';
-import ProductFormTest from './pages/ProductFormTest';
 import MyProducts from './pages/MyProducts';
 import AdminDashboard from './pages/AdminDashboard';
 import PendingApproval from './pages/PendingApproval';
