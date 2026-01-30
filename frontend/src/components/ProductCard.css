@@ -38,6 +38,18 @@
 .product-card-carousel .carousel-control-prev,
 .product-card-carousel .carousel-control-next {
   pointer-events: auto;
+  background: transparent !important;
+  opacity: 1 !important;
+  z-index: 20 !important;
+}
+
+.product-card-carousel .carousel-indicators {
+  pointer-events: auto !important;
+  z-index: 20 !important;
+}
+
+.product-card-carousel .carousel-indicators [data-bs-target] {
+  pointer-events: auto !important;
 }
 @media (max-width: 576px) {
   .product-card-carousel .carousel-control-prev,

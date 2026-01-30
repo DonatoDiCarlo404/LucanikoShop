@@ -5,7 +5,20 @@ const orderSchema = new mongoose.Schema(
     buyer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: false  // Opzionale per ordini guest
+    },
+    // Campi per ordini guest (quando buyer è null)
+    isGuestOrder: {
+      type: Boolean,
+      default: false
+    },
+    guestEmail: {
+      type: String,
+      required: false
+    },
+    guestName: {
+      type: String,
+      required: false
     },
     items: [
       {

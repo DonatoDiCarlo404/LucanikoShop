@@ -106,9 +106,14 @@ const OrderTracking = () => {
 
   return (
     <Container className="py-5">
-      <Button variant="outline-secondary" className="mb-4" onClick={() => navigate('/orders')}>
-        <i className="bi bi-arrow-left"></i> Torna agli ordini
-      </Button>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <Button variant="outline-secondary" onClick={() => navigate('/orders')}>
+          <i className="bi bi-arrow-left"></i> Torna agli ordini
+        </Button>
+        <Button variant="outline-primary" onClick={() => navigate('/profile')}>
+          <i className="bi bi-person"></i> Torna al Profilo
+        </Button>
+      </div>
 
       <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>
         <i className="bi bi-truck"></i> Tracking Ordine #{order._id.slice(-6).toUpperCase()}

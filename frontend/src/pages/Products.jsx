@@ -167,8 +167,9 @@ const Products = () => {
   return (
     <Container className="pt-2 pb-5">
       <div className="text-center mb-4 payoff-custom">
-        <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#00bf63', letterSpacing: 1 }}>
-          la Basilicata in un click!
+        <span style={{ fontSize: '1.5rem', fontWeight: 500, letterSpacing: 1 }}>
+          <span style={{ color: '#004b75' }}>La Basilicata</span>
+          <span style={{ color: '#00bf63' }}> in un click!</span>
         </span>
       </div>
 

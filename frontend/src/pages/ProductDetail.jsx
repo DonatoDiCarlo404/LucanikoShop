@@ -11,6 +11,7 @@ import {
   Alert,
   Carousel,
   ListGroup,
+  Modal,
 } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
@@ -47,6 +48,7 @@ const ProductDetail = () => {
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
 
   // Se il prodotto ha varianti, seleziona la prima combinazione valida all'apertura
   useEffect(() => {
@@ -639,121 +641,26 @@ const ProductDetail = () => {
               ) : reviews.length === 0 ? (
                 <p>Nessuna recensione per questo prodotto.</p>
               ) : (
-                <ListGroup variant="flush">
-                  {reviews.map((r) => (
-                    <ListGroup.Item key={r._id}>
-                      <div className="d-flex align-items-center mb-1">
-                        <span style={{ color: '#FFD700' }}>
-                          {'★'.repeat(r.rating)}
-                          {'☆'.repeat(5 - r.rating)}
-                        </span>
-
-                        <strong className="ms-2">{r.user?.name}</strong>
-
-                        <small className="text-muted ms-2">
-                          {new Date(r.createdAt).toLocaleDateString()}
-                        </small>
-                      </div>
-
-                      <div>{r.comment}</div>
-
-                      {r.updatedAt && r.updatedAt !== r.createdAt && (
-                        <div className="text-muted" style={{ fontSize: '0.9em' }}>
-                          Recensione modificata il {new Date(r.updatedAt).toLocaleDateString()}
-                        </div>
-                      )}
-
-                      {/* Pulsante modifica */}
-                      {user && r.user?._id === user._id && !editingReview && (() => {
-                        // Permetti la modifica solo se non è già stata modificata una volta
-                        const created = new Date(r.createdAt);
-                        const updated = new Date(r.updatedAt);
-                        const now = new Date();
-                        const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-                        const alreadyEdited = r.updatedAt && r.updatedAt !== r.createdAt;
-                        if (diffDays <= 30 && !alreadyEdited) {
-                          return (
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="mt-2 me-2"
-                              onClick={() => handleEditReview(r)}
-                            >
-                              Modifica
-                            </Button>
-                          );
-                        } else if (alreadyEdited) {
-                          return (
-                            <div className="text-muted mt-2" style={{ fontSize: '0.9em' }}>
-                              Modifica già effettuata
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <div className="text-muted mt-2" style={{ fontSize: '0.9em' }}>
-                              Modifica non più consentita
-                            </div>
-                          );
-                        }
-                      })()}
-
-                      {/* Pulsante elimina */}
-                      {user &&
-                        ((r.user?._id === user._id &&
-                          (() => {
-                            const created = new Date(r.createdAt);
-                            const now = new Date();
-                            const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-                            return diffDays <= 30;
-                          })()) ||
-                          user.role === 'admin') && (
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => handleDeleteReview(r._id)}
-                          >
-                            Elimina
-                          </Button>
-                        )}
-
-                      {/* FORM modifica */}
-                      {editingReview && editingReview._id === r._id && (
-                        <form onSubmit={handleEditSubmit} className="mt-2">
-                          <div className="mb-2">
-                            <label>Rating:</label>
-                            <select
-                              className="ms-2"
-                              value={editRating}
-                              onChange={e => setEditRating(Number(e.target.value))}
-                            >
-                              {[5, 4, 3, 2, 1].map(n => (
-                                <option key={n} value={n}>{n}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <textarea
-                            className="form-control mb-2"
-                            rows={2}
-                            value={editComment}
-                            onChange={e => setEditComment(e.target.value)}
-                            placeholder="Scrivi un commento..."
-                            required
-                          />
-                          {editError && <Alert variant="danger">{editError}</Alert>}
-                          <div className="d-flex gap-2">
-                            <Button type="submit" variant="primary" size="sm" disabled={editSubmitting}>
-                              {editSubmitting ? 'Salvataggio...' : 'Salva'}
-                            </Button>
-                            <Button type="button" variant="secondary" size="sm" onClick={handleCancelEdit}>
-                              Annulla
-                            </Button>
-                          </div>
-                        </form>
-                      )}
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
+                <div>
+                  <div className="d-flex align-items-center mb-3">
+                    <span style={{ color: '#FFD700', fontSize: '1.5rem' }}>
+                      {'★'.repeat(Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length))}
+                      {'☆'.repeat(5 - Math.round(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length))}
+                    </span>
+                    <span className="ms-3" style={{ fontSize: '1.2rem', fontWeight: 600 }}>
+                      {(reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)}/5.0
+                    </span>
+                    <span className="ms-2 text-muted">
+                      ({reviews.length} {reviews.length === 1 ? 'recensione' : 'recensioni'})
+                    </span>
+                  </div>
+                  <Button 
+                    variant="outline-primary" 
+                    onClick={() => setShowReviewsModal(true)}
+                  >
+                    Vedi tutte le recensioni
+                  </Button>
+                </div>
               )}
             </Card.Body>
           </Card>
@@ -863,6 +770,150 @@ const ProductDetail = () => {
           />
         </>
       )}
+
+      {/* MODALE RECENSIONI */}
+      <Modal 
+        show={showReviewsModal} 
+        onHide={() => setShowReviewsModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Tutte le recensioni</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {reviews.length === 0 ? (
+            <p>Nessuna recensione disponibile.</p>
+          ) : (
+            <ListGroup variant="flush">
+              {reviews.map((r) => (
+                <ListGroup.Item key={r._id}>
+                  <div className="d-flex align-items-center mb-1">
+                    <span style={{ color: '#FFD700' }}>
+                      {'★'.repeat(r.rating)}
+                      {'☆'.repeat(5 - r.rating)}
+                    </span>
+
+                    <strong className="ms-2">{r.user?.name}</strong>
+
+                    <small className="text-muted ms-2">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+
+                  <div>{r.comment}</div>
+
+                  {r.updatedAt && r.updatedAt !== r.createdAt && (
+                    <div className="text-muted" style={{ fontSize: '0.9em' }}>
+                      Recensione modificata il {new Date(r.updatedAt).toLocaleDateString()}
+                    </div>
+                  )}
+
+                  {/* Pulsante modifica */}
+                  {user && r.user?._id === user._id && !editingReview && (() => {
+                    // Permetti la modifica solo se non è già stata modificata una volta
+                    const created = new Date(r.createdAt);
+                    const updated = new Date(r.updatedAt);
+                    const now = new Date();
+                    const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+                    const alreadyEdited = r.updatedAt && r.updatedAt !== r.createdAt;
+                    if (diffDays <= 30 && !alreadyEdited) {
+                      return (
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="mt-2 me-2"
+                          onClick={() => {
+                            handleEditReview(r);
+                            setShowReviewsModal(false);
+                          }}
+                        >
+                          Modifica
+                        </Button>
+                      );
+                    } else if (alreadyEdited) {
+                      return (
+                        <div className="text-muted mt-2" style={{ fontSize: '0.9em' }}>
+                          Modifica già effettuata
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="text-muted mt-2" style={{ fontSize: '0.9em' }}>
+                          Modifica non più consentita
+                        </div>
+                      );
+                    }
+                  })()}
+
+                  {/* Pulsante elimina */}
+                  {user &&
+                    ((r.user?._id === user._id &&
+                      (() => {
+                        const created = new Date(r.createdAt);
+                        const now = new Date();
+                        const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+                        return diffDays <= 30;
+                      })()) ||
+                      user.role === 'admin') && (
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          handleDeleteReview(r._id);
+                          setShowReviewsModal(false);
+                        }}
+                      >
+                        Elimina
+                      </Button>
+                    )}
+
+                  {/* FORM modifica */}
+                  {editingReview && editingReview._id === r._id && (
+                    <form onSubmit={handleEditSubmit} className="mt-2">
+                      <div className="mb-2">
+                        <label>Rating:</label>
+                        <select
+                          className="ms-2"
+                          value={editRating}
+                          onChange={e => setEditRating(Number(e.target.value))}
+                        >
+                          {[5, 4, 3, 2, 1].map(n => (
+                            <option key={n} value={n}>{n}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <textarea
+                        className="form-control mb-2"
+                        rows={2}
+                        value={editComment}
+                        onChange={e => setEditComment(e.target.value)}
+                        placeholder="Scrivi un commento..."
+                        required
+                      />
+                      {editError && <Alert variant="danger">{editError}</Alert>}
+                      <div className="d-flex gap-2">
+                        <Button type="submit" variant="primary" size="sm" disabled={editSubmitting}>
+                          {editSubmitting ? 'Salvataggio...' : 'Salva'}
+                        </Button>
+                        <Button type="button" variant="secondary" size="sm" onClick={handleCancelEdit}>
+                          Annulla
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowReviewsModal(false)}>
+            Chiudi
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

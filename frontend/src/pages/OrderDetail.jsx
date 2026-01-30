@@ -72,13 +72,18 @@ const OrderDetail = () => {
 
   return (
     <Container className="py-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <Button variant="outline-secondary" onClick={() => navigate('/orders')}>
           ← Torna agli ordini
         </Button>
-        <Button variant="primary" onClick={() => navigate(`/orders/${id}/tracking`)}>
-          <i className="bi bi-truck"></i> Traccia Spedizione
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="primary" onClick={() => navigate(`/orders/${id}/tracking`)}>
+            <i className="bi bi-truck"></i> Traccia Spedizione
+          </Button>
+          <Button variant="outline-primary" onClick={() => navigate('/profile')}>
+            <i className="bi bi-person"></i> Torna al Profilo
+          </Button>
+        </div>
       </div>
 
       <Row>
@@ -156,9 +161,15 @@ const OrderDetail = () => {
                   <span>Spedizione:</span>
                   <span>€{order.shippingPrice.toFixed(2)}</span>
                 </ListGroup.Item>
+                {order.discountAmount > 0 && (
+                  <ListGroup.Item className="d-flex justify-content-between text-success">
+                    <span>Sconto:</span>
+                    <span>-€{order.discountAmount.toFixed(2)}</span>
+                  </ListGroup.Item>
+                )}
                 <ListGroup.Item className="d-flex justify-content-between">
-                  <span>Tasse:</span>
-                  <span>€{order.taxPrice.toFixed(2)}</span>
+                  <span className="text-muted"><small>Tasse (IVA inclusa):</small></span>
+                  <span className="text-muted"><small>€{order.taxPrice.toFixed(2)}</small></span>
                 </ListGroup.Item>
                 <ListGroup.Item className="d-flex justify-content-between">
                   <strong>Totale:</strong>

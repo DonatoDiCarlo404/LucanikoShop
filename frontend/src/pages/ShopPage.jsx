@@ -250,25 +250,21 @@ const ShopPage = () => {
               )}
             </Col>
             <Col md={5}>
-              <div className="d-flex flex-row gap-2 flex-wrap d-md-block">
-                <Card className="border-0 bg-white mb-2 flex-fill" style={{ minWidth: 0, boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)' }}>
-                  <Card.Body className="text-center p-2">
-                    <div className="mb-2">
-                      <span style={{ color: '#FFD700', fontSize: '1.5em' }}>
-                        {'★'.repeat(Math.round(parseFloat(stats.avgRating)))}
-                        {'☆'.repeat(5 - Math.round(parseFloat(stats.avgRating)))}
-                      </span>
-                    </div>
-                    <h5 className="mb-1">{stats.avgRating}/5.0</h5>
-                    <small className="text-muted">{stats.totalReviews} recensioni</small>
-                  </Card.Body>
-                </Card>
-                <Card className="border-0 bg-white flex-fill" style={{ minWidth: 0, boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)' }}>
-                  <Card.Body className="d-flex flex-column justify-content-center align-items-center text-center p-2" style={{ minHeight: '100%' }}>
-                    <h3 className="mb-1" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
-                    <p className="text-muted mb-0">Prodotti Disponibili</p>
-                  </Card.Body>
-                </Card>
+              <div className="d-flex flex-row gap-3 flex-wrap d-md-block">
+                <div className="text-center p-3 flex-fill">
+                  <div className="mb-2">
+                    <span style={{ color: '#FFD700', fontSize: '1.5em' }}>
+                      {'★'.repeat(Math.round(parseFloat(stats.avgRating)))}
+                      {'☆'.repeat(5 - Math.round(parseFloat(stats.avgRating)))}
+                    </span>
+                  </div>
+                  <h5 className="mb-1">{stats.avgRating}/5.0</h5>
+                  <small className="text-muted">{stats.totalReviews} recensioni</small>
+                </div>
+                <div className="d-flex flex-column justify-content-center align-items-center text-center p-3 flex-fill">
+                  <h3 className="mb-1" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
+                  <p className="text-muted mb-0">Prodotti Disponibili</p>
+                </div>
               </div>
             </Col>
           </Row>
@@ -420,7 +416,7 @@ const ShopPage = () => {
         ) : (
           <Row>
             {filteredProducts.map((product) => (
-              <Col key={product._id} xs={12} sm={6} md={4} lg={3} className="mb-4">
+              <Col key={product._id} xs={6} sm={6} md={4} lg={3} className="mb-4">
                 <ProductCard product={product} />
               </Col>
             ))}

@@ -46,15 +46,20 @@ export const handleStripeWebhook = async (req, res) => {
       // Estrai userId dai metadata
       console.log('📦 [WEBHOOK] Metadata completi:', JSON.stringify(session.metadata, null, 2));
       const userId = session.metadata.userId;
+      const guestEmail = session.metadata.guestEmail || session.customer_details?.email;
+      const isGuestOrder = !userId || userId === 'guest';
       console.log('👤 [WEBHOOK] userId estratto:', userId, 'typeof:', typeof userId);
+      console.log('👤 [WEBHOOK] isGuestOrder:', isGuestOrder);
+      console.log('📧 [WEBHOOK] guestEmail:', guestEmail);
 
-      // Gestione utenti guest: salta la creazione ordine per gli utenti non registrati
-      if (!userId || userId === 'guest') {
-        console.log('⚠️ [WEBHOOK] Checkout completato da utente guest - Ordine non salvato nel database');
-        return res.json({ received: true, message: 'Guest checkout - no order saved' });
+      // Recupera utente solo se non è guest
+      let buyerUser = null;
+      if (!isGuestOrder) {
+        buyerUser = await User.findById(userId);
+        console.log('👤 [WEBHOOK] Utente registrato trovato:', buyerUser ? '✅' : '❌');
       }
 
-      console.log('✅ [WEBHOOK] User ID valido, procedo con creazione ordine');
+      console.log('✅ [WEBHOOK] Procedo con creazione ordine');
       
       // Recupera i dati del carrello dai metadata
       const cartItemsData = JSON.parse(session.metadata.cartItems)
@@ -82,9 +87,6 @@ export const handleStripeWebhook = async (req, res) => {
       // Ottieni indirizzo di spedizione da Stripe
       const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
 
-      // Recupera utente per indirizzo salvato nel profilo
-      const buyerUser = await User.findById(userId);
-      console.log('👤 [WEBHOOK] Utente trovato:', buyerUser ? '✅' : '❌');
       console.log('📍 [WEBHOOK] Stripe shippingAddress:', shippingAddress);
       console.log('📍 [WEBHOOK] User address nel DB:', buyerUser?.address);
       
@@ -116,12 +118,13 @@ export const handleStripeWebhook = async (req, res) => {
       }
 
       // Crea l'ordine nel database
-      console.log('💾 [WEBHOOK] Creazione ordine con buyer:', userId);
+      console.log('💾 [WEBHOOK] Creazione ordine');
+      console.log('💾 [WEBHOOK] isGuestOrder:', isGuestOrder);
+      console.log('💾 [WEBHOOK] buyer:', isGuestOrder ? 'null (guest)' : userId);
       console.log('💾 [WEBHOOK] Items:', orderItems.length);
       console.log('💾 [WEBHOOK] Total:', session.amount_total / 100);
       
       const orderData = {
-        buyer: userId,
         items: orderItems,
         shippingAddress: finalShippingAddress,
         paymentMethod: 'stripe',
@@ -141,6 +144,16 @@ export const handleStripeWebhook = async (req, res) => {
         paidAt: new Date(),
         stripeSessionId: session.id,
       };
+
+      // Aggiungi campi specifici per ordini registrati o guest
+      if (isGuestOrder) {
+        orderData.isGuestOrder = true;
+        orderData.guestEmail = guestEmail;
+        orderData.guestName = session.customer_details?.name || 'Guest';
+      } else {
+        orderData.buyer = userId;
+        orderData.isGuestOrder = false;
+      }
       
       console.log('💾 [WEBHOOK] Order data completo:', JSON.stringify(orderData, null, 2));
       
@@ -148,22 +161,70 @@ export const handleStripeWebhook = async (req, res) => {
 
       console.log('✅ [WEBHOOK] Ordine creato con successo!');
       console.log('✅ [WEBHOOK] Order ID:', order._id);
-      console.log('✅ [WEBHOOK] Buyer salvato come:', order.buyer);
+      console.log('✅ [WEBHOOK] Buyer salvato come:', order.buyer || 'Guest');
+      console.log('✅ [WEBHOOK] Guest email:', order.guestEmail);
       console.log('✅ [WEBHOOK] isPaid:', order.isPaid);
       console.log('✅ [WEBHOOK] Total Price:', order.totalPrice);
 
+      // AGGIORNA STOCK PRODOTTI
+      console.log('📦 [WEBHOOK] Aggiornamento stock prodotti...');
+      for (const item of orderItems) {
+        try {
+          const product = await Product.findById(item.product);
+          if (!product) {
+            console.error(`⚠️ [WEBHOOK] Prodotto ${item.product} non trovato per aggiornare stock`);
+            continue;
+          }
+
+          // Se il prodotto ha varianti, aggiorna lo stock della variante specifica
+          if (item.selectedVariant && product.variants && product.variants.length > 0) {
+            const variantIndex = product.variants.findIndex(v => v._id.toString() === item.selectedVariant);
+            if (variantIndex !== -1) {
+              const oldStock = product.variants[variantIndex].stock;
+              product.variants[variantIndex].stock = Math.max(0, oldStock - item.quantity);
+              await product.save();
+              console.log(`✅ [WEBHOOK] Stock variante aggiornato: ${product.name} - Variante ${variantIndex} da ${oldStock} a ${product.variants[variantIndex].stock}`);
+            } else {
+              console.error(`⚠️ [WEBHOOK] Variante ${item.selectedVariant} non trovata nel prodotto ${product.name}`);
+            }
+          } else {
+            // Prodotto senza varianti, aggiorna lo stock principale
+            const oldStock = product.stock;
+            product.stock = Math.max(0, oldStock - item.quantity);
+            await product.save();
+            console.log(`✅ [WEBHOOK] Stock aggiornato: ${product.name} da ${oldStock} a ${product.stock}`);
+          }
+        } catch (stockError) {
+          console.error(`❌ [WEBHOOK] Errore aggiornamento stock per prodotto ${item.product}:`, stockError);
+        }
+      }
+
       // Invia email di conferma acquisto
       try {
-        const user = await User.findById(userId);
-        if (user) {
+        let recipientEmail, recipientName;
+        
+        if (isGuestOrder) {
+          // Ordine guest: usa email e nome dal guest order
+          recipientEmail = order.guestEmail;
+          recipientName = order.guestName;
+        } else {
+          // Ordine registrato: recupera email e nome dal profilo
+          const user = await User.findById(userId);
+          if (user) {
+            recipientEmail = user.email;
+            recipientName = user.name;
+          }
+        }
+
+        if (recipientEmail) {
           // Prepara lista prodotti
           const productsList = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
           const totalAmount = `€${order.totalPrice.toFixed(2)}`;
-          const shippingAddress = `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`;
+          const shippingAddress = `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`;
           
           await sendOrderConfirmationEmail(
-            user.email, 
-            user.name, 
+            recipientEmail, 
+            recipientName, 
             order._id.toString(), 
             productsList, 
             totalAmount, 

@@ -477,20 +477,45 @@ const VendorProfile = () => {
       const totalReviews = allReviews.length;
       const avgRating = totalReviews > 0 ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
 
-      // Aggiorna stats per il rateo recensioni
-      setStats({
-        reviewAvg: avgRating,
-        reviewCount: totalReviews
-      });
-
       // Carica ordini recenti
       const ordersRes = await fetch(`${API_URL}/orders/vendor/received`, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
+      let ordersData = [];
       if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
+        ordersData = await ordersRes.json();
         setOrders(ordersData.slice(0, 5));
       }
+
+      // Calcola statistiche complete
+      const totalOrders = ordersData.length;
+      const pendingOrders = ordersData.filter(order => 
+        order.status === 'pending' || order.status === 'processing'
+      ).length;
+      
+      // Calcola fatturato totale (solo ordini completati/spediti)
+      const totalRevenue = ordersData
+        .filter(order => order.status === 'shipped' || order.status === 'delivered')
+        .reduce((sum, order) => {
+          const orderTotal = order.items
+            .filter(item => item.seller?._id === vendorId || item.seller === vendorId)
+            .reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+          return sum + orderTotal;
+        }, 0);
+
+      // Conta prodotti attivi
+      const activeProducts = vendorProducts.filter(p => p.stock > 0 || (p.variants && p.variants.some(v => v.stock > 0))).length;
+
+      // Aggiorna stats con tutti i dati
+      setStats({
+        reviewAvg: avgRating,
+        reviewCount: totalReviews,
+        totalRevenue: totalRevenue,
+        totalOrders: totalOrders,
+        activeProducts: activeProducts,
+        pendingOrders: pendingOrders
+      });
+
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     }
@@ -1498,13 +1523,31 @@ const VendorProfile = () => {
                             )}
                           </td>
                           <td>
-                            {product.hasVariants ? (
-                              <Badge bg={(() => {
-                                const totalStock = product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
-                                return totalStock > 10 ? 'success' : totalStock > 0 ? 'warning' : 'danger';
-                              })()}>
-                                {product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0}
-                              </Badge>
+                            {product.hasVariants && product.variants && product.variants.length > 0 ? (
+                              <div style={{ fontSize: '0.85rem' }}>
+                                {product.variants.map((variant, idx) => {
+                                  const variantLabel = variant.attributes && variant.attributes.length > 0
+                                    ? variant.attributes.map(a => {
+                                        const attr = product.customAttributes?.find(ca => ca.key === a.key);
+                                        const option = attr?.options?.find(o => o.value === a.value);
+                                        return option?.label || a.value;
+                                      }).join(' • ')
+                                    : `Variante ${idx + 1}`;
+                                  const stockColor = variant.stock > 10 ? 'success' : variant.stock > 0 ? 'warning' : 'danger';
+                                  return (
+                                    <div key={idx} className="mb-1">
+                                      <Badge bg={stockColor} className="me-1">
+                                        {variant.stock || 0}
+                                      </Badge>
+                                      <small className="text-muted">{variantLabel}</small>
+                                    </div>
+                                  );
+                                })}
+                                <hr className="my-1" />
+                                <Badge bg="secondary">
+                                  Tot: {product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)}
+                                </Badge>
+                              </div>
                             ) : (
                               <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
                                 {product.stock}
@@ -2511,7 +2554,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
             <Col md={3} className="mb-3">
               <Card className="text-center">
                 <Card.Body>
-                  <h3 className="text-info">{products.length}</h3>
+                  <h3 className="text-info">{stats?.activeProducts || 0}</h3>
                   <p className="text-muted mb-0">Prodotti Attivi</p>
                 </Card.Body>
               </Card>

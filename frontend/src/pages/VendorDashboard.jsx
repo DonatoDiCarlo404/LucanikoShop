@@ -634,19 +634,36 @@ const VendorDashboard = () => {
                             }
                           </td>
                           <td>
-                            {(() => {
-                              let totalStock = typeof product.stock === 'number' ? product.stock : 0;
-                              if (Array.isArray(product.variants) && product.variants.length > 0) {
-                                totalStock = product.variants
-                                  .filter(v => typeof v.stock === 'number')
-                                  .reduce((sum, v) => sum + v.stock, 0);
-                              }
-                              return (
-                                <Badge bg={totalStock > 10 ? 'success' : totalStock > 0 ? 'warning' : 'danger'}>
-                                  {totalStock}
+                            {Array.isArray(product.variants) && product.variants.length > 0 ? (
+                              <div style={{ fontSize: '0.85rem' }}>
+                                {product.variants.map((variant, idx) => {
+                                  const variantLabel = variant.attributes && variant.attributes.length > 0
+                                    ? variant.attributes.map(a => {
+                                        const attr = product.customAttributes?.find(ca => ca.key === a.key);
+                                        const option = attr?.options?.find(o => o.value === a.value);
+                                        return option?.label || a.value;
+                                      }).join(' • ')
+                                    : `Variante ${idx + 1}`;
+                                  const stockColor = variant.stock > 10 ? 'success' : variant.stock > 0 ? 'warning' : 'danger';
+                                  return (
+                                    <div key={idx} className="mb-1">
+                                      <Badge bg={stockColor} className="me-1">
+                                        {variant.stock || 0}
+                                      </Badge>
+                                      <small className="text-muted">{variantLabel}</small>
+                                    </div>
+                                  );
+                                })}
+                                <hr className="my-1" />
+                                <Badge bg="secondary">
+                                  Tot: {product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)}
                                 </Badge>
-                              );
-                            })()}
+                              </div>
+                            ) : (
+                              <Badge bg={product.stock > 10 ? 'success' : product.stock > 0 ? 'warning' : 'danger'}>
+                                {product.stock || 0}
+                              </Badge>
+                            )}
                           </td>
                           <td>
                             {(() => {

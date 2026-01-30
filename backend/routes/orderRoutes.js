@@ -11,7 +11,7 @@ import {
   applyDiscountToOrder,
   calculateShippingCost
 } from '../controllers/orderController.js';
-import { protect } from '../middlewares/auth.js';
+import { protect, optionalAuth } from '../middlewares/auth.js';
 import Order from '../models/Order.js';
 
 // 🔧 DEBUG ENDPOINT - Rimuovere in produzione
@@ -76,8 +76,8 @@ router.get('/vendor/received', protect, getVendorOrders);
 router.get('/vendor/stats', protect, getVendorStats);
 router.put('/:id/status', protect, updateOrderStatus);
 
-// Calcola costo spedizione per il carrello
-router.post('/calculate-shipping', protect, calculateShippingCost);
+// Calcola costo spedizione per il carrello (accessibile anche a guest)
+router.post('/calculate-shipping', optionalAuth, calculateShippingCost);
 
 // Ottieni tutti gli ordini dell'utente loggato
 router.get('/my-orders', protect, getMyOrders);

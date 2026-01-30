@@ -337,9 +337,10 @@ export const applyDiscountToOrder = async (req, res) => {
         discountAmount = Math.round(discountAmount * 100) / 100;
 
         // Applica lo sconto all'ordine
+        // NOTA: itemsPrice è già IVA inclusa, taxPrice è solo informativo
         order.appliedDiscount = discount._id;
         order.discountAmount = discountAmount;
-        order.totalPrice = order.itemsPrice + order.shippingPrice + order.taxPrice - discountAmount;
+        order.totalPrice = order.itemsPrice + order.shippingPrice - discountAmount;
 
         // Incrementa il contatore di utilizzo del coupon
         discount.usageCount += 1;

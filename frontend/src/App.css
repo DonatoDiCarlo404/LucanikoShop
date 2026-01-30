@@ -1,3 +1,8 @@
+@media (max-width: 576px) {
+  .payoff-custom span {
+    font-size: 1.1rem !important;
+  }
+}
 /* Disabilita effetto hover/focus/active per bottoni modali termini e privacy in Cart.jsx */
 .no-hover-effect:hover,
 .no-hover-effect:focus,

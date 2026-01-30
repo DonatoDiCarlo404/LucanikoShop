@@ -93,8 +93,8 @@ const ProductCard = ({ product }) => {
       }}
       className="h-100"
     >
-      {/* Cuore wishlist in alto a sinistra, solo se utente autenticato */}
-      {user && (
+      {/* Cuore wishlist in alto a sinistra, solo per buyer loggato */}
+      {user && user.role === 'buyer' && (
         <span
           style={{
             position: 'absolute',
