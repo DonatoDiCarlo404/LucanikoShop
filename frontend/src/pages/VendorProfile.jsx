@@ -107,19 +107,10 @@ const VendorProfile = () => {
   });
 
   // State per News
-  const [newsText, setNewsText] = useState(() => localStorage.getItem('vendorNewsText') || '');
-  const [savedNews, setSavedNews] = useState(() => localStorage.getItem('vendorSavedNews') || '');
+  const [newsText, setNewsText] = useState('');
+  const [savedNews, setSavedNews] = useState('');
   const [savingNews, setSavingNews] = useState(false);
-
-  // Aggiorna localStorage quando newsText cambia
-  useEffect(() => {
-    localStorage.setItem('vendorNewsText', newsText);
-  }, [newsText]);
-
-  // Aggiorna localStorage quando savedNews cambia
-  useEffect(() => {
-    localStorage.setItem('vendorSavedNews', savedNews);
-  }, [savedNews]);
+  const [editingNews, setEditingNews] = useState(false);
 
   // State per form
   const [formData, setFormData] = useState({
@@ -255,6 +246,14 @@ const VendorProfile = () => {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Sincronizza newsText con profileData.news quando il profilo viene caricato
+  useEffect(() => {
+    if (profileData?.news) {
+      setNewsText(profileData.news);
+      setSavedNews(profileData.news);
+    }
+  }, [profileData]);
 
   // Carica documenti PDF del venditore
   const loadVendorDocuments = async () => {
@@ -493,9 +492,9 @@ const VendorProfile = () => {
         order.status === 'pending' || order.status === 'processing'
       ).length;
       
-      // Calcola fatturato totale (solo ordini completati/spediti)
+      // Calcola fatturato totale (solo ordini pagati, come nel backend)
       const totalRevenue = ordersData
-        .filter(order => order.status === 'shipped' || order.status === 'delivered')
+        .filter(order => order.isPaid)
         .reduce((sum, order) => {
           const orderTotal = order.items
             .filter(item => item.seller?._id === vendorId || item.seller === vendorId)
@@ -604,6 +603,7 @@ const VendorProfile = () => {
 
       setSuccess(successMessage);
       setProfileData(data);
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
       setTimeout(() => setSuccess(''), 1000);
       return true;
 
@@ -1372,8 +1372,10 @@ const VendorProfile = () => {
         <Tab eventKey="news" title={<span style={{color: activeTab === 'news' ? '#00bf63' : '#004b75'}}>📰 News</span>}>
           <Card>
             <Card.Body>
-              <h5 className="mb-3">News aziendali</h5>
-              {/* Campo news con salvataggio locale */}
+              <h5 className="mb-3">News aziendale</h5>
+              <p className="text-muted">Scrivi una news o comunicazione per i tuoi clienti (apparirà nel tuo shop pubblico).</p>
+              
+              {/* Form per creare/modificare news */}
               <Form onSubmit={async (e) => {
                 e.preventDefault();
                 setSavingNews(true);
@@ -1384,10 +1386,12 @@ const VendorProfile = () => {
                   await authAPI.updateVendorProfile({ news: newsText }, user.token);
                   console.log('[DEBUG NEWS FRONTEND] News salvata con successo');
                   setSavedNews(newsText);
+                  setEditingNews(false); // Disabilita editing dopo il salvataggio
                   // Ricarica il profilo per aggiornare profileData con la nuova news
                   await loadProfile();
                   console.log('[DEBUG NEWS FRONTEND] Profilo ricaricato dopo salvataggio news');
                   setSuccess('News salvata con successo!');
+                  window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
                   setTimeout(() => setSuccess(''), 2500);
                 } catch (err) {
                   setError(err.message || 'Errore durante il salvataggio della news');
@@ -1396,25 +1400,70 @@ const VendorProfile = () => {
                 }
               }}>
                 <Form.Group controlId="newsText">
-                  <Form.Label>Scrivi una news o comunicazione per i tuoi clienti (apparirà nel tuo shop).</Form.Label>
+                  <Form.Label>Contenuto della News</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={4}
-                    placeholder="Es. Spedizione gratuita / Spedizione gratuita per ordini superiori a 50€ / Utilizza il codice coupon ESTATE26 per uno sconto del 10%..."
+                    placeholder="Es. Spedizione gratuita per ordini superiori a 50€ / Utilizza il codice coupon ESTATE26 per uno sconto del 10% / Nuovi prodotti in arrivo..."
                     maxLength={80}
                     value={newsText}
                     onChange={e => setNewsText(e.target.value)}
+                    disabled={profileData?.news && !editingNews}
                   />
-                  <Form.Text className="text-muted">Massimo 80 caratteri.</Form.Text>
+                  <Form.Text className="text-muted">
+                    Massimo 80 caratteri. {newsText.length}/80
+                    {profileData?.news && !editingNews && (
+                      <span className="ms-3 text-success">
+                        <i className="bi bi-check-circle me-1"></i>
+                        News attuale salvata
+                      </span>
+                    )}
+                  </Form.Text>
                 </Form.Group>
-                <Button type="submit" variant="primary" className="mt-2" disabled={savingNews || !newsText.trim()}>
-                  {savingNews ? 'Salvataggio...' : 'Salva'}
-                </Button>
+                <div className="mt-3">
+                  <Button type="submit" variant="primary" disabled={savingNews || !newsText.trim() || (profileData?.news && !editingNews)}>
+                    {savingNews ? (
+                      <>
+                        <Spinner size="sm" className="me-2" />
+                        Salvataggio...
+                      </>
+                    ) : (
+                      'Salva News'
+                    )}
+                  </Button>
+                  {profileData?.news && !editingNews && (
+                    <Button 
+                      variant="info" 
+                      className="ms-2"
+                      onClick={() => {
+                        setNewsText(profileData.news);
+                        setEditingNews(true);
+                        setError('');
+                      }}
+                    >
+                      <i className="bi bi-pencil me-1"></i>
+                      Modifica News Esistente
+                    </Button>
+                  )}
+                  {editingNews && (
+                    <Button 
+                      variant="secondary" 
+                      className="ms-2"
+                      onClick={() => {
+                        setNewsText(profileData?.news || '');
+                        setEditingNews(false);
+                        setError('');
+                      }}
+                    >
+                      Annulla
+                    </Button>
+                  )}
+                </div>
                 {error && (
-                  <div className="alert alert-danger mt-3 mb-0 py-2 px-3">{error}</div>
+                  <Alert variant="danger" className="mt-3 mb-0">{error}</Alert>
                 )}
                 {success && (
-                  <div className="alert alert-success mt-3 mb-0 py-2 px-3">{success}</div>
+                  <Alert variant="success" className="mt-3 mb-0">{success}</Alert>
                 )}
               </Form>
             </Card.Body>
@@ -2588,25 +2637,45 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map(order => (
-                      <tr key={order._id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/orders/${order._id}`)}>
-                        <td>#{order._id.slice(-8)}</td>
-                        <td>{new Date(order.createdAt).toLocaleDateString('it-IT')}</td>
-                        <td>{order.buyer?.name || 'N/A'}</td>
-                        <td>€{order.totalPrice?.toFixed(2)}</td>
-                        <td>
-                          <Badge bg={
-                            order.status === 'delivered' ? 'success' :
-                            order.status === 'shipped' ? 'primary' :
-                            order.status === 'processing' ? 'info' :
-                            order.status === 'cancelled' ? 'danger' :
-                            'warning'
-                          }>
-                            {order.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {orders.map(order => {
+                      // ID del venditore corrente
+                      const currentVendorId = sellerId || user._id;
+                      
+                      // Calcola il totale per questo venditore
+                      const vendorTotal = order.items
+                        .filter(item => {
+                          const itemSellerId = item.seller?._id || item.seller;
+                          return itemSellerId?.toString() === currentVendorId?.toString();
+                        })
+                        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                      
+                      // Determina il nome del cliente
+                      const customerName = order.buyer?.name 
+                        || order.guestName 
+                        || (order.shippingAddress?.firstName && order.shippingAddress?.lastName 
+                            ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`
+                            : 'N/A');
+                      
+                      return (
+                        <tr key={order._id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/orders/${order._id}`)}>
+                          <td>#{order._id.slice(-8)}</td>
+                          <td>{new Date(order.createdAt).toLocaleDateString('it-IT')}</td>
+                          <td>{customerName}</td>
+                          <td>€{vendorTotal.toFixed(2)}</td>
+                          <td>
+                            <Badge bg={
+                              order.status === 'delivered' ? 'success' :
+                              order.status === 'shipped' ? 'primary' :
+                              order.status === 'processing' ? 'info' :
+                              order.status === 'cancelled' ? 'danger' :
+                              'warning'
+                            }>
+                              {order.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               )}

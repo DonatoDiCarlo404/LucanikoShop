@@ -128,6 +128,9 @@ Il team Lucaniko<br><br>
 
 // Email di benvenuto alla registrazione acquirente
 export const sendWelcomeEmail = async (userEmail, userName, loginLink = 'https://www.lucanikoshop.it/login') => {
+  console.log('[EMAIL DEBUG] Invio email di benvenuto a:', userEmail);
+  console.log('[EMAIL DEBUG] SendGrid API Key configurata:', !!process.env.SENDGRID_API_KEY);
+  
   const msg = {
     to: userEmail,
     from: 'info@lucanikoshop.it',
@@ -151,16 +154,27 @@ Il team Lucaniko<br><br>
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Email di benvenuto inviata a:', userEmail);
+    console.log('[EMAIL DEBUG] Tentativo invio email di benvenuto...');
+    const result = await sgMail.send(msg);
+    console.log('[EMAIL DEBUG] ✅ Email di benvenuto inviata con successo a:', userEmail);
+    console.log('[EMAIL DEBUG] Risposta SendGrid:', result?.[0]?.statusCode);
   } catch (error) {
-    console.error('Errore invio email di benvenuto:', error);
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email di benvenuto:', error);
+    console.error('[EMAIL DEBUG] Dettagli errore:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
     throw error;
   }
 };
 
 // Email richiesta supporto venditori
 export const sendVendorSupportEmail = async (nome, azienda, email, telefono, descrizione) => {
+  console.log('[EMAIL DEBUG] Invio email supporto venditore da:', email);
+  console.log('[EMAIL DEBUG] Destinatario: lucanikofood@gmail.com');
+  console.log('[EMAIL DEBUG] SendGrid API Key configurata:', !!process.env.SENDGRID_API_KEY);
+  
   const msg = {
     to: 'lucanikofood@gmail.com',
     from: 'info@lucanikoshop.it',
@@ -182,10 +196,17 @@ export const sendVendorSupportEmail = async (nome, azienda, email, telefono, des
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Email supporto venditori inviata a: lucanikofood@gmail.com');
+    console.log('[EMAIL DEBUG] Tentativo invio email supporto venditore...');
+    const result = await sgMail.send(msg);
+    console.log('[EMAIL DEBUG] ✅ Email supporto venditori inviata con successo a: lucanikofood@gmail.com');
+    console.log('[EMAIL DEBUG] Risposta SendGrid:', result?.[0]?.statusCode);
   } catch (error) {
-    console.error('Errore invio email supporto venditori:', error);
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email supporto venditori:', error);
+    console.error('[EMAIL DEBUG] Dettagli errore:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
     throw error;
   }
 };

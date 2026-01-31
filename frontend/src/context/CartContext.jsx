@@ -102,7 +102,17 @@ export const CartProvider = ({ children }) => {
   // Svuota carrello
   const clearCart = useCallback(() => {
     setCartItems([]);
-  }, []);
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    
+    // Pulisci tutto dal localStorage
+    const cartKey = getCartKey();
+    localStorage.removeItem(cartKey);
+    localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('discountAmount');
+    
+    console.log('🧹 [CART] Carrello svuotato completamente');
+  }, [user?._id]);
 
   // Applica coupon
   const applyCoupon = useCallback((coupon, discount) => {

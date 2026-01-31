@@ -199,9 +199,16 @@ export const register = async (req, res) => {
       
       // Invia email di benvenuto (non blocca la registrazione se fallisce)
       try {
+        console.log('[AUTH CONTROLLER] Tentativo invio email di benvenuto...');
         await sendWelcomeEmail(user.email, user.name);
+        console.log('[AUTH CONTROLLER] ✅ Email di benvenuto inviata');
       } catch (emailError) {
-        console.error('Errore invio email di benvenuto:', emailError);
+        console.error('[AUTH CONTROLLER] ❌ ERRORE invio email di benvenuto:', emailError);
+        console.error('[AUTH CONTROLLER] Dettagli errore:', {
+          message: emailError.message,
+          code: emailError.code,
+          response: emailError.response?.body
+        });
       }
 
       res.status(201).json({

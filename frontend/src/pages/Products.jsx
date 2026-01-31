@@ -241,6 +241,24 @@ const Products = () => {
                 padding-left: 1.2rem !important;
               }
             }
+            
+            /* Mobile: Ordina per e Reset Filtri affiancati */
+            @media (max-width: 576px) {
+              .catalog-controls-row .catalog-sort-col,
+              .catalog-controls-row .catalog-reset-col {
+                padding-left: 8px;
+                padding-right: 8px;
+              }
+              .catalog-controls-row .catalog-reset-col .btn {
+                margin-top: 0 !important;
+                font-size: 0.85rem;
+                padding: 0.5rem 0.3rem;
+              }
+              .catalog-controls-row .catalog-count-col {
+                margin-top: 0.75rem;
+                text-align: center;
+              }
+            }
           `}</style>
         </div>
       )}
@@ -325,8 +343,8 @@ const Products = () => {
       </Row>
 
       {/* Ordinamento e Reset */}
-      <Row className="mb-3">
-        <Col md={4}>
+      <Row className="mb-3 catalog-controls-row">
+        <Col md={4} xs={6} className="catalog-sort-col">
           <Form.Select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -339,12 +357,12 @@ const Products = () => {
             <option value="name">Nome A-Z</option>
           </Form.Select>
         </Col>
-        <Col md={4}>
+        <Col md={4} xs={6} className="catalog-reset-col">
           <Button variant="outline-secondary" onClick={handleResetFilters} className="w-100 mt-2 mt-md-0">
             <span><i className="bi bi-x-octagon"> Reset filtri</i></span>
           </Button>
         </Col>
-        <Col md={4}>
+        <Col md={4} xs={12} className="catalog-count-col">
           <div className="pt-2" style={{ color: '#198754', fontWeight: 500 }}>
             <strong>{total}</strong> prodotti trovati
           </div>

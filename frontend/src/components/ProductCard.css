@@ -48,6 +48,13 @@
   z-index: 20 !important;
 }
 
+/* Riduzione spazio indicatori in mobile */
+@media (max-width: 576px) {
+  .product-card-carousel .carousel-indicators {
+    margin-bottom: 0.25rem !important;
+  }
+}
+
 .product-card-carousel .carousel-indicators [data-bs-target] {
   pointer-events: auto !important;
 }

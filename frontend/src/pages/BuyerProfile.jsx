@@ -63,6 +63,7 @@ const BuyerProfile = () => {
         }, token);
         setUser(prev => ({ ...prev, ...updatedUser }));
         setSaveSuccess((prev) => ({ ...prev, name: true }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setEditName(false);
       } catch (err) {
         setSaveError((prev) => ({ ...prev, name: err.message }));
@@ -186,6 +187,7 @@ const BuyerProfile = () => {
       }
       await authAPI.updateProfile({ password: passwordForm.password }, token);
       setSaveSuccess((prev) => ({ ...prev, password: true }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setEditPassword(false);
       setPasswordForm({ password: '' });
     } catch (err) {
@@ -208,6 +210,7 @@ const BuyerProfile = () => {
       }, token);
       setUser(prev => ({ ...prev, ...updatedUser }));
       setSaveSuccess(s => ({ ...s, address: true }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setEditAddress(false);
     } catch (err) {
       setSaveError(e => ({ ...e, address: err.message }));
@@ -228,6 +231,7 @@ const BuyerProfile = () => {
       }
       const updated = await authAPI.updateProfile(data, token);
       setSaveSuccess((prev) => ({ ...prev, payment: true }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setEditPayment(false);
       setUser && setUser((prev) => ({ ...prev, ...updated }));
     } catch (err) {

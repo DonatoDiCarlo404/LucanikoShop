@@ -93,6 +93,11 @@ const Navbar = () => {
             {/* altri link seller/admin qui sotto */}
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
+                <div className="mb-2" style={{ fontWeight: 600, color: '#004b75', fontSize: '1.1rem' }}>
+                  <span style={{ display: 'block', textAlign: 'left', marginLeft: '0.5rem' }}>
+                    Ciao, {user.name ? user.name.split(' ')[0] : ''}
+                  </span>
+                </div>
                 <Nav.Link 
                   className="text-start d-lg-none w-100" 
                   onClick={() => { closeMenu(); navigate('/vendor/dashboard'); }}
@@ -306,6 +311,12 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partners'); }}
+                >
+                  Partners
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/login'); }}
                 >
                   Accedi / Registrati
@@ -349,6 +360,12 @@ const Navbar = () => {
                   onClick={() => { closeMenu(); navigate('/negozi'); }}
                 >
                   Negozi
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partners'); }}
+                >
+                  Partners
                 </Nav.Link>
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci

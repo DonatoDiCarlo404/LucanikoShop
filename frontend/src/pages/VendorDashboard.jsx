@@ -251,7 +251,11 @@ const VendorDashboard = () => {
   // Calcola totale ordine per il venditore
   const calculateVendorTotal = (order) => {
     return order.items
-      .filter(item => item.seller._id === user._id || user.role === 'admin')
+      .filter(item => {
+        const sellerId = item.seller?._id || item.seller;
+        const userId = user._id;
+        return sellerId.toString() === userId.toString() || user.role === 'admin';
+      })
       .reduce((sum, item) => sum + (item.price * item.quantity), 0)
       .toFixed(2);
   };
@@ -522,55 +526,75 @@ const VendorDashboard = () => {
                         .filter(order => {
                           const name = order.buyer?.name?.toLowerCase() || "";
                           const surname = order.buyer?.surname?.toLowerCase() || "";
+                          const guestName = order.guestName?.toLowerCase() || "";
+                          const shippingName = order.shippingAddress?.firstName?.toLowerCase() || "";
+                          const shippingSurname = order.shippingAddress?.lastName?.toLowerCase() || "";
                           const search = searchTerm.toLowerCase();
                           return (
                             name.includes(search) ||
                             surname.includes(search) ||
+                            guestName.includes(search) ||
+                            shippingName.includes(search) ||
+                            shippingSurname.includes(search) ||
                             (name + " " + surname).includes(search) ||
-                            (surname + " " + name).includes(search)
+                            (surname + " " + name).includes(search) ||
+                            (shippingName + " " + shippingSurname).includes(search)
                           );
                         })
-                        .map((order) => (
-                        <tr key={order._id}>
-                          <td><small>{order._id.slice(-8)}</small></td>
-                          <td>{new Date(order.createdAt).toLocaleDateString('it-IT')}</td>
-                          <td>{order.buyer?.name || 'N/A'}</td>
-                          <td>
-                            {order.items
-                              .filter(item => item.seller._id === user._id || user.role === 'admin')
-                              .map((item, idx) => (
-                                <div key={idx}>
-                                  <small>{item.name} x{item.quantity}</small>
-                                </div>
-                              ))}
-                          </td>
-                          <td>€{calculateVendorTotal(order)}</td>
-                          <td>{getStatusBadge(order.status)}</td>
-                          <td>
-                            {order.isPaid ? (
-                              <Badge bg="success">Sì</Badge>
-                            ) : (
-                              <Badge bg="danger">No</Badge>
-                            )}
-                          </td>
-                          <td>
-                            {order.trackingInfo?.trackingNumber ? (
-                              <small>{order.trackingInfo.trackingNumber}</small>
-                            ) : (
-                              <small className="text-muted">-</small>
-                            )}
-                          </td>
-                          <td>
-                            <Button
-                              size="sm"
-                              variant="outline-primary"
-                              onClick={() => handleUpdateStatus(order)}
-                            >
-                              Aggiorna
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                        .map((order) => {
+                          // Determina il nome del cliente
+                          const customerName = order.buyer?.name 
+                            || order.guestName 
+                            || (order.shippingAddress?.firstName && order.shippingAddress?.lastName 
+                                ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`
+                                : 'N/A');
+                          
+                          return (
+                            <tr key={order._id}>
+                              <td><small>{order._id.slice(-8)}</small></td>
+                              <td>{new Date(order.createdAt).toLocaleDateString('it-IT')}</td>
+                              <td>{customerName}</td>
+                              <td>
+                                {order.items
+                                  .filter(item => {
+                                    const sellerId = item.seller?._id || item.seller;
+                                    const userId = user._id;
+                                    return sellerId.toString() === userId.toString() || user.role === 'admin';
+                                  })
+                                  .map((item, idx) => (
+                                    <div key={idx}>
+                                      <small>{item.name} x{item.quantity}</small>
+                                    </div>
+                                  ))}
+                              </td>
+                              <td>€{calculateVendorTotal(order)}</td>
+                              <td>{getStatusBadge(order.status)}</td>
+                              <td>
+                                {order.isPaid ? (
+                                  <Badge bg="success">Sì</Badge>
+                                ) : (
+                                  <Badge bg="danger">No</Badge>
+                                )}
+                              </td>
+                              <td>
+                                {order.trackingInfo?.trackingNumber ? (
+                                  <small>{order.trackingInfo.trackingNumber}</small>
+                                ) : (
+                                  <small className="text-muted">-</small>
+                                )}
+                              </td>
+                              <td>
+                                <Button
+                                  size="sm"
+                                  variant="outline-primary"
+                                  onClick={() => handleUpdateStatus(order)}
+                                >
+                                  Aggiorna
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </Table>
                 </div>

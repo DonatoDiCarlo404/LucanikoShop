@@ -25,7 +25,6 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
-import debugRoutes from './routes/debugRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 
 const app = express();
@@ -92,7 +91,6 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/support', supportRoutes);
-app.use('/api/debug', debugRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -164,4 +162,14 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server in esecuzione sulla porta ${PORT}`);
+  
+  // Verifica configurazione SendGrid
+  if (process.env.SENDGRID_API_KEY) {
+    console.log('✅ SendGrid API Key configurata');
+    console.log('📧 SendGrid Key inizia con:', process.env.SENDGRID_API_KEY.substring(0, 10) + '...');
+  } else {
+    console.error('❌ ATTENZIONE: SendGrid API Key NON configurata!');
+    console.error('   Le email non verranno inviate.');
+    console.error('   Verifica che la variabile SENDGRID_API_KEY sia presente nel file .env');
+  }
 });

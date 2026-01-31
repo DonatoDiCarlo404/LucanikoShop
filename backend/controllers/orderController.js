@@ -114,7 +114,8 @@ export const getVendorOrders = async (req, res) => {
         // Trova ordini che contengono prodotti del venditore
         const orders = await Order.find({ 'items.seller': sellerId })
             .populate('buyer', 'name email')
-            .populate('items.product', 'name images price')
+            .populate('items.seller', 'name businessName')
+            .populate('items.product', 'name images')
             .sort({ createdAt: -1 });
 
         res.status(200).json(orders);

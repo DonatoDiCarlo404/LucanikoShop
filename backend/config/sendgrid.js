@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import sgMailPkg from '@sendgrid/mail';
 
 const sgMail = sgMailPkg;

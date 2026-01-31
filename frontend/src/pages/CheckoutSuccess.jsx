@@ -34,11 +34,19 @@ const CheckoutSuccess = () => {
 
         if (data.success) {
           setOrderCreated(true);
-          // Pulisci carrello solo se l'ordine è stato creato
+          // Pulisci carrello per tutti i tipi di utenti
           clearCart();
           removeCoupon();
+          // Pulisci tutti i carrelli dal localStorage
           localStorage.removeItem('cart_guest');
+          // Rimuovi anche eventuali carrelli di utenti loggati
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('cart_')) {
+              localStorage.removeItem(key);
+            }
+          });
           console.log('✅ [CHECKOUT SUCCESS] Ordine creato:', data.order._id);
+          console.log('✅ [CHECKOUT SUCCESS] Carrello svuotato');
         } else {
           setError(data.message || 'Errore nella creazione dell\'ordine');
         }
