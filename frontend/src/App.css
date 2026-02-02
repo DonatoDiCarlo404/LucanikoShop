@@ -1,3 +1,9 @@
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+/* Import Rubik font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
+
 @media (max-width: 576px) {
   .payoff-custom span {
     font-size: 1.1rem !important;
@@ -158,9 +164,6 @@ a:hover,
   text-decoration-color:  #004b75(var(--bs-primary-rgb), var(--bs-link-underline-opacity, 1)) !important;
 }
 
-/* Import Inter font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-
 /* Inter per prezzi prodotti, descrizione card, news, payoff */
 .product-price, .card-price, .cart-price, .badge-price, .inter-price {
   font-family: 'Inter', Arial, Helvetica, sans-serif !important;
@@ -176,8 +179,6 @@ a:hover,
   font-style: italic !important;
   background: #fff !important;
 }
-/* Import Rubik font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
 
 /* Link Password Dimenticata: bordo invisibile di default, visibile on hover */
 .btn-forgot-border {

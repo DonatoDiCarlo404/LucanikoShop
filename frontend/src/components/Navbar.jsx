@@ -93,11 +93,12 @@ const Navbar = () => {
             {/* altri link seller/admin qui sotto */}
             {isAuthenticated && user.role === 'seller' && user.isApproved && (
               <>
-                <div className="mb-2" style={{ fontWeight: 600, color: '#004b75', fontSize: '1.1rem' }}>
+                <div className="mb-2 d-lg-none" style={{ fontWeight: 600, color: '#004b75', fontSize: '1.1rem' }}>
                   <span style={{ display: 'block', textAlign: 'left', marginLeft: '0.5rem' }}>
                     Ciao, {user.name ? user.name.split(' ')[0] : ''}
                   </span>
                 </div>
+                {/* Tutte le voci seller solo mobile hamburger */}
                 <Nav.Link 
                   className="text-start d-lg-none w-100" 
                   onClick={() => { closeMenu(); navigate('/vendor/dashboard'); }}
@@ -133,7 +134,7 @@ const Navbar = () => {
                   className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/products'); }}
                 >
-                  Catalogo
+                  Prodotti
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
@@ -201,7 +202,7 @@ const Navbar = () => {
               )}
             </Nav.Link>
             <Nav.Link as={Link} to="/products" className="d-none d-lg-inline">
-              Catalogo
+              Prodotti
             </Nav.Link>
             <Nav.Link as={Link} to="/offers" className="d-none d-lg-inline">
               Offerte
@@ -289,7 +290,7 @@ const Navbar = () => {
                   className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/products'); }}
                 >
-                  Catalogo
+                  Prodotti
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 

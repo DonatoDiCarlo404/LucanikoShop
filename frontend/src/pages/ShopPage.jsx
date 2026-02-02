@@ -16,25 +16,24 @@ const ShopPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
-
-  console.log('🔵 ShopPage renderizzata, sellerId:', sellerId);
-  console.log('🔵 shopData:', shopData);
-  console.log('🔵 subcategories:', subcategories);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const productsPerPage = 12;
 
   useEffect(() => {
-    console.log('🟢 useEffect loadShopData eseguito');
     loadShopData();
   }, [sellerId]);
 
   useEffect(() => {
-    console.log('🟡 useEffect loadSubcategories eseguito, shopData:', shopData);
     if (shopData?.vendor?.businessCategories) {
-      console.log('🟡 Chiamando loadSubcategories...');
       loadSubcategories();
-    } else {
-      console.log('🟡 Nessun businessCategories, shopData?.vendor?.businessCategories:', shopData?.vendor?.businessCategories);
     }
   }, [shopData]);
+
+  // Reset pagina a 1 quando cambiano i filtri
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedSubcategory]);
 
   const loadShopData = async () => {
     try {
@@ -57,10 +56,8 @@ const ShopPage = () => {
   const loadSubcategories = async () => {
     try {
       const businessCategories = shopData.vendor.businessCategories;
-      console.log('📦 businessCategories del venditore:', businessCategories);
       
       if (!businessCategories || businessCategories.length === 0) {
-        console.log('⚠️ Nessuna businessCategories trovata');
         setSubcategories([]);
         return;
       }
@@ -71,13 +68,11 @@ const ShopPage = () => {
         throw new Error('Errore caricamento categorie');
       }
       const allCategories = await res.json();
-      console.log('📚 Tutte le categorie:', allCategories.length);
 
       // Filtra le macrocategorie che corrispondono a businessCategories
       const relevantParents = allCategories.filter(
         cat => !cat.parent && businessCategories.includes(cat.name)
       );
-      console.log('🏷️ Macrocategorie rilevanti:', relevantParents);
 
       // Estrai tutte le sottocategorie di queste macrocategorie
       const subs = [];
@@ -85,11 +80,9 @@ const ShopPage = () => {
         const children = allCategories.filter(cat => 
           cat.parent && cat.parent.toString() === parent._id.toString()
         );
-        console.log(`   ↳ Sottocategorie di "${parent.name}":`, children.length);
         subs.push(...children);
       });
 
-      console.log('✅ Sottocategorie totali caricate:', subs.length, subs.map(s => s.name));
       setSubcategories(subs);
     } catch (err) {
       console.error('❌ Errore caricamento sottocategorie:', err);
@@ -143,14 +136,6 @@ const ShopPage = () => {
   }));
   
   // Filtra prodotti per nome e sottocategoria
-  console.log('🔍 Filtro - selectedSubcategory:', selectedSubcategory);
-  console.log('🔍 Filtro - normalizedProducts:', normalizedProducts.map(p => ({ 
-    name: p.name, 
-    subcategory: p.subcategory,
-    subcategoryType: typeof p.subcategory,
-    subcategoryId: typeof p.subcategory === 'object' ? p.subcategory?._id : p.subcategory
-  })));
-  
   const filteredProducts = normalizedProducts.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSubcategory = !selectedSubcategory || 
@@ -159,14 +144,15 @@ const ShopPage = () => {
          ? p.subcategory._id === selectedSubcategory 
          : p.subcategory === selectedSubcategory));
     
-    if (selectedSubcategory) {
-      console.log(`   → Prodotto "${p.name}": matchesSubcategory=${matchesSubcategory}, subcategory=`, p.subcategory);
-    }
-    
     return matchesSearch && matchesSubcategory;
   });
-  
-  console.log('🔍 Filtro - filteredProducts:', filteredProducts.length);
+
+  // Calcola paginazione
+  const totalProducts = filteredProducts.length;
+  const totalPages = Math.ceil(totalProducts / productsPerPage) || 1;
+  const startIndex = (page - 1) * productsPerPage;
+  const endIndex = startIndex + productsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
   // Proprietario autenticato?
   const isOwner = user && user._id === vendor._id;
@@ -279,9 +265,6 @@ const ShopPage = () => {
           marginBottom: '1.5rem',
           position: 'relative',
           width: '100%',
-          maxWidth: '100vw',
-          marginLeft: 'calc(-50vw + 50%)',
-          marginRight: 'calc(-50vw + 50%)',
           background: '#fff',
         }}>
             <div className="news-banner-track" style={{
@@ -292,7 +275,7 @@ const ShopPage = () => {
               position: 'absolute',
               left: 0,
               top: 0,
-              minWidth: '100vw',
+              minWidth: '100%',
               animation: 'scrollNewsLoop 20s linear infinite',
             }}>
             <div className="news-banner-content" style={{
@@ -338,7 +321,7 @@ const ShopPage = () => {
           </div>
           <style>{`
             @keyframes scrollNewsLoop {
-              0% { transform: translateX(100vw); }
+              0% { transform: translateX(100%); }
               100% { transform: translateX(-100%); }
             }
             @media (max-width: 600px) {
@@ -414,13 +397,42 @@ const ShopPage = () => {
             Nessun prodotto trovato.
           </Alert>
         ) : (
-          <Row>
-            {filteredProducts.map((product) => (
-              <Col key={product._id} xs={6} sm={6} md={4} lg={3} className="mb-4">
-                <ProductCard product={product} />
-              </Col>
-            ))}
-          </Row>
+          <>
+            <Row>
+              {paginatedProducts.map((product) => (
+                <Col key={product._id} xs={6} sm={6} md={4} lg={3} className="mb-4">
+                  <ProductCard product={product} />
+                </Col>
+              ))}
+            </Row>
+
+            {/* Paginazione */}
+            {totalPages > 1 && (
+              <Row className="mt-4">
+                <Col className="d-flex justify-content-center align-items-center gap-3">
+                  <Button
+                    variant="outline-primary"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                    className="pagination-btn"
+                  >
+                    ← Precedente
+                  </Button>
+                  <span className="text-muted">
+                    Pagina <strong>{page}</strong> di <strong>{totalPages}</strong>
+                  </span>
+                  <Button
+                    variant="outline-primary"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
+                    className="pagination-btn"
+                  >
+                    Successiva →
+                  </Button>
+                </Col>
+              </Row>
+            )}
+          </>
         )}
       </div>
 

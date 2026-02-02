@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
 import { wishlistAPI } from '../services/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const ProductCard = ({ product }) => {
     // Calcola prezzo minimo e stock totale se ci sono varianti
@@ -23,6 +23,30 @@ const ProductCard = ({ product }) => {
   const { user } = useAuth();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef(null);
+
+  // Intersection Observer per animazione scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
 
   // Verifica se il prodotto è nella wishlist
   useEffect(() => {
@@ -61,6 +85,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
+    <div ref={cardRef} className={`product-card-wrapper ${isVisible ? 'fade-in-up' : ''}`}>
     <Card
       style={{
         cursor: 'pointer',
@@ -137,7 +162,7 @@ const ProductCard = ({ product }) => {
       {product.images && product.images.length > 0 ? (
         <Carousel
           interval={2500}
-          indicators={product.images.length > 1}
+          indicators={false}
           controls={product.images.length > 1}
           className="product-card-carousel"
         >
@@ -187,16 +212,18 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Mostra rating e numero recensioni solo se ci sono recensioni */}
-        {product.numReviews > 0 && (
-          <div className="d-flex align-items-center mb-2 justify-content-between">
-            <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
-              {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
-            </span>
-            <span className="text-muted small" style={{ marginLeft: 4 }}>
-              {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews})
-            </span>
-          </div>
-        )}
+        <div className="d-flex align-items-center mb-2 justify-content-between" style={{ minHeight: 28 }}>
+          {product.numReviews > 0 ? (
+            <>
+              <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
+                {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
+              </span>
+              <span className="text-muted small" style={{ marginLeft: 4 }}>
+                {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews})
+              </span>
+            </>
+          ) : null}
+        </div>
 
         <div className="d-flex flex-row flex-nowrap gap-2 mb-2 badge-category-row">
           <Badge className="badge-category-product">
@@ -263,6 +290,7 @@ const ProductCard = ({ product }) => {
         </div>
       </Card.Body>
     </Card>
+    </div>
   );
 };
 
@@ -285,3 +313,4 @@ ProductCard.propTypes = {
 };
 
 export default ProductCard;
+

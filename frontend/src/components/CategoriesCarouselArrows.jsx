@@ -93,7 +93,7 @@ const CategoriesCarouselArrows = () => {
       <Container>
         <h3 className="text-center mb-4" style={{ fontWeight: 600, color: '#004b75' }}>Esplora le Categorie</h3>
       </Container>
-      <Carousel interval={5000} indicators={true} controls={true} pause="hover">
+      <Carousel interval={5000} indicators={false} controls={true} pause="hover">
         {chunkedCards.map((group, idx) => (
           <Carousel.Item key={idx}>
             <div className="d-flex justify-content-center align-items-stretch w-100">

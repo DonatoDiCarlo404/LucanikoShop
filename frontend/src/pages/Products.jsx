@@ -182,9 +182,6 @@ const Products = () => {
           marginBottom: '1.5rem',
           position: 'relative',
           width: '100%',
-          maxWidth: '100vw',
-          marginLeft: 'calc(-50vw + 50%)',
-          marginRight: 'calc(-50vw + 50%)',
           background: '#fff',
         }}>
           <div className="news-banner-track" style={{
@@ -195,7 +192,7 @@ const Products = () => {
             position: 'absolute',
             left: 0,
             top: 0,
-            minWidth: '100vw',
+            minWidth: '100%',
             animation: 'scrollNewsLoop 20s linear infinite',
           }}>
             {adminNews.map(news => (
@@ -224,7 +221,7 @@ const Products = () => {
           </div>
           <style>{`
             @keyframes scrollNewsLoop {
-              0% { transform: translateX(100vw); }
+              0% { transform: translateX(100%); }
               100% { transform: translateX(-100%); }
             }
             @media (max-width: 600px) {
@@ -263,7 +260,117 @@ const Products = () => {
         </div>
       )}
 
-      <h2 className="mb-4" style={{ color: '#004b75' }}>Catalogo Prodotti</h2>
+      {/* Filtro Categorie con pulsanti */}
+      <div className="mb-4">
+        <div className="category-buttons-container d-flex gap-2">
+          <style>{`
+            .category-buttons-container {
+              flex-wrap: wrap;
+              justify-content: center;
+            }
+            .category-buttons-container .btn {
+              font-size: 0.85rem;
+              padding: 2px 8px;
+              border-radius: 14px;
+            }
+            @media (max-width: 768px) {
+              .category-buttons-container {
+                overflow-x: auto;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                padding-bottom: 8px;
+                justify-content: flex-start;
+              }
+              .category-buttons-container .btn {
+                font-size: 0.95rem;
+                padding: 4px 12px;
+                border-radius: 16px;
+              }
+            }
+          `}</style>
+          <button
+            className="btn"
+            style={{
+              backgroundColor: !category ? '#004b75' : '#fff',
+              color: !category ? '#fff' : '#004b75',
+              border: '2px solid #004b75',
+              borderRadius: '16px',
+              padding: '4px 12px',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              transition: 'all 0.3s ease',
+              minHeight: 0
+            }}
+            onClick={() => {
+              setCategory('');
+              setSubcategory('');
+            }}
+          >
+            Tutte le categorie
+          </button>
+          {/* Cibi e Bevande sempre prima */}
+          {categories
+            .filter(cat => cat.name === 'Cibi e Bevande')
+            .map(cat => (
+              <button
+                key={cat._id}
+                className="btn"
+                style={{
+                  backgroundColor: category === cat.name ? '#004b75' : '#fff',
+                  color: category === cat.name ? '#fff' : '#004b75',
+                  border: '2px solid #004b75',
+                  borderRadius: '16px',
+                  padding: '4px 12px',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  transition: 'all 0.3s ease',
+                  minHeight: 0
+                }}
+                onClick={() => {
+                  if (cat.name === 'Cibi e Bevande') {
+                    setShowSplash(true);
+                    setTimeout(() => {
+                      setShowSplash(false);
+                      setCategory(cat.name);
+                      setSubcategory('');
+                    }, 2000);
+                  } else {
+                    setCategory(cat.name);
+                    setSubcategory('');
+                  }
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+          {/* Altre categorie in ordine alfabetico */}
+          {categories
+            .filter(cat => cat.name !== 'Cibi e Bevande')
+            .map(cat => (
+              <button
+                key={cat._id}
+                className="btn"
+                style={{
+                  backgroundColor: category === cat.name ? '#004b75' : '#fff',
+                  color: category === cat.name ? '#fff' : '#004b75',
+                  border: '2px solid #004b75',
+                  borderRadius: '16px',
+                  padding: '4px 12px',
+                  fontWeight: 600,
+                  fontSize: '0.95rem',
+                  transition: 'all 0.3s ease',
+                  minHeight: 0
+                }}
+                onClick={() => {
+                  setCategory(cat.name);
+                  setSubcategory('');
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+        </div>
+      </div>
 
       {/* Filtri */}
       <Row className="mb-3">
@@ -282,49 +389,13 @@ const Products = () => {
             </InputGroup>
           </Form>
         </Col>
-        <Col md={3}>
-          <Form.Select
-            value={category}
-            onChange={(e) => {
-              const selected = e.target.value;
-              if (selected === 'Cibi e Bevande') {
-                setShowSplash(true);
-                setTimeout(() => {
-                  setShowSplash(false);
-                  setCategory(selected);
-                  setSubcategory('');
-                }, 2000);
-              } else {
-                setCategory(selected);
-                setSubcategory('');
-              }
-            }}
-            className="my-2 my-md-0"
-          >
-            <option value="">Tutte le categorie</option>
-            {/* Cibi e Bevande sempre prima */}
-            {categories
-              .filter(cat => cat.name === 'Cibi e Bevande')
-              .map(cat => (
-                <option key={cat._id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            {categories
-              .filter(cat => cat.name !== 'Cibi e Bevande')
-              .map(cat => (
-                <option key={cat._id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-          </Form.Select>
-        </Col>
-        <Col md={4}>
+        <Col md={7}>
           <Form.Select
             value={subcategory}
             onChange={(e) => setSubcategory(e.target.value)}
             className="my-2 my-md-0"
             disabled={!category || subcategories.length === 0}
+            style={{ maxWidth: 260, minWidth: 120, display: 'inline-block' }}
           >
             <option value="">
               {!category 

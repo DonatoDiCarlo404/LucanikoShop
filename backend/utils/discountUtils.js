@@ -14,8 +14,6 @@ export const updateExpiredDiscounts = async () => {
       endDate: { $lt: now }
     });
 
-    console.log(`🔍 Trovati ${expiredDiscounts.length} sconti scaduti`);
-
     for (const discount of expiredDiscounts) {
       // Disattiva lo sconto
       discount.isActive = false;
@@ -27,8 +25,6 @@ export const updateExpiredDiscounts = async () => {
       } else if (discount.applicationType === 'category' && discount.categories.length > 0) {
         await removeDiscountFromCategories(discount);
       }
-
-      console.log(`✅ Sconto scaduto disattivato: ${discount.name}`);
     }
 
     // 2. Trova gli sconti che devono essere attivati (periodo valido ma non ancora attivi)
@@ -38,8 +34,6 @@ export const updateExpiredDiscounts = async () => {
       endDate: { $gte: now }
     });
 
-    console.log(`🔍 Trovati ${discountsToActivate.length} sconti da attivare`);
-
     for (const discount of discountsToActivate) {
       // Applica lo sconto ai prodotti
       if (discount.applicationType === 'product' && discount.products.length > 0) {
@@ -47,8 +41,6 @@ export const updateExpiredDiscounts = async () => {
       } else if (discount.applicationType === 'category' && discount.categories.length > 0) {
         await applyDiscountToCategories(discount);
       }
-
-      console.log(`✅ Sconto attivato: ${discount.name}`);
     }
 
     return {
@@ -119,7 +111,6 @@ export const applyBestDiscountToProduct = async (productId) => {
     if (bestDiscount) {
       product.applyDiscount(bestDiscount);
       await product.save();
-      console.log(`✅ Sconto applicato al prodotto ${product.name}: ${bestDiscount.name}`);
       return product;
     }
 
@@ -135,8 +126,6 @@ export const applyBestDiscountToProduct = async (productId) => {
  */
 export const recalculateSellerDiscounts = async (sellerId) => {
   try {
-    console.log(`🔄 Ricalcolo sconti per il seller: ${sellerId}`);
-
     // Trova tutti i prodotti del seller
     const products = await Product.find({ seller: sellerId });
 
@@ -153,7 +142,6 @@ export const recalculateSellerDiscounts = async (sellerId) => {
       await product.save();
     }
 
-    console.log(`✅ Ricalcolo sconti completato per ${products.length} prodotti`);
     return products.length;
   } catch (error) {
     console.error('❌ Errore nel ricalcolo degli sconti:', error);

@@ -14,9 +14,7 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
   const handlePayment = async (e) => {
     e.preventDefault();
 
-    console.log('[StripePaymentForm] handlePayment START');
     if (!stripe || !elements) {
-      console.log('[StripePaymentForm] Stripe.js non pronto');
       return;
     }
 
@@ -25,7 +23,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
 
     try {
       // 1. Crea PaymentIntent sul backend
-      console.log('[StripePaymentForm] Creo PaymentIntent:', { amount, email, subscriptionType });
       const response = await fetch(`${API_URL}/payment/create-payment-intent`, {
         method: 'POST',
         headers: {
@@ -41,7 +38,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
         })
       });
 
-      console.log('[StripePaymentForm] PaymentIntent response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json();
         console.error('[StripePaymentForm] Errore PaymentIntent:', errorData);
@@ -50,11 +46,9 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
 
       const data = await response.json();
       const { clientSecret, paymentIntentId } = data;
-      console.log('[StripePaymentForm] PaymentIntent creato:', { clientSecret, paymentIntentId });
 
       // 2. Conferma il pagamento con Stripe
       const cardNumberElement = elements.getElement(CardNumberElement);
-      console.log('[StripePaymentForm] Confermo pagamento con Stripe...');
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardNumberElement,
@@ -73,16 +67,12 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
         return;
       }
 
-      console.log('[StripePaymentForm] Risposta Stripe:', paymentIntent);
-
       // 3. Verifica che il pagamento sia andato a buon fine
       if (paymentIntent.status === 'succeeded') {
-        console.log('[StripePaymentForm] Pagamento riuscito!');
         // Estrai dati non sensibili della carta dal backend
         let cardDetails = undefined;
         try {
           const paymentMethodId = paymentIntent?.payment_method;
-          console.log('[StripePaymentForm] paymentMethodId:', paymentMethodId);
           
           if (typeof paymentMethodId === 'string') {
             // Recupera i dati della carta dal backend
@@ -94,7 +84,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
             
             if (pmResponse.ok) {
               const pmData = await pmResponse.json();
-              console.log('[StripePaymentForm] Payment method data:', pmData);
               
               if (pmData.cardDetails) {
                 cardDetails = {
@@ -103,7 +92,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
                   cardNumber: pmData.cardDetails.last4,
                   expiryDate: `${pmData.cardDetails.exp_month.toString().padStart(2, '0')}/${pmData.cardDetails.exp_year.toString().slice(-2)}`
                 };
-                console.log('[StripePaymentForm] cardDetails estratti:', cardDetails);
               }
             } else {
               console.warn('[StripePaymentForm] Errore recupero payment method dal backend');
@@ -125,7 +113,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
               subscriptionPaid: true
             };
             if (cardDetails) regBody.cardDetails = cardDetails;
-            console.log('[StripePaymentForm] Invio dati registrazione:', regBody);
             const registerResponse = await fetch(`${API_URL}/auth/register`, {
               method: 'POST',
               headers: {
@@ -134,7 +121,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
               body: JSON.stringify(regBody)
             });
 
-            console.log('[StripePaymentForm] Risposta registrazione status:', registerResponse.status);
             if (!registerResponse.ok) {
               const errorData = await registerResponse.json();
               console.error('[StripePaymentForm] Errore registrazione:', errorData);
@@ -142,7 +128,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
             }
 
             const userData = await registerResponse.json();
-            console.log('[StripePaymentForm] Registrazione completata:', userData);
             onPaymentSuccess(paymentIntent.id, userData);
           } catch (regError) {
             console.error('[StripePaymentForm] Pagamento riuscito ma errore nella registrazione:', regError);
@@ -163,7 +148,6 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
       setProcessing(false);
       onPaymentError(errorMessage);
     }
-    console.log('[StripePaymentForm] handlePayment END');
   };
 
   const cardElementOptions = {

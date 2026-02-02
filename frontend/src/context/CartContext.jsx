@@ -110,8 +110,6 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem(cartKey);
     localStorage.removeItem('appliedCoupon');
     localStorage.removeItem('discountAmount');
-    
-    console.log('🧹 [CART] Carrello svuotato completamente');
   }, [user?._id]);
 
   // Applica coupon

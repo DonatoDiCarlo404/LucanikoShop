@@ -1,3 +1,19 @@
+/* Animazione fade-in dal basso per le card prodotto */
+.product-card-wrapper {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.product-card-wrapper.fade-in-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.carousel .carousel-item {
+  padding-bottom: 5px !important;
+}
+
 /* Badge sconto piccolo per il carrello */
 .badge-discount-small {
   background-color: #861515 !important;
@@ -153,4 +169,8 @@
   .product-card-img:not(.carousel-item) {
     padding-bottom: 5px;
   }
+}
+
+.carousel .carousel-item {
+  padding-bottom: 5px !important;
 }

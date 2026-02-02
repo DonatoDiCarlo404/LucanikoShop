@@ -300,19 +300,11 @@ export const orderAPI = {
 export const checkoutAPI = {
   // Crea sessione di Stripe Checkout (supporta guest checkout)
   createSession: async (cartItems, token = null, guestEmail = null, appliedCoupon = null, discountAmount = 0) => {
-    console.log('🚀 [API] createSession chiamata con:');
-    console.log('  - Token:', token ? 'Present' : 'Missing');
-    console.log('  - Cart items:', cartItems.length);
-    console.log('  - Guest email:', guestEmail);
-    console.log('  - Applied coupon:', appliedCoupon);
-    console.log('  - Discount amount:', discountAmount);
-    
     const headers = {
       'Content-Type': 'application/json',
     };
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log('  - Authorization header:', headers.Authorization.substring(0, 20) + '...');
     }
 
     const response = await fetch(`${API_URL}/checkout/create-session`, {

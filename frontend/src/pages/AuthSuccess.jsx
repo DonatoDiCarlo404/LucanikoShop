@@ -19,20 +19,13 @@ const AuthSuccess = () => {
           // Ottieni i dati dell'utente
           const userData = await authAPI.getProfile(token);
           
-          console.log('👤 [AuthSuccess] Dati utente:', userData);
-          
           // Se l'utente è admin, imposta il bypass per la manutenzione
           if (userData.role === 'admin') {
             sessionStorage.setItem('maintenance_bypass', 'true');
-            console.log('✅ [AuthSuccess] Bypass impostato per admin');
           }
           
           // Aspetta un momento per assicurarsi che sessionStorage sia sincronizzato
           await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Verifica che il bypass sia stato salvato
-          const bypassCheck = sessionStorage.getItem('maintenance_bypass');
-          console.log('🔍 [AuthSuccess] Bypass verificato:', bypassCheck);
           
           // Ricarica la pagina per aggiornare l'AuthContext
           window.location.href = '/';

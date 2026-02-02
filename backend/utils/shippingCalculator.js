@@ -111,9 +111,7 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
 
         // 4. Se arriviamo qui, la tariffa è applicabile
         // Restituisci le opzioni di spedizione disponibili
-        console.log('✅ [BACKEND] Tariffa applicabile! Controllo opzioni...');
         if (rate.shippingOptions && Array.isArray(rate.shippingOptions) && rate.shippingOptions.length > 0) {
-            console.log('🟢 [BACKEND] Trovate opzioni di spedizione:', rate.shippingOptions);
             const validOptions = rate.shippingOptions
                 .filter(opt => opt.shippingName && opt.shippingPrice !== undefined && opt.shippingPrice !== null)
                 .map(opt => ({
@@ -133,7 +131,6 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
 
     // Se nessuna tariffa è applicabile, usa quella predefinita
     if (applicableRates.length === 0) {
-        console.log('⚠️ [BACKEND] Nessuna tariffa applicabile, uso tariffa predefinita');
         const defaultRate = vendorShippingSettings.defaultShippingRate || 0;
         return {
             shippingCost: defaultRate,
@@ -157,8 +154,6 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     const cheapestOption = allShippingOptions.reduce((min, opt) => 
         opt.price < min.price ? opt : min
     , allShippingOptions[0]);
-
-    console.log('📦 [SHIPPING] Opzione selezionata:', cheapestOption.name, '- €' + cheapestOption.price.toFixed(2));
 
     return {
         shippingCost: cheapestOption.price,
@@ -186,8 +181,6 @@ export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, tot
     const vendorShippingCosts = {};
     let totalShipping = 0;
 
-    console.log('📦 [SHIPPING] Calcolo spedizione per', itemsByVendor.length, 'venditori | Totale carrello: €' + totalCartValue.toFixed(2));
-
     itemsByVendor.forEach(({ vendorId, items, vendorShippingSettings }) => {
         // Calcola il subtotale per questo venditore usando il prezzo dal carrello
         const vendorCartTotal = items.reduce((sum, item) => {
@@ -204,8 +197,6 @@ export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, tot
         vendorShippingCosts[vendorId] = shippingResult;
         totalShipping += shippingResult.shippingCost;
     });
-
-    console.log('📦 [SHIPPING] Spedizione totale calcolata: €' + totalShipping.toFixed(2));
 
     return {
         totalShipping,

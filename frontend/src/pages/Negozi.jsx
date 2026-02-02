@@ -118,7 +118,20 @@ const Negozi = () => {
       {/* Filtro Macrocategorie */}
       <div className="mb-4">
         <h5 className="mb-3" style={{ color: '#004b75', fontWeight: 600, textAlign: 'left' }}>Filtra per categoria:</h5>
-        <div className="d-flex flex-wrap gap-1 justify-content-start" style={{maxWidth: 900}}>
+        <div className="negozi-category-buttons d-flex gap-2 justify-content-start" style={{maxWidth: 900}}>
+          <style>{`
+            .negozi-category-buttons {
+              flex-wrap: wrap;
+            }
+            @media (max-width: 768px) {
+              .negozi-category-buttons {
+                overflow-x: auto;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                padding-bottom: 8px;
+              }
+            }
+          `}</style>
           <button
             className="btn"
             style={{
@@ -199,9 +212,9 @@ const Negozi = () => {
                 <h3 
                   className="mb-4 pb-2" 
                   style={{ 
-                    color: '#00bf63', 
+                    color: '#004b75', 
                     fontWeight: 700, 
-                    borderBottom: '3px solid #00bf63' 
+                    borderBottom: '3px solid #004b75' 
                   }}
                 >
                   {category}

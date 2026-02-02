@@ -77,8 +77,6 @@ const BillingInfo = () => {
         ? formData.aziendaEmail 
         : formData.email;
 
-      console.log('🚀 [BILLING] Invio checkout con coupon:', appliedCoupon?.couponCode, '| Sconto:', discountAmount);
-
       const { sessionId, url } = await checkoutAPI.createSession(
         cartItems, 
         user ? user.token : null,

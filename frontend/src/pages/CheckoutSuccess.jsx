@@ -22,15 +22,10 @@ const CheckoutSuccess = () => {
         return;
       }
 
-      console.log('🔄 [CHECKOUT SUCCESS] Verifica e creazione ordine...');
-      console.log('🔄 [CHECKOUT SUCCESS] Session ID:', sessionId);
-
       try {
         // Chiama l'endpoint di success per creare l'ordine
         const response = await fetch(`${API_URL}/checkout/success?session_id=${sessionId}`);
         const data = await response.json();
-
-        console.log('🔄 [CHECKOUT SUCCESS] Risposta:', data);
 
         if (data.success) {
           setOrderCreated(true);
@@ -45,8 +40,6 @@ const CheckoutSuccess = () => {
               localStorage.removeItem(key);
             }
           });
-          console.log('✅ [CHECKOUT SUCCESS] Ordine creato:', data.order._id);
-          console.log('✅ [CHECKOUT SUCCESS] Carrello svuotato');
         } else {
           setError(data.message || 'Errore nella creazione dell\'ordine');
         }

@@ -415,7 +415,7 @@ const ProductDetail = () => {
               />
             </div>
           ) : product.images?.length > 0 ? (
-            <Carousel>
+            <Carousel indicators={false}>
               {product.images.map((image, index) => (
                 <Carousel.Item key={index}>
                   <img

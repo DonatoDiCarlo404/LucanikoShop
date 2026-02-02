@@ -50,9 +50,7 @@ const discountSchema = new mongoose.Schema(
     couponCode: {
       type: String,
       trim: true,
-      uppercase: true,
-      sparse: true, // Permette null ma deve essere unico se presente
-      unique: true
+      uppercase: true
     },
     // Validità temporale
     startDate: {
@@ -167,7 +165,7 @@ discountSchema.methods.calculateDiscountedPrice = function(originalPrice) {
 // Indici
 discountSchema.index({ seller: 1, isActive: 1 });
 discountSchema.index({ startDate: 1, endDate: 1 });
-discountSchema.index({ couponCode: 1 }, { sparse: true });
+discountSchema.index({ couponCode: 1 }, { unique: true, sparse: true });
 discountSchema.index({ products: 1 });
 discountSchema.index({ categories: 1 });
 

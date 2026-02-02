@@ -57,11 +57,6 @@ const Cart = () => {
   const calculateShipping = async () => {
     if (cartCount === 0) return;
 
-    console.log('🔵 [CART DEBUG] Inizio calcolo spedizione');
-    console.log('🔵 [CART DEBUG] Paese selezionato:', shippingCountry);
-    console.log('🔵 [CART DEBUG] Regione selezionata:', shippingRegion);
-    console.log('🔵 [CART DEBUG] Items nel carrello:', cartItems);
-
     setLoadingShipping(true);
     try {
       const headers = {
@@ -89,9 +84,6 @@ const Cart = () => {
 
       const data = await res.json();
 
-      console.log('🟢 [CART DEBUG] Risposta server calcolo spedizione:', data);
-      console.log('🟢 [CART DEBUG] Costi spedizione per venditore:', data.vendorShippingCosts);
-
       if (res.ok && data.success) {
         setShippingCost(data.totalShipping || 0);
         setShippingDetails(data.vendorShippingCosts || null);
@@ -100,13 +92,11 @@ const Cart = () => {
         const allOptions = [];
         if (data.vendorShippingCosts) {
           Object.values(data.vendorShippingCosts).forEach(vendorShipping => {
-            console.log('🟡 [CART DEBUG] Opzioni venditore:', vendorShipping.shippingOptions);
             if (vendorShipping.shippingOptions && vendorShipping.shippingOptions.length > 0) {
               allOptions.push(...vendorShipping.shippingOptions);
             }
           });
         }
-        console.log('🟢 [CART DEBUG] Tutte le opzioni estratte:', allOptions);
         setShippingOptions(allOptions);
         
         // Seleziona automaticamente l'opzione più economica se disponibile
@@ -181,8 +171,6 @@ const Cart = () => {
       setShowGuestForm(true);
       return;
     }
-
-    console.log('🚀 [CART] Invio checkout - Coupon:', appliedCoupon?.couponCode, '| Sconto:', discountAmount);
 
     setIsCheckingOut(true);
     try {

@@ -73,7 +73,6 @@ const VendorProfile = () => {
   // Precompila il form pagamento quando si apre il modal
   useEffect(() => {
     if (showPaymentModal && profileData?.cardDetails) {
-      console.log('[VendorProfile] Dati carta salvati:', profileData.cardDetails);
       setPaymentForm(form => ({
         ...form,
         cardHolder: profileData.cardDetails.cardHolder || '',
@@ -563,15 +562,6 @@ const VendorProfile = () => {
       setError('');
       setSuccess('');
 
-      // Log dei dati prima dell'invio
-      console.log('📤 [SAVE] Dati da inviare al backend:', dataToSave);
-      console.log('📤 [SAVE] shippingRates completo:', JSON.stringify(dataToSave?.shopSettings?.shipping?.shippingRates, null, 2));
-      if (dataToSave?.shopSettings?.shipping?.shippingRates) {
-        dataToSave.shopSettings.shipping.shippingRates.forEach((rate, i) => {
-          console.log(`📤 [SAVE] Tariffa ${i} - shippingOptions:`, rate.shippingOptions);
-        });
-      }
-
       // Se admin sta modificando profilo di un altro venditore, usa endpoint specifico
       const url = (user.role === 'admin' && sellerId)
         ? `${API_URL}/admin/sellers/${sellerId}/profile`
@@ -590,15 +580,6 @@ const VendorProfile = () => {
 
       if (!res.ok) {
         throw new Error(data.message || 'Errore nel salvataggio del profilo');
-      }
-
-      // Log dei dati ricevuti dal backend
-      console.log('📥 [SAVE] Dati ricevuti dal backend:', data);
-      console.log('📥 [SAVE] shippingRates dal backend:', JSON.stringify(data?.shopSettings?.shipping?.shippingRates, null, 2));
-      if (data?.shopSettings?.shipping?.shippingRates) {
-        data.shopSettings.shipping.shippingRates.forEach((rate, i) => {
-          console.log(`📥 [SAVE] Tariffa ${i} dal backend - shippingOptions:`, rate.shippingOptions);
-        });
       }
 
       setSuccess(successMessage);
@@ -789,7 +770,7 @@ const VendorProfile = () => {
   // Log all'avvio del componente
   useEffect(() => {
     if (profileData) {
-      console.log('[VendorProfile] profileData:', profileData);
+      // profileData caricato
     }
   }, [profileData]);
 
@@ -1382,14 +1363,11 @@ const VendorProfile = () => {
                 setError('');
                 setSuccess('');
                 try {
-                  console.log('[DEBUG NEWS FRONTEND] Invio news al backend:', newsText);
                   await authAPI.updateVendorProfile({ news: newsText }, user.token);
-                  console.log('[DEBUG NEWS FRONTEND] News salvata con successo');
                   setSavedNews(newsText);
                   setEditingNews(false); // Disabilita editing dopo il salvataggio
                   // Ricarica il profilo per aggiornare profileData con la nuova news
                   await loadProfile();
-                  console.log('[DEBUG NEWS FRONTEND] Profilo ricaricato dopo salvataggio news');
                   setSuccess('News salvata con successo!');
                   window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top
                   setTimeout(() => setSuccess(''), 2500);
@@ -1998,8 +1976,6 @@ const VendorProfile = () => {
                 {formData.shopSettings.shipping.shippingRates && formData.shopSettings.shipping.shippingRates.length > 0 ? (
                   <div className="mb-3">
                     {formData.shopSettings.shipping.shippingRates.map((rate, index) => {
-                      console.log(`🟡 [DEBUG] Visualizzazione tariffa ${index}:`, rate);
-                      console.log(`🟡 [DEBUG] Opzioni spedizione tariffa ${index}:`, rate.shippingOptions);
                       return (
                       <Card key={index} className="mb-2">
                         <Card.Body>
@@ -2985,10 +2961,8 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 return val;
               };
               let rateToSave = { ...shippingRateForm };
-              console.log('🔵 [DEBUG] Tariffa da salvare (prima conversione):', rateToSave);
               rateToSave.baseRate = convertRate(rateToSave.baseRate);
               rateToSave.ratePerUnit = convertRate(rateToSave.ratePerUnit);
-              console.log('🔵 [DEBUG] Tariffa dopo conversione rate:', rateToSave);
               if (rateToSave.zones && Array.isArray(rateToSave.zones)) {
                 rateToSave.zones = rateToSave.zones.map(z => ({
                   ...z,
@@ -3021,8 +2995,6 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 }
               };
               setFormData(updatedFormData);
-              console.log('🟢 [DEBUG] Tariffa salvata in formData:', rateToSave);
-              console.log('🟢 [DEBUG] Tutte le tariffe dopo salvataggio:', updatedFormData.shopSettings.shipping.shippingRates);
               setShowShippingModal(false);
               
               // Salva automaticamente sul server

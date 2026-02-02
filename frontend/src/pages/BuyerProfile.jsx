@@ -117,22 +117,11 @@ const BuyerProfile = () => {
       setLoading(true);
       setError(null);
       try {
-        console.log('\n🔄 [BUYER_PROFILE] Caricamento dati profilo...');
-        console.log('👤 [BUYER_PROFILE] User ID:', user._id);
-        console.log('👤 [BUYER_PROFILE] User token:', user.token ? 'Present' : 'Missing');
-        
         const [ordersData, reviewsData, wishlistData] = await Promise.all([
           orderAPI.getMyOrders(token),
           reviewAPI.getMyReviews(token),
           wishlistAPI.getWishlist(token),
         ]);
-        
-        console.log('📦 [BUYER_PROFILE] Ordini ricevuti:', ordersData?.length || 0);
-        if (ordersData && ordersData.length > 0) {
-          console.log('📦 [BUYER_PROFILE] Primo ordine:', ordersData[0]);
-        }
-        console.log('⭐ [BUYER_PROFILE] Recensioni ricevute:', reviewsData?.length || 0);
-        console.log('❤️ [BUYER_PROFILE] Wishlist items:', wishlistData?.length || 0);
         
         setOrders(ordersData || []);
         setReviews(reviewsData || []);
