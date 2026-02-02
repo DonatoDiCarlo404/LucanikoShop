@@ -90,12 +90,13 @@ const Negozi = () => {
   }
 
   return (
-    <Container className="py-5">
-      <div className="mb-5 d-flex flex-wrap align-items-center justify-content-between" style={{ textAlign: 'left', gap: 16 }}>
+    <main>
+      <Container className="py-5">
+        <div className="mb-5 d-flex flex-wrap align-items-center justify-content-between" style={{ textAlign: 'left', gap: 16 }}>
         <div>
           <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Negozi</h1>
           <p className="text-muted" style={{ fontSize: '1.1rem', textAlign: 'left', marginBottom: 0 }}>
-            Scopri tutte le aziende lucane registrate su LucanikoShop
+            Clicca sulla card e scopri di più.
           </p>
         </div>
         <div style={{ minWidth: 200, maxWidth: 300, width: '100%' }}>
@@ -263,6 +264,7 @@ const Negozi = () => {
                                 maxHeight: '100%',
                                 objectFit: 'contain'
                               }}
+                              loading="lazy"
                             />
                           ) : (
                             <div 
@@ -325,7 +327,8 @@ const Negozi = () => {
           })}
         </>
       )}
-    </Container>
+      </Container>
+    </main>
   );
 };
 

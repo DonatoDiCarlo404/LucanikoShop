@@ -92,8 +92,9 @@ const Categories = () => {
   }
 
   return (
-    <Container className="mt-4 mb-5">
-      <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>Categorie</h2>
+    <main>
+      <Container className="mt-4 mb-5">
+        <h2 className="mb-4" style={{ color: '#004b75', fontWeight: 700 }}>Categorie</h2>
       <Row className="g-4">
         {categoryCards.map(cat => (
           <Col key={cat.id} xs={6} sm={4} md={3}>
@@ -113,8 +114,7 @@ const Categories = () => {
                     width: '100%',
                     objectFit: 'cover', 
                     background: '#f8f9fa' 
-                  }}
-                  onError={() => handleImageError(cat.id, cat.name)}
+                  }}                  loading="lazy"                  onError={() => handleImageError(cat.id, cat.name)}
                 />
               ) : (
                 <div
@@ -141,7 +141,8 @@ const Categories = () => {
           </Col>
         ))}
       </Row>
-    </Container>
+      </Container>
+    </main>
   );
 };
 

@@ -67,7 +67,7 @@ const Partners = () => {
         <div>
           <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Partners</h1>
           <p className="text-muted" style={{ fontSize: '1.1rem', textAlign: 'left', marginBottom: 0 }}>
-            Scopri le aziende che supportano LucanikoShop
+            Scopri le aziende che supportano Lucaniko Shop
           </p>
         </div>
         <div style={{ minWidth: 200, maxWidth: 300, width: '100%' }}>

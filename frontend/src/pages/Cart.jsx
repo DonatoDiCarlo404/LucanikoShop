@@ -306,6 +306,7 @@ const Cart = () => {
                         src={item.images[item.images.length - 1].url}
                         alt={item.name}
                         style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                        loading="lazy"
                       />
                     ) : (
                       <div style={{ width: '100%', height: '80px', backgroundColor: '#f0f0f0', borderRadius: '8px' }} />

@@ -1,0 +1,17 @@
+# robots.txt per Lucaniko Shop
+User-agent: *
+Allow: /
+
+# Blocca pagine amministrative e checkout
+Disallow: /admin/
+Disallow: /vendor/
+Disallow: /cart
+Disallow: /checkout/
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /orders/
+
+# Sitemap
+Sitemap: https://lucanikoshop.it/api/sitemap
+Sitemap: https://lucanikoshop.it/sitemap.xml

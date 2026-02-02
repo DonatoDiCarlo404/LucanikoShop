@@ -19,6 +19,7 @@ import { productsAPI, API_URL } from '../services/api';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
+import SEOHelmet from '../components/SEOHelmet';
 
 
 const ProductDetail = () => {
@@ -395,7 +396,16 @@ const ProductDetail = () => {
   }
 
   return (
-    <Container className="py-5">
+    <>
+      <SEOHelmet
+        title={`${product.name} - Lucaniko Shop`}
+        description={product.description || `Acquista ${product.name} su Lucaniko Shop. ${product.category ? `Categoria: ${product.category.name}.` : ''} Prodotti tipici lucani di qualità.`}
+        keywords={`${product.name}, ${product.category?.name || ''}, prodotti tipici lucani, lucaniko shop`}
+        image={product.images?.[0] || 'https://lucanikoshop.it/Lucaniko Shop PNG solo testo-01.png'}
+        url={`https://lucanikoshop.it/products/${product._id}`}
+        type="product"
+      />
+      <Container className="py-5">
       <Button variant="outline-secondary" className="mb-4" onClick={() => navigate('/products')}>
         ← Torna al catalogo
       </Button>
@@ -915,6 +925,7 @@ const ProductDetail = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

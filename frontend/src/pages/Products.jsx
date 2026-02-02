@@ -165,7 +165,8 @@ const Products = () => {
   }
 
   return (
-    <Container className="pt-2 pb-5">
+    <main>
+      <Container className="pt-2 pb-5">
       <div className="text-center mb-4 payoff-custom">
         <span style={{ fontSize: '1.5rem', fontWeight: 500, letterSpacing: 1 }}>
           <span style={{ color: '#004b75' }}>La Basilicata</span>
@@ -481,6 +482,7 @@ const Products = () => {
         </Row>
       )}
     </Container>
+    </main>
   );
 };
 

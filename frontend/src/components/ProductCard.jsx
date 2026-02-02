@@ -172,6 +172,7 @@ const ProductCard = ({ product }) => {
                 src={img.url}
                 alt={product.name}
                 className="product-card-img"
+                loading="lazy"
               />
             </Carousel.Item>
           ))}

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/authContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import GoogleAnalytics from './components/GoogleAnalytics';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -60,6 +62,7 @@ function AppContent() {
 
   return (
     <>
+      <GoogleAnalytics measurementId={import.meta.env.VITE_GA_MEASUREMENT_ID} />
       <Navbar />
       <CookieBanner />
       <ToastContainer
@@ -158,11 +161,13 @@ function App() {
 
   // Mostra l'app normale
   return (
-    <AuthProvider>
-      <CartProvider>
-        <AppContent />
-      </CartProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

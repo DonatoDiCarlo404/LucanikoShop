@@ -111,6 +111,7 @@ const CategoriesCarouselArrows = () => {
                         src={cat.image}
                         alt={cat.name}
                         style={{ height: 200, width: '100%', objectFit: 'cover', background: '#f8f9fa' }}
+                        loading="lazy"
                         onError={() => handleImageError(cat.id)}
                       />
                     ) : (
