@@ -91,58 +91,6 @@ router.post('/get-payment-method', async (req, res) => {
   }
 });
 
-// Route GET per verificare che il webhook sia raggiungibile
-router.get('/webhook', (req, res) => {
-  res.json({ 
-    message: 'Webhook endpoint is active. Use POST with Stripe signature.',
-    status: 'ok' 
-  });
-});
-
-// Webhook endpoint per eventi Stripe
-router.post('/webhook', 
-  express.raw({type: 'application/json'}), 
-  async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
-    let event;
-    
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-    
-    // Gestisci l'evento
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        console.log('✅ PaymentIntent succeeded:', paymentIntent.id);
-        // TODO: Attiva account venditore nel database
-        // TODO: Invia email di conferma
-        break;
-        
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
-        console.log('❌ PaymentIntent failed:', failedPayment.id);
-        // TODO: Notifica utente del fallimento
-        break;
-        
-      case 'charge.refunded':
-        const refund = event.data.object;
-        console.log('💸 Charge refunded:', refund.id);
-        // TODO: Gestisci rimborso
-        break;
-        
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-    
-    res.json({received: true});
-});
-
 // Crea un rimborso (solo admin)
 router.post('/refund', async (req, res) => {
   try {
