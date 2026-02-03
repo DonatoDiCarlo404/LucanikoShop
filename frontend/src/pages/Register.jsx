@@ -8,7 +8,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '../components/StripePaymentForm';
 
 // Chiave pubblica Stripe
-const stripePromise = loadStripe('pk_test_51SS11yRcLktP33tcvW9XbFOfI3b9jyL4pumGnEiGVfIYhr0wtKZybKrmMNApfcrUaLxSwN0spQBeTLqt6KHeqFZO00clKGog92');
+const stripePromise = loadStripe('pk_live_51SrKuwK9Lxisu9UDKKX60Lgx23xWmVDcP1H6Or0TCYAvqWDBqDQ0id912MUmaUMy7bdl1XO9ytBpXpdc56V7AAuX001BqzRaTY');
 
 // Prezzi Piano di Adesione 2026 (IVA inclusa)
 const SUBSCRIPTION_PRICES = {
