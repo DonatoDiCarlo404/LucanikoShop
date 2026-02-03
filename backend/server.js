@@ -30,6 +30,7 @@ console.log('📦 Importazione paymentRoutes...');
 import paymentRoutes from './routes/paymentRoutes.js';
 console.log('✅ paymentRoutes importato con successo');
 
+import stripeConnectRoutes from './routes/stripeConnectRoutes.js';
 import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
@@ -102,6 +103,7 @@ app.use('/api/wishlist', wishlistRoutes);
 console.log('🔌 Montaggio route /api/payment...');
 app.use('/api/payment', paymentRoutes);
 console.log('✅ Route /api/payment montata con successo');
+app.use('/api/stripe-connect', stripeConnectRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/sitemap', sitemapRoutes);
