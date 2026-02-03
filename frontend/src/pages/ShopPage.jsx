@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Container, Row, Col, Card, Spinner, Alert, Badge, Button } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
@@ -27,6 +28,14 @@ const ShopPage = () => {
   useEffect(() => {
     if (shopData?.vendor?.businessCategories) {
       loadSubcategories();
+    }
+  }, [shopData]);
+
+  // Aggiorna meta tag quando caricano i dati
+  useEffect(() => {
+    if (shopData?.vendor) {
+      const { businessName, businessDescription } = shopData.vendor;
+      document.title = `${businessName || 'Negozio'} - Lucaniko Shop`;
     }
   }, [shopData]);
 
@@ -113,6 +122,13 @@ const ShopPage = () => {
 
   const { vendor, products, stats } = shopData;
   
+  // Meta tag dinamici per SEO
+  const shopTitle = `${vendor.businessName || 'Negozio'} - Lucaniko Shop`;
+  const shopDescription = vendor.businessDescription || 
+    `Scopri i prodotti di ${vendor.businessName || 'questo negozio'} su Lucaniko Shop. Prodotti tipici lucani di qualità.`;
+  const shopUrl = `https://lucanikoshop.it/shop/${vendor.slug || vendor._id}`;
+  const shopImage = vendor.logo?.url || 'https://lucanikoshop.it/Lucaniko Shop PNG solo testo-01.png';
+  
   // Normalizza i prodotti per assicurare compatibilità con ProductCard
   const normalizedProducts = products.map(p => ({
     ...p,
@@ -158,7 +174,27 @@ const ShopPage = () => {
   const isOwner = user && user._id === vendor._id;
 
   return (
-    <Container className="py-5">
+    <>
+      <Helmet>
+        <title>{shopTitle}</title>
+        <meta name="description" content={shopDescription} />
+        <link rel="canonical" href={shopUrl} />
+        
+        {/* Open Graph */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={shopTitle} />
+        <meta property="og:description" content={shopDescription} />
+        <meta property="og:url" content={shopUrl} />
+        <meta property="og:image" content={shopImage} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={shopTitle} />
+        <meta name="twitter:description" content={shopDescription} />
+        <meta name="twitter:image" content={shopImage} />
+      </Helmet>
+      
+      <Container className="py-4">
       {/* Header Negozio: logo, info pubbliche, contatti, social */}
       <Card className="mb-4 shadow">
         <Card.Body>
@@ -442,7 +478,8 @@ const ShopPage = () => {
           ← Torna al Catalogo Completo
         </Button>
       </div>
-    </Container>
+      </Container>
+    </>
   );
 };
 

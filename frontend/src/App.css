@@ -86,9 +86,9 @@ a:hover,
   color: #fff !important;
   font-weight: 500;
 }
-/* Badge custom per Non disponibile, colore più chiaro */
+/* Badge custom per Non disponibile, colore più scuro per contrasto accessibilità */
 .badge-not-available {
-  background: #8a8a8a !important;
+  background: #6c757d !important;
   color: #fff !important;
   font-weight: 500;
 }

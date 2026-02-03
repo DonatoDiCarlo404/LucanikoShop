@@ -478,7 +478,7 @@ const AdminDashboard = () => {
                                 cursor: 'pointer',
                                 textDecoration: 'underline'
                               }}
-                              onClick={() => navigate(`/shop/${seller._id}`)}
+                              onClick={() => navigate(`/shop/${seller.slug || seller._id}`)}
                             >
                               {seller.businessName}
                             </span>

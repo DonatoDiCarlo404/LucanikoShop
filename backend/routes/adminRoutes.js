@@ -9,6 +9,7 @@ import {
   getSellerProfile,
   updateSellerProfile,
   getAllProducts,
+  getAllOrders,
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middlewares/auth.js';
 
@@ -28,6 +29,9 @@ router.put('/sellers/:id/profile', updateSellerProfile);
 
 // Get prodotti
 router.get('/products', getAllProducts);
+
+// Get ordini
+router.get('/orders', getAllOrders);
 
 // Approva/Rifiuta venditore
 router.put('/approve-seller/:id', approveSeller);

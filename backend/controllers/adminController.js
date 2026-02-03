@@ -1,5 +1,4 @@
-import User from '../models/User.js';
-import Product from '../models/Product.js';
+import { User, Product, Order } from '../models/index.js';
 
 // @desc    Get tutti i venditori in attesa di approvazione
 // @route   GET /api/admin/pending-sellers
@@ -296,6 +295,21 @@ export const getAllProducts = async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get tutti gli ordini (admin)
+// @route   GET /api/admin/orders
+// @access  Private/Admin
+export const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate('buyer', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

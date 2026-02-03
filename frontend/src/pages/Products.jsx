@@ -396,7 +396,7 @@ const Products = () => {
             onChange={(e) => setSubcategory(e.target.value)}
             className="my-2 my-md-0"
             disabled={!category || subcategories.length === 0}
-            style={{ maxWidth: 260, minWidth: 120, display: 'inline-block' }}
+            style={{ maxWidth: 320, minWidth: 180, display: 'inline-block' }}
           >
             <option value="">
               {!category 

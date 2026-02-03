@@ -441,13 +441,15 @@ const VendorProfile = () => {
   // Carica statistiche e recensioni come in ShopPage.jsx
   const loadStats = async () => {
     try {
+      // Determina quale venditore stiamo visualizzando
+      const vendorId = (user.role === 'admin' && sellerId) ? sellerId : user._id;
+      
       // Carica prodotti del venditore
       let productsUrl = `${API_URL}/products/seller/my-products`;
-      let vendorId = user._id;
       if (user.role === 'admin' && sellerId) {
         productsUrl = `${API_URL}/admin/products`;
-        vendorId = sellerId;
       }
+      
       const productsRes = await fetch(productsUrl, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
@@ -476,12 +478,30 @@ const VendorProfile = () => {
       const avgRating = totalReviews > 0 ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
 
       // Carica ordini recenti
-      const ordersRes = await fetch(`${API_URL}/orders/vendor/received`, {
+      // Se admin visualizza altro venditore, usa endpoint admin per ottenere tutti gli ordini
+      let ordersUrl = `${API_URL}/orders/vendor/received`;
+      if (user.role === 'admin' && sellerId) {
+        ordersUrl = `${API_URL}/admin/orders`;
+      }
+      
+      const ordersRes = await fetch(ordersUrl, {
         headers: { Authorization: `Bearer ${user.token}` }
       });
       let ordersData = [];
       if (ordersRes.ok) {
-        ordersData = await ordersRes.json();
+        const allOrders = await ordersRes.json();
+        
+        // Se admin visualizza altro venditore, filtra gli ordini per quel venditore
+        if (user.role === 'admin' && sellerId) {
+          ordersData = allOrders.filter(order => 
+            order.items.some(item => 
+              item.seller?._id === vendorId || item.seller === vendorId
+            )
+          );
+        } else {
+          ordersData = allOrders;
+        }
+        
         setOrders(ordersData.slice(0, 5));
       }
 
@@ -815,7 +835,7 @@ const VendorProfile = () => {
                     {profileData.socialLinks?.tiktok && <a href={profileData.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="me-2" title="TikTok"><i className="bi bi-tiktok" style={{ fontSize: 22 }}></i></a>}
                     {profileData.businessWhatsapp && <a href={`https://wa.me/${profileData.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="me-2" title="WhatsApp"><i className="bi bi-whatsapp" style={{ fontSize: 22 }}></i></a>}
                     {profileData.website && <a href={profileData.website} target="_blank" rel="noopener noreferrer" className="me-2" title="Sito Web"><i className="bi bi-globe" style={{ fontSize: 22 }}></i></a>}
-                    <a href="#" onClick={(e) => { e.preventDefault(); const url = `${window.location.origin}/shop/${user._id}`; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo"><i className="bi bi-share" style={{ fontSize: 22 }}></i></a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); const url = `${window.location.origin}/shop/${profileData?.slug || user._id}`; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo"><i className="bi bi-share" style={{ fontSize: 22 }}></i></a>
                   </div>
                   <div className="d-block d-md-none w-100" style={{ borderBottom: '1px solid #eee', margin: '12px 0' }}></div>
                 </>

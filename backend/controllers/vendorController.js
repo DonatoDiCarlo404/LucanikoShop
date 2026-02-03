@@ -1,13 +1,25 @@
 import { User, Product, Review } from '../models/index.js';
 
-// @desc    Ottieni profilo pubblico venditore
-// @route   GET /api/vendors/:id
+// @desc    Ottieni profilo pubblico venditore (per ID o slug)
+// @route   GET /api/vendors/:idOrSlug
 // @access  Public
 export const getPublicVendorProfile = async (req, res) => {
   try {
-    const vendor = await User.findById(req.params.id).select(
-      'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories'
-    );
+    const { idOrSlug } = req.params;
+    
+    // Cerca per ID MongoDB o per slug
+    let vendor;
+    if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
+      // È un ID MongoDB valido
+      vendor = await User.findById(idOrSlug).select(
+        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug'
+      );
+    } else {
+      // È uno slug
+      vendor = await User.findOne({ slug: idOrSlug }).select(
+        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug'
+      );
+    }
 
     if (!vendor) {
       return res.status(404).json({ message: 'Venditore non trovato' });
@@ -58,7 +70,8 @@ export const getPublicVendorProfile = async (req, res) => {
         memberSince: vendor.createdAt,
         shopSettings: vendor.shopSettings,
         news: vendor.news,
-        businessCategories: vendor.businessCategories
+        businessCategories: vendor.businessCategories,
+        slug: vendor.slug
       },
       products,
       stats: {
@@ -80,9 +93,9 @@ export const getAllVendors = async (req, res) => {
     const vendors = await User.find({ 
       role: 'seller', 
       isApproved: true 
-    }).select('name businessName ragioneSociale businessDescription logo storeAddress businessCategories createdAt');
+    }).select('name businessName ragioneSociale businessDescription logo storeAddress businessCategories createdAt slug');
 
-    // Formatta i dati per includere la città e le categorie
+    // Formatta i dati per includere la città, le categorie e lo slug
     const formattedVendors = vendors.map(vendor => ({
       _id: vendor._id,
       name: vendor.name,
@@ -92,6 +105,7 @@ export const getAllVendors = async (req, res) => {
       logo: vendor.logo,
       city: vendor.storeAddress?.city || '',
       businessCategories: vendor.businessCategories || [],
+      slug: vendor.slug,
       memberSince: vendor.createdAt
     }));
 

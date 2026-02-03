@@ -90,6 +90,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    slug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      unique: true,
+      sparse: true, // Permette null ma deve essere unico se presente
+      index: true
+    },
     ragioneSociale: {
       type: String,
       trim: true
@@ -343,6 +351,50 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Funzione per generare slug unico da businessName
+function generateSlug(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Spazi in trattini
+    .replace(/[^\w\-]+/g, '')       // Rimuovi caratteri non alfanumerici
+    .replace(/\-\-+/g, '-')         // Trattini multipli in uno solo
+    .replace(/^-+/, '')             // Rimuovi trattini all'inizio
+    .replace(/-+$/, '');            // Rimuovi trattini alla fine
+}
+
+// Genera slug automaticamente prima di salvare
+userSchema.pre('save', async function (next) {
+  // Genera slug solo per seller con businessName
+  if (this.role === 'seller' && this.businessName && (!this.slug || this.isModified('businessName'))) {
+    let slug = generateSlug(this.businessName);
+    
+    // Verifica unicità dello slug
+    let slugExists = true;
+    let counter = 1;
+    let uniqueSlug = slug;
+    
+    while (slugExists) {
+      const existingUser = await this.constructor.findOne({ 
+        slug: uniqueSlug,
+        _id: { $ne: this._id } // Escludi se stessi
+      });
+      
+      if (!existingUser) {
+        slugExists = false;
+      } else {
+        uniqueSlug = `${slug}-${counter}`;
+        counter++;
+      }
+    }
+    
+    this.slug = uniqueSlug;
+  }
+  
+  next();
+});
 
 // Hash della password prima di salvare
 userSchema.pre('save', async function (next) {

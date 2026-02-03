@@ -107,16 +107,16 @@ footer, .footer, .footer * {
   background-color: rgb(255 255 255)!important;
 }
 
-/* Animazione icone social footer */
+/* Animazione icone social footer - colori con contrasto migliorato */
 .footer-social-icon {
   display: inline-block;
   transition: transform 0.3s ease, color 0.3s ease;
-  color: #2785d7;
+  color: #004b75;
 }
 
 .footer-social-icon:hover {
   transform: scale(1.2);
-  color: #0003a3;
+  color: #00bf63;
 }
 
 /* Riduci spazio sopra copyright footer */

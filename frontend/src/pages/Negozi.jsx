@@ -96,7 +96,7 @@ const Negozi = () => {
         <div>
           <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Negozi</h1>
           <p className="text-muted" style={{ fontSize: '1.1rem', textAlign: 'left', marginBottom: 0 }}>
-            Clicca sulla card e scopri di più.
+            Scopri i negozi partner di Lucaniko Shop e i loro prodotti artigianali.
           </p>
         </div>
         <div style={{ minWidth: 200, maxWidth: 300, width: '100%' }}>
@@ -232,7 +232,7 @@ const Negozi = () => {
                           border: '2px solid transparent',
                           boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)'
                         }}
-                        onClick={() => navigate(`/shop/${vendor._id}`)}
+                        onClick={() => navigate(`/shop/${vendor.slug || vendor._id}`)}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-8px)';
                           e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.16)';

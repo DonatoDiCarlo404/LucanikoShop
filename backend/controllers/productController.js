@@ -77,7 +77,7 @@ export const getProducts = async (req, res) => {
     }
 
     const products = await Product.find(query)
-      .populate('seller', 'name businessName email')
+      .populate('seller', 'name businessName email slug')
       .populate('category', 'name')
       .populate('subcategory', 'name')
       .limit(Number(limit))
@@ -103,7 +103,7 @@ export const getProducts = async (req, res) => {
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('seller', 'name businessName email avatar')
+      .populate('seller', 'name businessName email avatar slug')
       .populate('category', 'name')
       .populate('subcategory', 'name');
 
@@ -382,7 +382,7 @@ export const getMyProducts = async (req, res) => {
     const products = await Product.find({ seller: req.user._id })
       .populate('category', 'name')
       .populate('subcategory', 'name')
-      .populate('seller', 'businessName name')
+      .populate('seller', 'businessName name slug')
       .sort({ createdAt: -1 });
 
     res.json(products);
@@ -439,8 +439,9 @@ export const getSuggestedProducts = async (req, res) => {
 
     // Recupera prodotti suggeriti
     const products = await Product.find(query)
-      .populate('seller', 'businessName name')
+      .populate('seller', 'businessName name slug')
       .populate('category', 'name')
+      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit isActive variants originalPrice ivaPercent seller hasVariants')
       .limit(Number(limit))
       .sort({ createdAt: -1 });
 

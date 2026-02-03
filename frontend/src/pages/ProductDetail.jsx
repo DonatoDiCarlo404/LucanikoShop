@@ -483,7 +483,7 @@ const ProductDetail = () => {
                         fontWeight: 600,
                         transition: 'color 0.2s, text-decoration-color 0.2s'
                       }}
-                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                      onClick={() => navigate(`/shop/${product.seller?.slug || product.seller?._id}`)}
                       onMouseEnter={e => {
                         e.currentTarget.style.color = '#00bf63';
                         e.currentTarget.style.textDecorationColor = '#00bf63';
@@ -502,7 +502,7 @@ const ProductDetail = () => {
                     <Button 
                       variant="outline-primary" 
                       size="sm"
-                      onClick={() => navigate(`/shop/${product.seller._id}`)}
+                      onClick={() => navigate(`/shop/${product.seller?.slug || product.seller?._id}`)}
                     >
                       Vedi tutti i prodotti di questo venditore →
                     </Button>

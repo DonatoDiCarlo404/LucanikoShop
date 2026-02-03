@@ -167,26 +167,60 @@ const Navbar = () => {
               </>
             )}
 
-            {isAuthenticated && user.role === 'admin' && false && (
+            {isAuthenticated && user.role === 'admin' && (
               <>
-                <Nav.Link as={Link} to="/vendor/dashboard" className="text-start">
-                  <span><i className="bi bi-graph-up"></i> Dashboard Venditore</span>
-                </Nav.Link>
-                <Nav.Link as={Link} to="/my-products" className="text-start">
-                  <span><i className="bi bi-kanban"></i> Gestione prodotti</span>
-                  {pendingProductsCount > 0 && (
-                    <Badge bg="info" className="ms-2">
-                      {pendingProductsCount}
-                    </Badge>
-                  )}
-                </Nav.Link>
-                <Nav.Link as={Link} to="/admin/dashboard" className="text-start">
+                <div className="mb-2 d-lg-none" style={{ fontWeight: 600, color: '#004b75', fontSize: '1.1rem' }}>
+                  <span style={{ display: 'block', textAlign: 'left', marginLeft: '0.5rem' }}>
+                    Ciao, {user.name ? user.name.split(' ')[0] : ''}
+                  </span>
+                </div>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/admin/dashboard'); }}
+                >
                   <span><i className="bi bi-shield-lock"></i> Dashboard Admin</span>
                   {pendingCount > 0 && (
                     <Badge bg="warning" className="ms-2">
                       {pendingCount}
                     </Badge>
                   )}
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/products'); }}
+                >
+                  <span><i className="bi bi-box-seam"></i> Prodotti</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/offers'); }}
+                >
+                  <span><i className="bi bi-tag"></i> Offerte</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/categories'); }}
+                >
+                  <span><i className="bi bi-grid"></i> Categorie</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/negozi'); }}
+                >
+                  <span><i className="bi bi-shop"></i> Negozi</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/partners'); }}
+                >
+                  <span><i className="bi bi-people"></i> Partners</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={handleLogout}
+                  style={{ color: '#dc3545', fontWeight: 600 }}
+                >
+                  <span><i className="bi bi-power"></i> Esci</span>
                 </Nav.Link>
               </>
             )}
@@ -255,12 +289,6 @@ const Navbar = () => {
                 )}
                 {(user.role === 'admin') && (
                   <>
-                    <NavDropdown.Item onClick={() => navigate('/vendor/dashboard')}>
-                      <span><i className="bi bi-graph-up me-2"></i> Dashboard Venditore</span>
-                    </NavDropdown.Item>
-                    <NavDropdown.Item onClick={() => navigate('/my-products')}>
-                      <span><i className="bi bi-kanban me-2"></i> Gestione prodotti</span>
-                    </NavDropdown.Item>
                     <NavDropdown.Item onClick={() => navigate('/admin/dashboard')}>
                       <span><i className="bi bi-shield-lock me-2"></i> Dashboard Admin</span>
                       {pendingCount > 0 && (

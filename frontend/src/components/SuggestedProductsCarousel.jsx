@@ -105,7 +105,23 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
           id={`carousel-${sameVendor ? 'same' : 'other'}`}
           className="suggested-products-carousel"
         >
-          {products.map((product) => (
+          {products.map((product) => {
+            // Calcola il prezzo da mostrare
+            let displayPrice = product.price;
+            let displayDiscountedPrice = product.discountedPrice;
+            
+            // Se il prodotto ha varianti, prendi il prezzo minimo
+            if (product.hasVariants && product.variants && product.variants.length > 0) {
+              const prices = product.variants.map(v => v.price).filter(p => p != null);
+              displayPrice = prices.length > 0 ? Math.min(...prices) : 0;
+              
+              if (product.hasActiveDiscount) {
+                const discountedPrices = product.variants.map(v => v.discountedPrice).filter(p => p != null);
+                displayDiscountedPrice = discountedPrices.length > 0 ? Math.min(...discountedPrices) : displayPrice;
+              }
+            }
+            
+            return (
             <Card 
               key={product._id} 
               className="suggested-product-card"
@@ -153,15 +169,15 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
                   {product.hasActiveDiscount ? (
                     <>
                       <span className="discounted-price fw-bold" style={{ color: '#004b75' }}>
-                        €{product.discountedPrice?.toFixed(2)}
+                        {product.hasVariants && 'da '}€{displayDiscountedPrice?.toFixed(2)}
                       </span>
                       <span className="original-price text-muted text-decoration-line-through ms-2">
-                        €{product.price?.toFixed(2)}
+                        €{displayPrice?.toFixed(2)}
                       </span>
                     </>
                   ) : (
                     <span className="current-price fw-bold" style={{ color: '#004b75' }}>
-                      €{product.price?.toFixed(2)}
+                      {product.hasVariants && 'da '}€{displayPrice?.toFixed(2)}
                     </span>
                   )}
                 </div>
@@ -176,7 +192,8 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
                 </Button>
               </Card.Body>
             </Card>
-          ))}
+            );
+          })}
         </div>
         
         {products.length > 3 && (
