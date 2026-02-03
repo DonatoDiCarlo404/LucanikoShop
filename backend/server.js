@@ -21,7 +21,11 @@ import discountRoutes from './routes/discountRoutes.js';
 import shopSettingsRoutes from './routes/shopSettingsRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
+
+console.log('📦 Importazione paymentRoutes...');
 import paymentRoutes from './routes/paymentRoutes.js';
+console.log('✅ paymentRoutes importato con successo');
+
 import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
@@ -89,7 +93,9 @@ app.use('/api/discounts', discountRoutes);
 app.use('/api/shop-settings', shopSettingsRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+console.log('🔌 Montaggio route /api/payment...');
 app.use('/api/payment', paymentRoutes);
+console.log('✅ Route /api/payment montata con successo');
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/sitemap', sitemapRoutes);
