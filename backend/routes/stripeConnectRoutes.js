@@ -1,6 +1,6 @@
 import express from 'express';
 import Stripe from 'stripe';
-import { protect, sellerOnly } from '../middlewares/auth.js';
+import { protect, seller } from '../middlewares/auth.js';
 import User from '../models/User.js';
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // @route   POST /api/stripe-connect/create-account
 // @desc    Crea un account Stripe Connect per il venditore
 // @access  Private (Seller only)
-router.post('/create-account', protect, sellerOnly, async (req, res) => {
+router.post('/create-account', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -67,7 +67,7 @@ router.post('/create-account', protect, sellerOnly, async (req, res) => {
 // @route   POST /api/stripe-connect/create-onboarding-link
 // @desc    Crea un link per l'onboarding del venditore su Stripe
 // @access  Private (Seller only)
-router.post('/create-onboarding-link', protect, sellerOnly, async (req, res) => {
+router.post('/create-onboarding-link', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -101,7 +101,7 @@ router.post('/create-onboarding-link', protect, sellerOnly, async (req, res) => 
 // @route   GET /api/stripe-connect/account-status
 // @desc    Verifica lo stato dell'account Stripe Connect del venditore
 // @access  Private (Seller only)
-router.get('/account-status', protect, sellerOnly, async (req, res) => {
+router.get('/account-status', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
@@ -146,7 +146,7 @@ router.get('/account-status', protect, sellerOnly, async (req, res) => {
 // @route   GET /api/stripe-connect/dashboard-link
 // @desc    Crea un link per accedere alla dashboard Stripe Express del venditore
 // @access  Private (Seller only)
-router.get('/dashboard-link', protect, sellerOnly, async (req, res) => {
+router.get('/dashboard-link', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
