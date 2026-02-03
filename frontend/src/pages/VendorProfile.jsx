@@ -70,6 +70,13 @@ const VendorProfile = () => {
     cvv: ''
   });
 
+  // State per Stripe Connect
+  const [stripeConnectStatus, setStripeConnectStatus] = useState({
+    connected: false,
+    onboardingComplete: false,
+    loading: false
+  });
+
   // Precompila il form pagamento quando si apre il modal
   useEffect(() => {
     if (showPaymentModal && profileData?.cardDetails) {
@@ -85,6 +92,23 @@ const VendorProfile = () => {
       setPaymentForm(form => ({ ...form, cvv: '' }));
     }
   }, [showPaymentModal, profileData]);
+
+  // Verifica stato Stripe Connect all'avvio e quando torna dall'onboarding
+  useEffect(() => {
+    if (user?.role === 'seller') {
+      checkStripeConnectStatus();
+      
+      // Verifica se è tornato dall'onboarding Stripe
+      const stripeOnboarding = searchParams.get('stripe_onboarding');
+      if (stripeOnboarding === 'success') {
+        setSuccess('✅ Configurazione Stripe completata con successo!');
+        checkStripeConnectStatus();
+        // Rimuovi il parametro dall'URL
+        searchParams.delete('stripe_onboarding');
+        setSearchParams(searchParams);
+      }
+    }
+  }, [user, searchParams]);
 
   // State per gestione sconti
   const [showDiscountModal, setShowDiscountModal] = useState(false);
@@ -613,6 +637,100 @@ const VendorProfile = () => {
       return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Funzioni Stripe Connect
+  const checkStripeConnectStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/stripe-connect/account-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setStripeConnectStatus({
+          connected: data.connected,
+          onboardingComplete: data.onboardingComplete,
+          loading: false
+        });
+      }
+    } catch (error) {
+      console.error('Errore verifica stato Stripe:', error);
+    }
+  };
+
+  const handleStripeConnectOnboarding = async () => {
+    try {
+      setStripeConnectStatus(prev => ({ ...prev, loading: true }));
+      setError('');
+      
+      const token = localStorage.getItem('token');
+      
+      // Step 1: Crea account Stripe Connect se non esiste
+      if (!stripeConnectStatus.connected) {
+        const createResponse = await fetch(`${API_URL}/stripe-connect/create-account`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!createResponse.ok) {
+          const errorData = await createResponse.json();
+          throw new Error(errorData.message || 'Errore creazione account Stripe');
+        }
+      }
+      
+      // Step 2: Crea link onboarding
+      const linkResponse = await fetch(`${API_URL}/stripe-connect/create-onboarding-link`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!linkResponse.ok) {
+        const errorData = await linkResponse.json();
+        throw new Error(errorData.message || 'Errore creazione link onboarding');
+      }
+      
+      const data = await linkResponse.json();
+      
+      // Redirect a Stripe onboarding
+      window.location.href = data.url;
+      
+    } catch (error) {
+      console.error('Errore onboarding Stripe:', error);
+      setError(error.message || 'Errore durante l\'onboarding Stripe');
+      setStripeConnectStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleOpenStripeDashboard = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/stripe-connect/dashboard-link`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore apertura dashboard Stripe');
+      }
+      
+      const data = await response.json();
+      window.open(data.url, '_blank');
+      
+    } catch (error) {
+      console.error('Errore dashboard Stripe:', error);
+      setError('Errore durante l\'apertura della dashboard Stripe');
     }
   };
 
@@ -1834,30 +1952,62 @@ const VendorProfile = () => {
                 <Alert variant="info">
                   Stripe Connect permette di accettare pagamenti con carta direttamente sul tuo conto.
                 </Alert>
-                <Form.Check 
-                  type="checkbox"
-                  label="Abilita Stripe"
-                  checked={formData.shopSettings.paymentMethods.stripe.enabled}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    shopSettings: {
-                      ...prev.shopSettings,
-                      paymentMethods: {
-                        ...prev.shopSettings.paymentMethods,
-                        stripe: {
-                          ...prev.shopSettings.paymentMethods.stripe,
-                          enabled: e.target.checked
-                        }
-                      }
-                    }
-                  }))}
-                  className="mb-3"
-                />
-                {formData.shopSettings.paymentMethods.stripe.onboardingComplete ? (
-                  <Badge bg="success">Configurazione Stripe completata ✓</Badge>
+                
+                {stripeConnectStatus.connected && stripeConnectStatus.onboardingComplete ? (
+                  <div className="mb-3">
+                    <Badge bg="success" className="mb-2">Configurazione Stripe completata ✓</Badge>
+                    <div className="d-flex gap-2">
+                      <Button 
+                        variant="outline-primary" 
+                        size="sm"
+                        onClick={handleOpenStripeDashboard}
+                      >
+                        📊 Apri Dashboard Stripe
+                      </Button>
+                      <Button 
+                        variant="outline-secondary" 
+                        size="sm"
+                        onClick={checkStripeConnectStatus}
+                      >
+                        🔄 Aggiorna Stato
+                      </Button>
+                    </div>
+                  </div>
+                ) : stripeConnectStatus.connected && !stripeConnectStatus.onboardingComplete ? (
+                  <div className="mb-3">
+                    <Badge bg="warning" text="dark" className="mb-2">Onboarding incompleto</Badge>
+                    <p className="small text-muted mb-2">Completa la configurazione Stripe per iniziare ad accettare pagamenti.</p>
+                    <Button 
+                      variant="warning" 
+                      size="sm"
+                      onClick={handleStripeConnectOnboarding}
+                      disabled={stripeConnectStatus.loading}
+                    >
+                      {stripeConnectStatus.loading ? (
+                        <>
+                          <Spinner animation="border" size="sm" className="me-2" />
+                          Caricamento...
+                        </>
+                      ) : (
+                        '⚙️ Completa Configurazione'
+                      )}
+                    </Button>
+                  </div>
                 ) : (
-                  <Button variant="primary" size="sm">
-                    Configura Stripe Connect
+                  <Button 
+                    variant="primary" 
+                    size="sm"
+                    onClick={handleStripeConnectOnboarding}
+                    disabled={stripeConnectStatus.loading}
+                  >
+                    {stripeConnectStatus.loading ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        Configurazione...
+                      </>
+                    ) : (
+                      '🔗 Configura Stripe Connect'
+                    )}
                   </Button>
                 )}
 
