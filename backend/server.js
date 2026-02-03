@@ -11,7 +11,11 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import checkoutRoutes from './routes/checkoutRoutes.js';
+
+console.log('📦 Importazione webhookRoutes...');
 import webhookRoutes from './routes/webhookRoutes.js';
+console.log('✅ webhookRoutes importato con successo');
+
 import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import { notFound, errorHandler } from './middlewares/errorMiddleware.js';
@@ -40,7 +44,9 @@ const PORT = process.env.PORT || 5000;
 
 // IMPORTANTE: Webhook route PRIMA di express.json()
 // Stripe ha bisogno del raw body per verificare la firma
+console.log('🔌 Montaggio route /api/webhook...');
 app.use('/api/webhook', webhookRoutes);
+console.log('✅ Route /api/webhook montata con successo');
 
 // Middleware CORS configurato per produzione
 const allowedOrigins = [
