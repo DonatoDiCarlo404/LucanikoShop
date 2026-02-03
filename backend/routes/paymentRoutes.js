@@ -91,6 +91,14 @@ router.post('/get-payment-method', async (req, res) => {
   }
 });
 
+// Route GET per verificare che il webhook sia raggiungibile
+router.get('/webhook', (req, res) => {
+  res.json({ 
+    message: 'Webhook endpoint is active. Use POST with Stripe signature.',
+    status: 'ok' 
+  });
+});
+
 // Webhook endpoint per eventi Stripe
 router.post('/webhook', 
   express.raw({type: 'application/json'}), 
