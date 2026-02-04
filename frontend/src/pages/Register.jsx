@@ -584,24 +584,218 @@ const Register = () => {
         <Modal.Header closeButton>
           <Modal.Title>Termini &amp; Condizioni – Venditori (Lucaniko Shop)</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{maxHeight: '70vh', overflowY: 'auto'}}>
-          <ol>
-            <li><b>Oggetto e definizioni</b><br />Il presente documento disciplina l'adesione delle aziende ("Venditori") al marketplace Lucaniko Shop e l'utilizzo degli strumenti messi a disposizione per la vendita ai consumatori finali.</li>
-            <li><b>Requisiti di ammissione</b><br />Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop).<br />Il Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.).<br />Lucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura.</li>
-            <li><b>Per la categoria di vendita CIBI E BEVANDE è <br />obbligatorio offrire su questo marketplace solo prodotti Lucani. Tutti i prodotti non Lucani saranno rimossi senza alcun avviso e potrebbe comportare l'esclusione del venditore da Lucaniko Shop.</b></li>
-            <li><b>Abbonamenti e attivazione</b><br />Piano di adesione 2026 (come da offerta in piattaforma):<br />- €299 (IVA Inclusa) / 1 anno<br />- €499 (IVA Inclusa) / 2 anni<br />- €599 (IVA Inclusa) / 3 anni <br /> <b>INCLUDE:</b><br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo <br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news) L'accesso è attivato dopo:<br />- approvazione della richiesta<br />- pagamento effettuato online<br />- emissione fattura da parte di INSIDE DI DI PIETRO VITO<br />Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico. <br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
-            <li><b>Commissioni sulle vendite e pagamenti</b><br />- Nessuna commissione di marketplace, salvo diverso accordo.<br />- I pagamenti sono gestiti tramite Stripe: il Venditore deve creare/configurare il proprio account Stripe e completare eventuali verifiche (KYC/AML).<br />- Stripe accredita direttamente al Venditore gli importi delle vendite al netto delle commissioni Stripe e di eventuali trattenute richieste da Stripe.</li>
-            <li><b>Obblighi del Venditore (prodotti, conformità e leggi)</b><br />Il Venditore è l'unico responsabile di:<br />- veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)<br />- conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)<br />- disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)<br />- gestione resi, recesso, rimborsi, garanzia e assistenza post-vendita<br />- gestione spedizioni e consegne<br />Lucaniko Shop non garantisce esclusiva di prodotto nè di prezzo. Più venditori possono offrire prodotti uguali o simili anche a prezzi differenti.<br />È vietato vendere prodotti illegali, contraffatti, pericolosi o soggetti a restrizioni non gestibili sulla Piattaforma.</li>
-            <li><b>Spedizioni</b><br />Il Venditore imposta aree servite, tempi, corrieri e costi.<br />Il Venditore è responsabile di imballaggio, integrità e tracciamento.</li>
-            <li><b>Termini di vendita del Venditore</b><br />Ogni Venditore deve pubblicare i propri Termini e Condizioni di vendita (spedizioni, resi, recesso, garanzie, contatti), che l'Acquirente dovrà accettare in fase di checkout.</li>
-            <li><b>Pagina venditore e contenuti</b><br />Il Venditore può avere una pagina dedicata con:<br />- logo e descrizione<br />- contatti cliccabili (telefono, email, sito, social)<br />- indirizzo<br />- catalogo prodotti<br />Il Venditore garantisce di avere i diritti d'uso su logo, immagini e testi caricati e manleva Lucaniko Shop da rivendicazioni di terzi.</li>
-            <li><b>Uso della Piattaforma e condotte vietate</b><br />È vietato:<br />- utilizzare la Piattaforma per finalità illecite<br />- inserire contenuti ingannevoli o non conformi<br />- aggirare i flussi di pagamento della Piattaforma se non autorizzato<br />- sollecitare pagamenti esterni per ordini generati dal marketplace</li>
-            <li><b>Sospensione e cessazione</b><br />Lucaniko Shop può sospendere o disattivare l'account venditore (anche senza preavviso nei casi gravi) in caso di:<br />- violazioni normative o dei presenti Termini<br />- contestazioni ripetute, frodi, prodotti vietati<br />- inadempimenti gravi nella gestione ordini/resi<br />Il Venditore può recedere dall'adesione secondo le modalità indicate; gli importi dell'abbonamento già pagati possono essere non rimborsabili salvo obblighi di legge o diversa previsione contrattuale.</li>
-            <li><b>Trattamento dati: ruoli e responsabilità</b><br />Lucaniko Shop è titolare dei dati necessari alla gestione della Piattaforma.<br />Il Venditore è titolare autonomo dei dati necessari alla gestione degli ordini (spedizione, fatturazione, assistenza).<br />Le parti si impegnano a trattare i dati nel rispetto del GDPR e a fornire informative e misure di sicurezza adeguate.</li>
-            <li><b>Limitazione di responsabilità e manleva</b><br />Il Venditore manleva Lucaniko Shop da danni, sanzioni, reclami e pretese derivanti da:<br />prodotti non conformi o pericolosi<br />violazioni di legge (fiscali, consumatori, etichettatura)<br />violazioni di proprietà intellettuale<br />gestione ordini, spedizioni, resi e rimborsi</li>
-            <li><b>Variazione Termini &amp; Condizioni</b><br />Lucaniko Shop si riserva il diritto di modificare i Termini &amp; Condizioni in qualsiasi momento con efficace immediata dalla pubblicazione sul sito</li>
-            <li><b>Legge applicabile e foro</b><br />Il rapporto è regolato dalla legge italiana. Foro competente di Potenza.</li>            
-          </ol>
+        <Modal.Body style={{maxHeight: '70vh', overflowY: 'auto', fontSize: '1.05rem', lineHeight: 1.7}}>
+          <div style={{ marginBottom: 28 }}>
+            <strong>1) Oggetto e definizioni</strong>
+            <div style={{ marginTop: 6 }}>
+              Il presente documento disciplina l'adesione delle aziende ("Venditori") al marketplace Lucaniko Shop e l'utilizzo degli strumenti messi a disposizione per la vendita ai consumatori finali.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>2) Requisiti di ammissione</strong>
+            <div style={{ marginTop: 6 }}>
+              Possono candidarsi aziende con sede operativa/legale in Basilicata o che producono/vendono prodotti riconducibili al territorio lucano (criteri definiti da Lucaniko Shop). Il Venditore deve fornire dati completi e veritieri (ragione sociale, P. IVA, sede, referente, contatti, SDI, ecc.). Lucaniko Shop si riserva di richiedere documentazione aggiuntiva e di approvare o rifiutare la candidatura. Per la categoria di vendita CIBI E BEVANDE è obbligatorio offrire su questo marketplace solo prodotti Lucani. Tutti i prodotti non Lucani saranno rimossi senza alcun avviso e potrebbe comportare l'esclusione del venditore da Lucaniko Shop.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>3) Piano di Adesione e attivazione</strong>
+            <div style={{ marginTop: 6 }}>
+              <strong>Piano di Adesione 2026</strong> (come da offerta in piattaforma):
+              <ul style={{ marginTop: 8 }}>
+                <li>€299 (IVA inclusa) / 1 anno</li>
+                <li>€499 (IVA inclusa) / 2 anni</li>
+                <li>€599 (IVA inclusa) / 3 anni</li>
+              </ul>
+              <strong>INCLUDE:</strong>
+              <ul style={{ marginTop: 8 }}>
+                <li>Registrazione e accesso alla piattaforma</li>
+                <li>Onboarding e formazione iniziale</li>
+                <li>Supporto operativo</li>
+                <li>Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news)</li>
+              </ul>
+              <br />
+              L'accesso è attivato dopo:
+              <ul style={{ marginTop: 8 }}>
+                <li>approvazione della richiesta</li>
+                <li>pagamento effettuato online</li>
+                <li>emissione fattura da parte di INSIDE DI DI PIETRO VITO</li>
+              </ul>
+              Il venditore potrà scegliere se rinnovare o meno la partnership alla scadenza (in caso di non rinnovo, il venditore dovrà inviare una email di disdetta, con tutti i dati aziendali di registrazione, in allegato un documento d'identità del titolare, entro 60 giorni dalla data di scadenza). In caso di mancato avviso, il rinnovo sarà automatico.
+              <br /><br />
+              <strong>Privacy e Sicurezza:</strong> Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>4) Obblighi del Venditore (prodotti, conformità e leggi)</strong>
+            <div style={{ marginTop: 6 }}>
+              Il Venditore è l'unico responsabile di:
+              <ul style={{ marginTop: 8 }}>
+                <li>veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)</li>
+                <li>conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)</li>
+                <li>disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)</li>
+                <li>gestione resi, recesso, rimborsi, garanzia e assistenza post-vendita</li>
+                <li>gestione spedizioni e consegne</li>
+              </ul>
+              Lucaniko Shop non garantisce esclusiva di prodotto nè di prezzo. Più venditori possono offrire prodotti uguali o simili anche a prezzi differenti. È vietato vendere prodotti illegali, contraffatti, pericolosi o soggetti a restrizioni non gestibili sulla Piattaforma.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>5) Spedizioni</strong>
+            <div style={{ marginTop: 6 }}>
+              Il Venditore imposta aree servite, tempi, corrieri e costi. Il Venditore è responsabile di imballaggio, integrità e tracciamento.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>6) Termini di vendita del Venditore</strong>
+            <div style={{ marginTop: 6 }}>
+              Ogni Venditore deve pubblicare i propri Termini e Condizioni di vendita (spedizioni, resi, recesso, garanzie, contatti), che l'Acquirente dovrà accettare in fase di checkout.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>7) Pagina venditore e contenuti</strong>
+            <div style={{ marginTop: 6 }}>
+              Il Venditore può avere una pagina dedicata con:
+              <ul style={{ marginTop: 8 }}>
+                <li>logo e descrizione</li>
+                <li>contatti cliccabili (telefono, email, sito, social)</li>
+                <li>indirizzo</li>
+                <li>catalogo prodotti</li>
+              </ul>
+              Il Venditore garantisce di avere i diritti d'uso su logo, immagini e testi caricati e manleva Lucaniko Shop da rivendicazioni di terzi.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>8) Uso della Piattaforma e condotte vietate</strong>
+            <div style={{ marginTop: 6 }}>
+              È vietato:
+              <ul style={{ marginTop: 8 }}>
+                <li>utilizzare la Piattaforma per finalità illecite</li>
+                <li>inserire contenuti ingannevoli o non conformi</li>
+                <li>aggirare i flussi di pagamento della Piattaforma se non autorizzato</li>
+                <li>sollecitare pagamenti esterni per ordini generati dal marketplace</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9) Sospensione e cessazione</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop può sospendere o disattivare l'account venditore (anche senza preavviso nei casi gravi) in caso di:
+              <ul style={{ marginTop: 8 }}>
+                <li>violazioni normative o dei presenti Termini</li>
+                <li>contestazioni ripetute, frodi, prodotti vietati</li>
+                <li>inadempimenti gravi nella gestione ordini/resi</li>
+              </ul>
+              Il Venditore può recedere dall'adesione secondo le modalità indicate; gli importi del Piano di Adesione già pagati possono essere non rimborsabili salvo obblighi di legge o diversa previsione contrattuale.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>10) Trattamento dati: ruoli e responsabilità</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop è titolare dei dati necessari alla gestione della Piattaforma. Il Venditore è titolare autonomo dei dati necessari alla gestione degli ordini (spedizione, fatturazione, assistenza). Le parti si impegnano a trattare i dati nel rispetto del GDPR e a fornire informative e misure di sicurezza adeguate.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>11) Limitazione di responsabilità e manleva</strong>
+            <div style={{ marginTop: 6 }}>
+              Il Venditore manleva Lucaniko Shop da danni, sanzioni, reclami e pretese derivanti da: prodotti non conformi o pericolosi violazioni di legge (fiscali, consumatori, etichettatura) violazioni di proprietà intellettuale gestione ordini, spedizioni, resi e rimborsi
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>12) Pagamenti, trasferimenti e accrediti ai Venditori – Trasparenza</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop è un marketplace che utilizza Stripe Connect per gestire correttamente i flussi multi-venditore.
+              <br /><br />
+              <strong>Flusso economico in breve</strong>
+              <ul style={{ marginTop: 8 }}>
+                <li>L'Acquirente paga tramite Stripe al checkout.</li>
+                <li>Stripe applica le proprie commissioni di elaborazione (variabili per carta/paese/metodo).</li>
+                <li>L'importo viene contabilizzato nei flussi Stripe della Piattaforma e destinato ai Venditori interessati.</li>
+                <li>Lucaniko Shop dispone i trasferimenti ai Venditori tramite Stripe Connect secondo tempi e regole del marketplace.</li>
+              </ul>
+              <br />
+              <strong>Nessuna commissione % Lucaniko Shop</strong>
+              <br /><br />
+              Lucaniko Shop non applica commissioni percentuali sulle vendite. È trattenuto esclusivamente un importo fisso di €0,30 per ciascun trasferimento al Venditore, quale costo operativo di trasferimento/accredito, soggetto a fatturazione e IVA secondo la normativa vigente.
+              <br /><br />
+              Le commissioni Stripe non sono stabilite da Lucaniko Shop e possono variare in base al metodo di pagamento e al paese.
+              <br /><br />
+              <strong>Periodo di riserva: trasferimenti dopo 14 giorni</strong>
+              <br /><br />
+              Per ridurre rischi di contestazioni e gestire correttamente eventuali:
+              <ul style={{ marginTop: 8 }}>
+                <li>richieste di recesso (quando applicabile)</li>
+                <li>resi/rimborsi</li>
+                <li>mancata consegna</li>
+                <li>contestazioni/chargeback</li>
+              </ul>
+              i trasferimenti ai Venditori vengono effettuati in genere dopo 14 giorni dall'incasso (o dalla conferma ordine/pagamento, secondo eventi tecnici), salvo:
+              <ul style={{ marginTop: 8 }}>
+                <li>casi in cui la legge impone diversamente,</li>
+                <li>richieste di rimborso già attive,</li>
+                <li>verifiche/limitazioni imposte da Stripe (KYC, rischio, frodi),</li>
+                <li>accordi diversi formalizzati per specifiche categorie.</li>
+              </ul>
+              Questo periodo non modifica i diritti dei consumatori, ma è una regola di payout interna del marketplace.
+              <br /><br />
+              <strong>Resi e rimborsi: chi decide e come avvengono</strong>
+              <br /><br />
+              Il Venditore è responsabile di valutare e gestire:
+              <ul style={{ marginTop: 8 }}>
+                <li>richieste di recesso (se applicabile)</li>
+                <li>resi per difetti/non conformità</li>
+                <li>rimborsi totali o parziali</li>
+              </ul>
+              Se è dovuto un rimborso, esso viene gestito tramite i flussi di pagamento (Stripe) in base alle regole applicabili. Lucaniko Shop può fornire supporto tecnico sui flussi ma non sostituisce il Venditore nelle decisioni commerciali e legali.
+              <br /><br />
+              <strong>Contestazioni/chargeback</strong>
+              <br /><br />
+              Se l'Acquirente avvia una contestazione tramite banca/circuito:
+              <ul style={{ marginTop: 8 }}>
+                <li>Stripe può trattenere l'importo contestato e applicare costi di gestione disputa;</li>
+                <li>il Venditore deve fornire prove (tracking, consegna, comunicazioni, policy);</li>
+                <li>in caso di esito sfavorevole, gli importi possono essere stornati secondo regole Stripe.</li>
+              </ul>
+              <br />
+              <strong>Verifiche Stripe e blocchi</strong>
+              <br /><br />
+              Stripe può richiedere al Venditore verifiche/documenti (KYC/AML). Senza verifiche complete i trasferimenti possono essere ritardati o sospesi.
+              <br /><br />
+              <strong>IVA e documenti fiscali</strong>
+              <br /><br />
+              Il Venditore è responsabile di:
+              <ul style={{ marginTop: 8 }}>
+                <li>IVA e regime fiscale</li>
+                <li>emissione fattura/scontrino ove previsto</li>
+                <li>conservazione documentale</li>
+              </ul>
+              Lucaniko Shop non versa IVA per conto dei Venditori.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>13) Variazione Termini &amp; Condizioni</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop si riserva il diritto di modificare i Termini &amp; Condizioni in qualsiasi momento con efficace immediata dalla pubblicazione sul sito
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>14) Legge applicabile e foro</strong>
+            <div style={{ marginTop: 6 }}>
+              Il rapporto è regolato dalla legge italiana. Foro competente di Potenza.
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
@@ -615,24 +809,76 @@ const Register = () => {
         <Modal.Header closeButton>
           <Modal.Title>Termini &amp; Condizioni – Acquirenti (Lucaniko Shop)</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{maxHeight: '70vh', overflowY: 'auto'}}>
-          <ol>
-            <li><b>Oggetto</b><br />Lucaniko Shop è un marketplace che consente agli utenti ("Acquirenti") di acquistare prodotti offerti da aziende terze ("Venditori") registrate sulla Piattaforma.</li>
-            <li><b>Ruolo di Lucaniko Shop</b><br />Lucaniko Shop non è il venditore dei prodotti, salvo diversa indicazione.<br />Il contratto di vendita si conclude direttamente tra Acquirente e Venditore.<br />Lucaniko Shop fornisce infrastruttura tecnica, vetrina e strumenti di pagamento/gestione ordini.</li>
-            <li><b>Registrazione e acquisti</b><br />L'Acquirente può registrarsi o acquistare come ospite (quando disponibile).<br />L'Acquirente garantisce che i dati inseriti sono veritieri e aggiornati.<br />Le credenziali sono personali; l'Acquirente è responsabile dell'uso del proprio account.<br />Privacy e Sicurezza: Lucaniko Shop garantisce la privacy dei dati personali e si impegna a proteggere le informazioni sensibili. Consulta la nostra privacy policy.</li>
-            <li><b>Informazioni su prodotti e prezzi</b><br />Le schede prodotto, disponibilità, conformità e descrizioni sono predisposte dal Venditore.<br />Immagini e colori possono differire dal reale.<br />I prezzi sono esposti in euro e includono/imputano IVA secondo quanto indicato dal Venditore.</li>
-            <li><b>Ordine e conclusione del contratto</b><br />L'ordine si considera effettuato quando l'Acquirente riceve conferma (email o area personale).<br />Il Venditore può rifiutare/annullare l'ordine per indisponibilità o cause legittime; in tal caso, l'Acquirente non subisce addebiti o riceve rimborso secondo i flussi di pagamento.</li>
-            <li><b>Spedizioni e consegna</b><br />Costi, tempi, aree servite e vettori sono stabiliti da ciascun Venditore.<br />L'Acquirente visualizza i costi di spedizione prima della conferma dell'ordine.<br />Eventuali ritardi del corriere o cause di forza maggiore non imputabili a Lucaniko Shop non generano responsabilità diretta della Piattaforma.</li>
-            <li><b>Pagamenti (Stripe)</b><br />I pagamenti sono elaborati tramite Stripe.<br />I metodi disponibili (carte, wallet, altri) possono variare per Paese e/o configurazione del Venditore.<br />L'addebito può essere immediato o secondo logiche del provider; l'importo viene trasferito al Venditore al netto delle commissioni del circuito.</li>
-            <li><b>Coupon e promozioni</b><br />I Venditori possono attivare coupon/sconti su prodotti, categorie o periodi.<br />Le promozioni possono essere soggette a condizioni (validità, quantità, categorie, cumulabilità).</li>
-            <li><b>Diritto di recesso (consumatori)</b><br />Se l'Acquirente è un "consumatore" ai sensi del D.Lgs. 206/2005 ("Codice del Consumo"), può esercitare il recesso entro 14 giorni dalla consegna, salvo eccezioni di legge (es. prodotti deperibili, sigillati aperti, personalizzati, ecc.).<br />La richiesta di recesso va inviata al Venditore tramite i canali indicati nella pagina del Venditore e/o tramite Centro Assistenza.<br />I costi di restituzione possono essere a carico dell'Acquirente salvo diversa indicazione del Venditore.<br />Il rimborso avviene secondo i tempi e le modalità previste dalla legge e dal Venditore.</li>
-            <li><b>Resi, rimborsi, prodotti difettosi e garanzia legale</b><br />La gestione di resi/rimborsi è in capo al Venditore.<br />Per prodotti difettosi o non conformi, si applica la garanzia legale di conformità (quando applicabile) e l'Acquirente deve contattare il Venditore.</li>
-            <li><b>Limitazione di responsabilità</b><br />Lucaniko Shop non risponde di:<br />qualità, conformità e sicurezza dei prodotti venduti da terzi<br />inadempimenti del Venditore<br />ritardi imputabili a corrieri o cause di forza maggiore<br />Resta fermo il rispetto delle norme inderogabili a tutela del consumatore.</li>
-            <li><b>Recensioni e contenuti degli utenti</b><br />L'Acquirente può lasciare recensioni o contenuti rispettosi e veritieri. È vietato pubblicare contenuti illeciti, offensivi, diffamatori o che violino diritti di terzi.</li>
-            <li><b>Assistenza e reclami</b><br />L'Acquirente, per qualsiasi genere di informazione sui prodotti in vendita, dovrà contattare esclusivamente il Venditore (i contatti di ciascun Venditore sono disponibili nel profilo).</li>
-            <li><b>Legge applicabile e foro</b><br />Il contratto è regolato dalla legge italiana. Per i consumatori, il foro competente è quello di Potenza.</li>
-            <li><b>Piattaforma ODR (solo consumatori UE)</b><br />Se applicabile, l'Acquirente può utilizzare la piattaforma europea ODR per la risoluzione online delle controversie.</li>
-          </ol>
+        <Modal.Body style={{maxHeight: '70vh', overflowY: 'auto', fontSize: '1.05rem', lineHeight: 1.7}}>
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.1 Oggetto</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop consente agli Acquirenti di acquistare prodotti venduti da Venditori terzi.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.2 Ruolo della Piattaforma</strong>
+            <div style={{ marginTop: 6 }}>
+              Lucaniko Shop non è parte del contratto di vendita (salvo diversa indicazione). Il contratto è tra Acquirente e Venditore.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.3 Ordini multi-venditore</strong>
+            <div style={{ marginTop: 6 }}>
+              Checkout unico, ma vendite separate per Venditore: spedizioni/resi/rimborsi/documenti fiscali separati.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.4 Informazioni su prodotti e prezzi</strong>
+            <div style={{ marginTop: 6 }}>
+              Responsabilità del Venditore. Immagini indicative. Prezzi e IVA come indicato dal Venditore.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.5 Spedizioni</strong>
+            <div style={{ marginTop: 6 }}>
+              Gestite dal Venditore; costi e tempi visibili prima della conferma.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.6 Recesso (consumatori) e eccezioni – deperibili</strong>
+            <div style={{ marginTop: 6 }}>
+              Il consumatore può recedere entro 14 giorni salvo eccezioni previste dal Codice del Consumo, tra cui (a titolo esemplificativo):
+              <ul style={{ marginTop: 8 }}>
+                <li>beni deperibili o che rischiano di deteriorarsi rapidamente (molti alimentari)</li>
+                <li>beni sigillati non restituibili per motivi igienici/sanitari se aperti</li>
+                <li>beni personalizzati</li>
+              </ul>
+              La gestione del recesso/resi è in capo al Venditore.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.7 Garanzia legale</strong>
+            <div style={{ marginTop: 6 }}>
+              Per consumatori: garanzia legale di conformità ove applicabile.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.8 Pagamenti</strong>
+            <div style={{ marginTop: 6 }}>
+              Gestiti da Stripe. L'Acquirente può avviare contestazioni tramite canali bancari; il Venditore gestisce evidenze di consegna/servizio.
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 28 }}>
+            <strong>9.9 Foro competente (SAFE)</strong>
+            <div style={{ marginTop: 6 }}>
+              Per Acquirenti consumatori, è competente in via inderogabile il foro del luogo di residenza o domicilio del consumatore (normativa consumer).<br />
+              Per Acquirenti non consumatori, foro di Potenza.
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTermsModalBuyer(false)}>

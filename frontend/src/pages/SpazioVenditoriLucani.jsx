@@ -1,66 +1,46 @@
 import { Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-const categories = [
-  "Abbigliamento e Accessori",
-  "Benessere e Salute",
-  "Calzature",
-  "Casa, Arredi e Ufficio",
-  "Cibi e Bevande",
-  "Elettronica e Informatica",
-  "Industria, Ferramenta e Artigianato",
-  "Libri, Media e Giocattoli",
-  "Orologi e Gioielli",
-  "Ricambi e accessori per auto e moto",
-  "Sport, Hobby e Viaggi"
-];
-
-const benefits = [
-  "Nessuna commissione sulle vendite",
-  "Pagamenti diretti tramite Stripe",
-  "Pagina aziendale dedicata",
-  "Massima visibilità all’interno del progetto Lucaniko"
-];
-
-const steps = [
-  "Registrazione e inserimento dati aziendali",
-  "Pagamento online, verifica e approvazione",
-  "Attivazione adesione",
-  "Configurazione store e caricamento prodotti",
-  "Vendite con pagamenti gestiti da Stripe"
-];
-
-const plans = [
-  "€299 (IVA inclusa) / 1 anno",
-  "€499 (IVA inclusa) / 2 anni",
-  "€599 (IVA inclusa) / 3 anni"
-];
-
 const SpazioVenditoriLucani = () => (
   <Container className="policy-container py-4">
-    <h2 className="mb-4 text-center">Spazio Venditori Lucani</h2>
-    <p className="mb-3 text-center">Entra a far parte del primo marketplace dedicato alle aziende lucane.</p>
-    <p className="mb-2 text-center">Tutte le imprese della Basilicata possono vendere i propri prodotti in numerose categorie:</p>
+    <h2 className="mb-4 text-center">Spazio Venditori Lucani – Lucaniko Shop</h2>
+    <p className="mb-3 text-center">Lucaniko Shop è un progetto dedicato alle imprese lucane per offrire:</p>
     <ul className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}>
-      {categories.map((cat, idx) => <li key={idx}>{cat}</li>)}
+      <li>uno store digitale</li>
+      <li>strumenti di vendita online</li>
+      <li>pagamenti digitali sicuri</li>
+      <li>visibilità in un ecosistema dedicato</li>
     </ul>
 
-    <h5 className="mt-4 mb-2 text-center">Vantaggi per i venditori</h5>
+    <h5 className="mt-4 mb-2">5.1 Requisiti di partecipazione</h5>
+    <p className="mb-2">Possono candidarsi aziende che:</p>
+    <ul className="mb-3" style={{ maxWidth: 600, margin: '0 auto' }}>
+      <li>hanno sede legale/operativa in Basilicata e/o</li>
+      <li>vendono prodotti riconducibili al territorio lucano secondo criteri indicati nei Termini Venditori.</li>
+    </ul>
+    <p className="mb-4">Lucaniko Shop può richiedere documentazione e approvare/rifiutare candidature.</p>
+
+    <h5 className="mt-4 mb-2">5.2 Categorie</h5>
+    <p className="mb-4">Categorie disponibili (esemplificative): abbigliamento, casa, cibi e bevande, artigianato, elettronica, ricambi, ecc.</p>
+
+    <h5 className="mt-4 mb-2">5.3 Vantaggi</h5>
     <ul className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}>
-      {benefits.map((b, idx) => <li key={idx}>{b}</li>)}
+      <li>nessuna commissione percentuale sulle vendite (ad eccezione di Stripe)</li>
+      <li>pagamenti con Stripe Connect</li>
+      <li>pagina aziendale dedicata</li>
+      <li>onboarding e supporto</li>
+      <li>community e aggiornamenti</li>
     </ul>
 
-    <h5 className="mt-4 mb-2 text-center">Come funziona</h5>
-    <ul className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}>
-      {steps.map((s, idx) => <li key={idx}>{s}</li>)}
+    <h5 className="mt-4 mb-2 text-center">Piano di Adesione 2026</h5>
+    <ul className="mb-3" style={{ maxWidth: 400, margin: '0 auto' }}>
+      <li>€299 (IVA inclusa) / 1 anno</li>
+      <li>€499 (IVA inclusa) / 2 anni</li>
+      <li>€599 (IVA inclusa) / 3 anni</li>
     </ul>
-
-    <h5 className="mt-4 mb-2 text-center">Piano di Adesione e attivazione</h5>
-    <p className="mb-2 text-center">Piano di Adesione 2026 (come da offerta in piattaforma):</p>
-    <ul className="mb-4" style={{ maxWidth: 400, margin: '0 auto' }}>
-      {plans.map((p, idx) => <li key={idx}>{p}</li>)}
-    </ul>
-    <li className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}><b>INCLUDE:</b><br />- Registrazione e accesso alla piattaforma<br />- Onboarding e formazione iniziale<br />- Supporto operativo <br />- Accesso alla community WhatsApp aziende Lucaniko Shop (guide pratiche, best pratices, aggiornamenti, news)</li>
+    <p className="mb-2" style={{ maxWidth: 600, margin: '0 auto' }}><strong>Include:</strong> accesso piattaforma, onboarding, supporto, community WhatsApp.</p>
+    <p className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}>Attivazione dopo approvazione candidatura + pagamento + emissione fattura da INSIDE di Di Pietro Vito.</p>
+    <p className="mb-4" style={{ maxWidth: 600, margin: '0 auto' }}><strong>Rinnovo e disdetta:</strong> se previsto rinnovo automatico, le modalità e i termini (es. 60 giorni) sono indicati nei Termini Venditori. In mancanza di disdetta nei termini, il rinnovo potrà essere applicato.</p>
 
     <p className="mt-4 text-center">
       Per ulteriori informazioni consulta i <Link to="/terms-vendors">termini e condizioni venditore</Link>

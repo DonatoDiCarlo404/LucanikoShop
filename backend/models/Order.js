@@ -160,6 +160,17 @@ const orderSchema = new mongoose.Schema(
         type: Date
       }
     },
+    // Campi per gestione rimborsi
+    isRefunded: {
+      type: Boolean,
+      default: false
+    },
+    refundedAt: {
+      type: Date
+    },
+    refundReason: {
+      type: String
+    },
     // Sistema calcolo earnings per venditori (multivendor)
     vendorEarnings: [
       {
@@ -181,7 +192,7 @@ const orderSchema = new mongoose.Schema(
         transferFee: {
           type: Number,
           required: true,
-          default: 0.25
+          default: 0.30
         },
         netAmount: {
           type: Number,

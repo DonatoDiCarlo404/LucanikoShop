@@ -2,7 +2,10 @@ import Order from "../models/Order.js";
 import { Discount } from "../models/index.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
+import Notification from "../models/Notification.js";
 import { calculateMultiVendorShipping } from "../utils/shippingCalculator.js";
+import { cancelVendorEarnings, createRefundDebt } from "../utils/vendorEarningsCalculator.js";
+import { sendRefundNotificationEmail } from "../utils/emailTemplates.js";
 
 // @desc    Filtra ordini per query string (productId, buyer, isPaid)
 // @route   GET /api/orders?productId=...&buyer=...&isPaid=true
@@ -434,6 +437,172 @@ export const calculateShippingCost = async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message
+        });
+    }
+};
+
+// @desc    Rimborsa un ordine e cancella earnings venditori (entro 14 giorni)
+// @route   POST /api/orders/:id/refund
+// @access  Private/Admin
+export const refundOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        console.log('\n💸 [REFUND_ORDER] ============ RICHIESTA RIMBORSO ============');
+        console.log('💸 [REFUND_ORDER] Ordine ID:', id);
+        console.log('💸 [REFUND_ORDER] Admin:', req.user.email);
+        console.log('💸 [REFUND_ORDER] Motivo:', reason || 'Non specificato');
+
+        // Verifica permessi admin
+        if (req.user.role !== 'admin') {
+            console.log('❌ [REFUND_ORDER] Accesso negato: utente non admin');
+            return res.status(403).json({ 
+                message: 'Solo gli amministratori possono effettuare rimborsi' 
+            });
+        }
+
+        // Trova l'ordine
+        const order = await Order.findById(id);
+        
+        if (!order) {
+            console.log('❌ [REFUND_ORDER] Ordine non trovato');
+            return res.status(404).json({ message: 'Ordine non trovato' });
+        }
+
+        // Verifica se ordine già rimborsato
+        if (order.status === 'refunded' || order.isRefunded) {
+            console.log('⚠️  [REFUND_ORDER] Ordine già rimborsato');
+            return res.status(400).json({ 
+                message: 'Questo ordine è già stato rimborsato' 
+            });
+        }
+
+        console.log('📦 [REFUND_ORDER] Ordine trovato:');
+        console.log('   - Status:', order.status);
+        console.log('   - Totale:', order.totalPrice, '€');
+        console.log('   - isPaid:', order.isPaid);
+
+        // Gestione earnings venditori
+        let earningsCancellation = null;
+        let debtCreation = null;
+        
+        try {
+            // Prova prima a cancellare earnings pending (rimborso entro 14 giorni)
+            earningsCancellation = await cancelVendorEarnings(id);
+            console.log('✅ [REFUND_ORDER] Earnings cancellati:', earningsCancellation.success);
+            
+            // Se non ci sono pending da cancellare, crea debiti (rimborso post-pagamento)
+            if (!earningsCancellation.success) {
+                console.log('⚠️  [REFUND_ORDER] Nessun pending trovato, creo debiti...');
+                debtCreation = await createRefundDebt(id);
+                console.log('💳 [REFUND_ORDER] Debiti creati:', debtCreation.success);
+            }
+        } catch (err) {
+            console.error('⚠️  [REFUND_ORDER] Errore gestione earnings:', err.message);
+            // Continua comunque con il rimborso, ma logga l'errore
+        }
+
+        // Aggiorna stato ordine
+        order.status = 'refunded';
+        order.isRefunded = true;
+        order.refundedAt = new Date();
+        order.refundReason = reason || 'Rimborso richiesto da amministratore';
+        
+        await order.save();
+
+        console.log('✅ [REFUND_ORDER] Ordine aggiornato a "refunded"');
+
+        // Notifica venditori coinvolti
+        try {
+            console.log('📧 [REFUND_ORDER] Invio notifiche ai venditori...');
+            
+            // Recupera tutti i venditori coinvolti nell'ordine
+            const vendorIds = [...new Set(order.items.map(item => item.seller.toString()))];
+            const vendors = await User.find({ _id: { $in: vendorIds }, role: 'seller' });
+
+            console.log(`📧 [REFUND_ORDER] Trovati ${vendors.length} venditori da notificare`);
+
+            const isPostPayment = debtCreation?.success || false;
+            const notificationPromises = [];
+
+            for (const vendor of vendors) {
+                console.log(`📧 [REFUND_ORDER] Notifica a: ${vendor.companyName} (${vendor.email})`);
+
+                // Calcola importo venditore specifico
+                const vendorItems = order.items.filter(item => item.seller.toString() === vendor._id.toString());
+                const vendorAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+                // Email notifica
+                const emailPromise = sendRefundNotificationEmail(
+                    vendor.email,
+                    vendor.companyName || vendor.name,
+                    order.orderNumber,
+                    vendorAmount,
+                    order.refundReason,
+                    isPostPayment,
+                    isPostPayment ? { debtAmount: vendorAmount } : null
+                ).catch(err => {
+                    console.error(`❌ [REFUND_ORDER] Errore invio email a ${vendor.email}:`, err.message);
+                });
+
+                // Notifica in-app
+                const notificationData = {
+                    userId: vendor._id,
+                    type: 'order_status_change',
+                    message: isPostPayment 
+                        ? `⚠️ Ordine #${order.orderNumber} rimborsato. Debito di €${vendorAmount.toFixed(2)} detratto dal prossimo pagamento.`
+                        : `🔄 Ordine #${order.orderNumber} rimborsato. Earnings di €${vendorAmount.toFixed(2)} cancellati.`,
+                    data: {
+                        orderId: order._id,
+                        orderNumber: order.orderNumber,
+                        refundAmount: vendorAmount,
+                        refundReason: order.refundReason,
+                        isPostPayment,
+                        refundedAt: order.refundedAt
+                    }
+                };
+
+                const notificationPromise = Notification.create(notificationData).catch(err => {
+                    console.error(`❌ [REFUND_ORDER] Errore creazione notifica per ${vendor._id}:`, err.message);
+                });
+
+                notificationPromises.push(emailPromise, notificationPromise);
+            }
+
+            // Attendi tutte le notifiche (email + in-app)
+            await Promise.all(notificationPromises);
+            console.log('✅ [REFUND_ORDER] Notifiche inviate con successo');
+
+        } catch (notificationError) {
+            console.error('⚠️  [REFUND_ORDER] Errore invio notifiche:', notificationError);
+            // Non bloccare il rimborso se le notifiche falliscono
+        }
+
+        console.log('✅ [REFUND_ORDER] ============ RIMBORSO COMPLETATO ============\n');
+
+        res.status(200).json({
+            success: true,
+            message: 'Ordine rimborsato con successo',
+            order: {
+                _id: order._id,
+                status: order.status,
+                isRefunded: order.isRefunded,
+                refundedAt: order.refundedAt,
+                refundReason: order.refundReason
+            },
+            earningsCancellation: earningsCancellation || null,
+            debtCreation: debtCreation || null,
+            warning: debtCreation?.success ? 
+                'ATTENZIONE: Creati debiti per venditori. Verranno detratti dai prossimi pagamenti.' : 
+                null
+        });
+
+    } catch (error) {
+        console.error('❌ [REFUND_ORDER] Errore rimborso ordine:', error);
+        res.status(500).json({ 
+            message: 'Errore durante il rimborso dell\'ordine',
+            error: error.message 
         });
     }
 };

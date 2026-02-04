@@ -47,6 +47,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import BillingInfo from './pages/BillingInfo';
 import Negozi from './pages/Negozi';
 import Partners from './pages/Partners';
+import AdminPaymentControl from './pages/AdminPaymentControl';
 
 function AppContent() {
   const location = useLocation();
@@ -114,6 +115,7 @@ function AppContent() {
 
         {/* Admin routes */}
         <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
+        <Route path="/admin/payment-control" element={<ProtectedRoute allowedRoles={['admin']}> <AdminPaymentControl /> </ProtectedRoute>} />
         <Route path="/terms-vendors" element={<TermsVendors />} />
         <Route path="/terms-buyers" element={<TermsBuyers />} />
         <Route path="/cookie-policy" element={<CookiePolicy />} />

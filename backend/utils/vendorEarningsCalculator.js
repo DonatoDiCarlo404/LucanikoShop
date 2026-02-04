@@ -52,8 +52,8 @@ export const calculateVendorEarnings = (order) => {
       // Fee Stripe proporzionale al valore dei prodotti del venditore
       const proportionalStripeFee = (productPrice / totalOrder) * stripeTransactionFee;
 
-      // Fee transfer Stripe: €0.25 per ogni transfer
-      const transferFee = 0.25;
+      // Fee transfer Stripe: €0.30 per ogni transfer (IVA inclusa)
+      const transferFee = 0.30;
 
       // Netto che riceverà il venditore
       const netAmount = productPrice - proportionalStripeFee - transferFee;
@@ -122,4 +122,231 @@ export const validateEarningsCalculation = (vendorEarnings, totalOrder) => {
     difference: Math.round(difference * 10000) / 10000,
     isValid
   };
+};
+
+/**
+ * Cancella gli earnings di un ordine rimborsato (solo se ancora pending)
+ * Questa funzione gestisce i rimborsi entro i 14 giorni dalla vendita
+ * 
+ * @param {String} orderId - ID dell'ordine da rimborsare
+ * @returns {Object} Risultato operazione con dettagli cancellazione
+ */
+export const cancelVendorEarnings = async (orderId) => {
+  try {
+    // Import dinamico per evitare dipendenze circolari
+    const VendorPayout = (await import('../models/VendorPayout.js')).default;
+    const User = (await import('../models/User.js')).default;
+
+    console.log('\n🔄 [REFUND] ============ CANCELLAZIONE EARNINGS ============');
+    console.log('🔄 [REFUND] Ordine ID:', orderId);
+
+    // Trova tutti i VendorPayout pending per questo ordine
+    const pendingPayouts = await VendorPayout.find({
+      orderId: orderId,
+      status: 'pending'
+    });
+
+    if (pendingPayouts.length === 0) {
+      console.log('⚠️  [REFUND] Nessun VendorPayout pending trovato per questo ordine');
+      console.log('⚠️  [REFUND] Probabile pagamento già effettuato (>14 giorni)');
+      return {
+        success: false,
+        message: 'Nessun payout pending da cancellare. Il pagamento potrebbe essere già stato effettuato.',
+        cancelledPayouts: []
+      };
+    }
+
+    console.log(`🔄 [REFUND] Trovati ${pendingPayouts.length} payout pending da cancellare`);
+
+    const cancelledPayouts = [];
+    const vendorUpdates = [];
+
+    // Per ogni payout pending, cancella e aggiorna statistiche venditore
+    for (const payout of pendingPayouts) {
+      console.log(`\n🔄 [REFUND] Cancellazione payout: ${payout._id}`);
+      console.log(`   - Venditore: ${payout.vendorId}`);
+      console.log(`   - Importo: €${payout.amount.toFixed(2)}`);
+
+      // Aggiorna statistiche venditore
+      const vendor = await User.findById(payout.vendorId);
+      
+      if (vendor) {
+        const oldPendingEarnings = vendor.pendingEarnings || 0;
+        const oldTotalEarnings = vendor.totalEarnings || 0;
+
+        vendor.pendingEarnings = Math.max(0, oldPendingEarnings - payout.amount);
+        vendor.totalEarnings = Math.max(0, oldTotalEarnings - payout.amount);
+        
+        await vendor.save();
+
+        console.log(`✅ [REFUND] Statistiche venditore aggiornate:`);
+        console.log(`   - Pending Earnings: €${oldPendingEarnings.toFixed(2)} → €${vendor.pendingEarnings.toFixed(2)}`);
+        console.log(`   - Total Earnings: €${oldTotalEarnings.toFixed(2)} → €${vendor.totalEarnings.toFixed(2)}`);
+
+        vendorUpdates.push({
+          vendorId: vendor._id,
+          vendorName: vendor.companyName || vendor.name,
+          amountCancelled: payout.amount,
+          oldPendingEarnings,
+          newPendingEarnings: vendor.pendingEarnings,
+          oldTotalEarnings,
+          newTotalEarnings: vendor.totalEarnings
+        });
+      }
+
+      // Elimina il VendorPayout
+      await VendorPayout.deleteOne({ _id: payout._id });
+      console.log(`✅ [REFUND] VendorPayout eliminato: ${payout._id}`);
+
+      cancelledPayouts.push({
+        payoutId: payout._id,
+        vendorId: payout.vendorId,
+        amount: payout.amount,
+        stripeFee: payout.stripeFee,
+        transferFee: payout.transferFee
+      });
+    }
+
+    console.log('\n✅ [REFUND] ============ CANCELLAZIONE COMPLETATA ============');
+    console.log(`✅ [REFUND] ${cancelledPayouts.length} payout cancellati`);
+    console.log(`✅ [REFUND] ${vendorUpdates.length} venditori aggiornati`);
+    console.log('✅ [REFUND] ================================================\n');
+
+    return {
+      success: true,
+      message: `Cancellati ${cancelledPayouts.length} payout pending. Earnings venditori aggiornati.`,
+      cancelledPayouts,
+      vendorUpdates,
+      timestamp: new Date()
+    };
+
+  } catch (error) {
+    console.error('❌ [REFUND] Errore cancellazione earnings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Crea debiti per rimborsi post-pagamento (venditore già pagato)
+ * Gestisce i casi in cui il pagamento è già stato effettuato al venditore (>14 giorni)
+ * 
+ * @param {String} orderId - ID dell'ordine da rimborsare
+ * @returns {Object} Risultato operazione con dettagli debiti creati
+ */
+export const createRefundDebt = async (orderId) => {
+  try {
+    // Import dinamico per evitare dipendenze circolari
+    const VendorPayout = (await import('../models/VendorPayout.js')).default;
+    const User = (await import('../models/User.js')).default;
+    const Order = (await import('../models/Order.js')).default;
+
+    console.log('\n💳 [REFUND_DEBT] ============ CREAZIONE DEBITO RIMBORSO ============');
+    console.log('💳 [REFUND_DEBT] Ordine ID:', orderId);
+
+    // Trova ordine
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw new Error('Ordine non trovato');
+    }
+
+    // Trova tutti i VendorPayout già pagati per questo ordine
+    const paidPayouts = await VendorPayout.find({
+      orderId: orderId,
+      status: 'paid'
+    });
+
+    if (paidPayouts.length === 0) {
+      console.log('⚠️  [REFUND_DEBT] Nessun VendorPayout già pagato trovato');
+      return {
+        success: false,
+        message: 'Nessun pagamento effettuato da rimborsare',
+        debts: []
+      };
+    }
+
+    console.log(`💳 [REFUND_DEBT] Trovati ${paidPayouts.length} payout già pagati`);
+
+    const createdDebts = [];
+    const vendorUpdates = [];
+
+    // Per ogni payout già pagato, crea un debito negativo
+    for (const payout of paidPayouts) {
+      console.log(`\n💳 [REFUND_DEBT] Creazione debito per payout: ${payout._id}`);
+      console.log(`   - Venditore: ${payout.vendorId}`);
+      console.log(`   - Importo pagato: €${payout.amount.toFixed(2)}`);
+
+      // Crea VendorPayout negativo (debito)
+      const debtPayout = await VendorPayout.create({
+        vendorId: payout.vendorId,
+        orderId: orderId,
+        amount: -Math.abs(payout.amount), // Negativo per indicare debito
+        stripeFee: 0, // Il debito è solo sull'importo netto
+        transferFee: 0,
+        status: 'pending', // Sarà detratto dal prossimo pagamento
+        saleDate: new Date(),
+        isRefundDebt: true, // Flag per identificare i debiti
+        refundedPayoutId: payout._id // Riferimento al payout originale
+      });
+
+      console.log(`✅ [REFUND_DEBT] Debito creato: ${debtPayout._id}`);
+      console.log(`   - Importo debito: €${debtPayout.amount.toFixed(2)}`);
+
+      // Aggiorna statistiche venditore
+      const vendor = await User.findById(payout.vendorId);
+      
+      if (vendor) {
+        const oldDebtBalance = vendor.debtBalance || 0;
+        const oldPaidEarnings = vendor.paidEarnings || 0;
+
+        // Incrementa debito
+        vendor.debtBalance = oldDebtBalance + Math.abs(payout.amount);
+        
+        // Sottrai da paidEarnings (ma non scendere sotto zero)
+        vendor.paidEarnings = Math.max(0, oldPaidEarnings - Math.abs(payout.amount));
+        
+        await vendor.save();
+
+        console.log(`✅ [REFUND_DEBT] Statistiche venditore aggiornate:`);
+        console.log(`   - Debt Balance: €${oldDebtBalance.toFixed(2)} → €${vendor.debtBalance.toFixed(2)}`);
+        console.log(`   - Paid Earnings: €${oldPaidEarnings.toFixed(2)} → €${vendor.paidEarnings.toFixed(2)}`);
+
+        vendorUpdates.push({
+          vendorId: vendor._id,
+          vendorName: vendor.companyName || vendor.name,
+          debtAmount: Math.abs(payout.amount),
+          oldDebtBalance,
+          newDebtBalance: vendor.debtBalance,
+          oldPaidEarnings,
+          newPaidEarnings: vendor.paidEarnings
+        });
+      }
+
+      createdDebts.push({
+        debtPayoutId: debtPayout._id,
+        vendorId: payout.vendorId,
+        amount: Math.abs(payout.amount),
+        originalPayoutId: payout._id
+      });
+    }
+
+    console.log('\n✅ [REFUND_DEBT] ============ DEBITO CREATO ============');
+    console.log(`✅ [REFUND_DEBT] ${createdDebts.length} debiti creati`);
+    console.log(`✅ [REFUND_DEBT] ${vendorUpdates.length} venditori aggiornati`);
+    console.log('⚠️  [REFUND_DEBT] ATTENZIONE: I venditori hanno un debito attivo!');
+    console.log('⚠️  [REFUND_DEBT] Sarà detratto automaticamente dal prossimo pagamento');
+    console.log('✅ [REFUND_DEBT] ============================================\n');
+
+    return {
+      success: true,
+      message: `Creati ${createdDebts.length} debiti. Saranno detratti dai prossimi pagamenti.`,
+      debts: createdDebts,
+      vendorUpdates,
+      timestamp: new Date(),
+      warning: 'I venditori hanno debiti attivi. Verranno detratti automaticamente.'
+    };
+
+  } catch (error) {
+    console.error('❌ [REFUND_DEBT] Errore creazione debito:', error);
+    throw error;
+  }
 };

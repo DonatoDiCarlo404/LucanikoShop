@@ -17,7 +17,6 @@ const vendorPayoutSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: [true, 'Importo netto è obbligatorio'],
-      min: [0, 'L\'importo non può essere negativo'],
       default: 0.0
     },
     stripeFee: {
@@ -29,7 +28,7 @@ const vendorPayoutSchema = new mongoose.Schema(
     transferFee: {
       type: Number,
       required: true,
-      default: 0.25,
+      default: 0.30,
       min: [0, 'La fee transfer non può essere negativa']
     },
     status: {
@@ -57,6 +56,17 @@ const vendorPayoutSchema = new mongoose.Schema(
     },
     failureReason: {
       type: String,
+      default: null
+    },
+    // Campi per gestione debiti da rimborsi post-pagamento (Fase 6.2)
+    isRefundDebt: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    refundedPayoutId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'VendorPayout',
       default: null
     }
   },

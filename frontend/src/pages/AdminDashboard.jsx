@@ -858,6 +858,62 @@ const AdminDashboard = () => {
             </Card.Body>
           </Card>
         </Tab>
+
+        {/* TAB PANNELLO PAGAMENTI */}
+        <Tab eventKey="payments" title={<><i className="bi bi-cash-stack me-2"></i>Pagamenti Venditori</>}>
+          <Card>
+            <Card.Header>
+              <div>
+                <h5><i className="bi bi-cash-stack me-2"></i>Pannello Controllo Pagamenti</h5>
+                <small className="text-muted">Monitora i pagamenti ai venditori, statistiche e transfer</small>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <p className="mb-4">
+                Accedi al pannello completo per gestire tutti i pagamenti ai venditori, visualizzare statistiche dettagliate
+                e monitorare i transfer Stripe.
+              </p>
+              
+              <div className="d-grid gap-2">
+                <Button 
+                  variant="primary" 
+                  size="lg"
+                  onClick={() => window.location.href = '/admin/payment-control'}
+                  className="d-flex align-items-center justify-content-center"
+                >
+                  <i className="bi bi-box-arrow-up-right me-2"></i>
+                  Apri Pannello Controllo Pagamenti
+                </Button>
+              </div>
+
+              <hr className="my-4" />
+
+              <Row className="text-center">
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-clock-history fs-1 text-warning mb-2"></i>
+                    <h6 className="text-muted">Payouts Pending</h6>
+                    <p className="small">Visualizza tutti i pagamenti in attesa (&gt;14 giorni)</p>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-graph-up fs-1 text-success mb-2"></i>
+                    <h6 className="text-muted">Statistiche</h6>
+                    <p className="small">Totali pagati, da pagare, transfer falliti, fee</p>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-funnel fs-1 text-info mb-2"></i>
+                    <h6 className="text-muted">Filtri Avanzati</h6>
+                    <p className="small">Filtra per venditore, data, status e altro</p>
+                  </div>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Tab>
       </Tabs>
 
       {/* Modal Sponsor */}

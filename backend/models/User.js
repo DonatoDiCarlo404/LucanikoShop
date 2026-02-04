@@ -333,7 +333,15 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0.0,
       min: [0, 'I guadagni pagati non possono essere negativi']
-    },    // Status e verifiche
+    },
+    // Debiti da rimborsi post-pagamento (Fase 6.2)
+    debtBalance: {
+      type: Number,
+      default: 0.0,
+      min: [0, 'Il saldo debito non può essere negativo']
+    },
+    
+    // Status e verifiche
     isVerified: {
       type: Boolean,
       default: false

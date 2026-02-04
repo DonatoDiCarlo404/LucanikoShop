@@ -578,30 +578,31 @@ const Cart = () => {
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
                     label={
                       <span>
-                        Dichiaro di aver letto e accettato i{' '}
+                        Confermando l'ordine dichiaro di aver letto e accettato i{' '}
                         <Button
                           variant="link"
                           className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
-                          style={{ fontSize: 'inherit', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'default', background: 'none' }}
+                          style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
                           onClick={(e) => {
                             e.preventDefault();
                             setShowTermsModal(true);
                           }}
                         >
-                          Termini e Condizioni di Vendita
+                          Termini
                         </Button>
-                        {' '}e l'{' '}
+                        {' '}e la{' '}
                         <Button
                           variant="link"
                           className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
-                          style={{ fontSize: 'inherit', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'default', background: 'none' }}
+                          style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
                           onClick={(e) => {
                             e.preventDefault();
                             setShowPrivacyModal(true);
                           }}
                         >
-                          Informativa Privacy di Lucaniko Shop
+                          Privacy Policy
                         </Button>
+                        {' '}di Lucaniko Shop e le Condizioni Generali di Vendita dei Venditori presenti nel mio carrello, con i quali concludo separati contratti di vendita (consultabili nelle rispettive pagine Venditore).
                       </span>
                     }
                     required
@@ -665,28 +666,83 @@ const Cart = () => {
         </>
       )}
 
-      {/* Modale Termini e Condizioni Venditore */}
+      {/* Modale Termini Acquirenti */}
       <Modal show={showTermsModal} onHide={() => setShowTermsModal(false)} size="lg" scrollable>
-        <Modal.Header closeButton style={{ border: 'none', boxShadow: 'none' }}>
-          <Modal.Title style={{ border: 'none', boxShadow: 'none' }}>Termini e Condizioni del Venditore</Modal.Title>
+        <Modal.Header closeButton>
+          <Modal.Title>Termini & Condizioni Acquirenti – Lucaniko Shop</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ whiteSpace: 'pre-wrap' }}>
-          {(() => {
-            const text = vendorTerms.termsText || 'Termini e condizioni non disponibili.';
-            // Sostituisci il punto 12 con il testo aggiornato
-            return text.replace(
-              /12\.\s+[^\n]*\n\n[\s\S]*?(?=\n\n⸻\n\n13\.)/,
-              `12. Protezione dei dati personali
+        <Modal.Body>
+          <div style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.1 Oggetto</strong>
+              <div style={{ marginTop: 6 }}>
+                Lucaniko Shop consente agli Acquirenti di acquistare prodotti venduti da Venditori terzi.
+              </div>
+            </div>
 
-I dati personali dell'Acquirente sono trattati nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR).
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.2 Ruolo della Piattaforma</strong>
+              <div style={{ marginTop: 6 }}>
+                Lucaniko Shop non è parte del contratto di vendita (salvo diversa indicazione). Il contratto è tra Acquirente e Venditore.
+              </div>
+            </div>
 
-Lucaniko Shop opera come titolare del trattamento per i dati raccolti e trattati nell'ambito del funzionamento della piattaforma (registrazione, gestione account, checkout, pagamenti, assistenza e servizi connessi).
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.3 Ordini multi-venditore</strong>
+              <div style={{ marginTop: 6 }}>
+                Checkout unico, ma vendite separate per Venditore: spedizioni/resi/rimborsi/documenti fiscali separati.
+              </div>
+            </div>
 
-Il Venditore, limitatamente ai dati necessari per l'evasione dell'ordine, la spedizione dei prodotti, la gestione di resi, garanzie e obblighi fiscali, opera come titolare autonomo del trattamento, assumendosi ogni responsabilità prevista dalla normativa vigente.
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.4 Informazioni su prodotti e prezzi</strong>
+              <div style={{ marginTop: 6 }}>
+                Responsabilità del Venditore. Immagini indicative. Prezzi e IVA come indicato dal Venditore.
+              </div>
+            </div>
 
-Per maggiori informazioni sulle modalità di trattamento dei dati personali, sui ruoli dei soggetti coinvolti e sui diritti dell'Acquirente, è possibile consultare l'Informativa Privacy di Lucaniko Shop, disponibile sulla piattaforma.`
-            );
-          })()}
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.5 Spedizioni</strong>
+              <div style={{ marginTop: 6 }}>
+                Gestite dal Venditore; costi e tempi visibili prima della conferma.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.6 Recesso (consumatori) e eccezioni – deperibili</strong>
+              <div style={{ marginTop: 6 }}>
+                Il consumatore può recedere entro 14 giorni salvo eccezioni previste dal Codice del Consumo, tra cui (a titolo esemplificativo):
+                <ul style={{ marginTop: 8 }}>
+                  <li>beni deperibili o che rischiano di deteriorarsi rapidamente (molti alimentari)</li>
+                  <li>beni sigillati non restituibili per motivi igienici/sanitari se aperti</li>
+                  <li>beni personalizzati</li>
+                </ul>
+                La gestione del recesso/resi è in capo al Venditore.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.7 Garanzia legale</strong>
+              <div style={{ marginTop: 6 }}>
+                Per consumatori: garanzia legale di conformità ove applicabile.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.8 Pagamenti</strong>
+              <div style={{ marginTop: 6 }}>
+                Gestiti da Stripe. L'Acquirente può avviare contestazioni tramite canali bancari; il Venditore gestisce evidenze di consegna/servizio.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 28 }}>
+              <strong>9.9 Foro competente (SAFE)</strong>
+              <div style={{ marginTop: 6 }}>
+                Per Acquirenti consumatori, è competente in via inderogabile il foro del luogo di residenza o domicilio del consumatore (normativa consumer).<br />
+                Per Acquirenti non consumatori, foro di Potenza.
+              </div>
+            </div>
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
@@ -704,69 +760,104 @@ Per maggiori informazioni sulle modalità di trattamento dei dati personali, sui
         </Modal.Footer>
       </Modal>
 
-      {/* Modale Informativa Privacy */}
+      {/* Modale Privacy Policy */}
       <Modal show={showPrivacyModal} onHide={() => setShowPrivacyModal(false)} size="lg" scrollable>
         <Modal.Header closeButton>
           <Modal.Title>Privacy Policy – Lucaniko Shop</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="mb-3 text-muted" style={{ fontSize: '0.98rem' }}>Ultimo aggiornamento: 15 gennaio 2026</div>
+          <div className="mb-3 text-muted" style={{ fontSize: '0.98rem' }}>Ultimo aggiornamento: 4 febbraio 2026</div>
           <div className="mb-4" style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
-            La presente informativa è resa ai sensi degli artt. 13 e 14 del Regolamento (UE) 2016/679 ("GDPR") e descrive come vengono trattati i dati personali degli utenti che visitano e utilizzano il marketplace Lucaniko Shop (di seguito anche "Piattaforma").
+            <strong>Titolare del trattamento</strong><br />
+            INSIDE di Di Pietro Vito – P. IVA 02118850763<br />
+            Sede: Via Monticchio 17/B, 85028 Rionero in Vulture (PZ)<br />
+            Email privacy: <a href="mailto:info@dipietrodigital.it">info@dipietrodigital.it</a>
           </div>
-          <div className="mb-4 p-3" style={{ background: '#f8f9fa', borderLeft: '3px solid #0d6efd', fontSize: '1rem', lineHeight: 1.6 }}>
-            <strong>Nota:</strong> Lucaniko Shop è un marketplace. Le vendite sono concluse tra Acquirente e Venditore (azienda lucana). Il Venditore, per i dati trattati per l'evasione degli ordini e gli obblighi fiscali, opera normalmente come titolare autonomo.
-          </div>
+
           <div style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
             <div style={{ marginBottom: 28 }}>
-              <strong>1) Titolare del trattamento</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>INSIDE di Di Pietro Vito{'\n'}P. IVA: 02118850763{'\n'}Sede/indirizzo: Via Monticchio 17/B, 85028 Rionero in Vulture (PZ), Italia{'\n'}Email di contatto privacy: info@dipietrodigital.it</div>
+              <strong>7.1 Marketplace: ruoli privacy</strong>
+              <div style={{ marginTop: 6 }}>
+                <strong>Lucaniko Shop:</strong> Titolare per dati necessari a piattaforma (account, sicurezza, log, gestione tecnica ordini, supporto, comunicazioni).<br /><br />
+                <strong>Venditori:</strong> Titolari autonomi per dati necessari a evasione ordine, spedizione, resi, garanzie, fatturazione.<br /><br />
+                <strong>Stripe:</strong> gestisce pagamenti secondo propri termini (ruolo come da contratti Stripe).
+              </div>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>2) Dati personali trattati</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>A seconda dell'uso della Piattaforma, possiamo trattare:{'\n\n'}2.1 Dati forniti direttamente dall'utente{'\n'}Account acquirente: nome, cognome, email, metodo di pagamento, indirizzo di spedizione/fatturazione, telefono, ecc.{'\n'}Checkout come ospite: dati necessari alla conclusione dell'ordine{'\n'}Richieste al Centro Assistenza: contenuto del messaggio, dati di contatto, eventuali allegati.{'\n'}Account venditore (aziende): dati del referente, ragione sociale, P. IVA, sede, recapiti, codice univico SDI, metodo di pagamento, documentazione e informazioni per la pubblicazione del negozio e dei prodotti.{'\n\n'}2.2 Dati di navigazione e uso della Piattaforma{'\n'}Indirizzo IP, log tecnici, identificativi dispositivo/browser, pagine visitate, eventi di utilizzo (es. accessi, preferenze). (lucaniko.it){'\n\n'}2.3 Dati relativi ai pagamenti{'\n'}I pagamenti sono gestiti tramite Stripe. Lucaniko Shop non memorizza i dati completi delle carte; può ricevere esiti e identificativi di transazione. (I metodi disponibili possono variare per Paese e/o venditore.)</div>
+              <strong>7.2 Dati trattati</strong>
+              <ul style={{ marginTop: 6 }}>
+                <li>dati account acquirente (nome, contatti, indirizzi)</li>
+                <li>dati ordine (prodotti acquistati, importi, stato)</li>
+                <li>dati account venditore (azienda, P.IVA, SDI, referente, documentazione)</li>
+                <li>dati assistenza (messaggi/allegati)</li>
+                <li>dati tecnici (IP, log, eventi sicurezza)</li>
+                <li>dati pagamento: Lucaniko Shop non conserva carte; riceve esiti/ID transazione</li>
+              </ul>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>3) Finalità e basi giuridiche del trattamento</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Trattiamo i dati per le seguenti finalità:{'\n\n'}Erogazione della Piattaforma e gestione account (registrazione, accesso, sicurezza).{'\n'}Base giuridica: esecuzione di un contratto (art. 6(1)(b) GDPR) e legittimo interesse alla sicurezza (art. 6(1)(f)).{'\n\n'}Gestione ordini e assistenza (richieste, comunicazioni operative, prevenzione frodi).{'\n'}Base giuridica: art. 6(1)(b) e 6(1)(f).{'\n\n'}Adempimenti legali (obblighi contabili/amministrativi, gestione contestazioni e richieste autorità).{'\n'}Base giuridica: obbligo legale (art. 6(1)(c)).{'\n\n'}Comunicazioni promozionali/newsletter (se attivate).{'\n'}Base giuridica: consenso (art. 6(1)(a)) oppure legittimo interesse in caso di soft-spam nei limiti di legge.{'\n\n'}Statistiche e miglioramento del servizio (analisi aggregate, performance, funzionalità).{'\n'}Base giuridica: legittimo interesse; per strumenti di tracciamento non tecnici, consenso tramite banner cookie.</div>
+              <strong>7.3 Finalità e basi giuridiche</strong>
+              <ul style={{ marginTop: 6 }}>
+                <li>erogazione servizio e gestione account/ordini (art. 6(1)(b))</li>
+                <li>sicurezza e prevenzione frodi (art. 6(1)(f))</li>
+                <li>adempimenti legali (art. 6(1)(c))</li>
+                <li>assistenza (art. 6(1)(b)/(f))</li>
+                <li>marketing/newsletter (consenso art. 6(1)(a) o soft-spam dove lecito)</li>
+                <li>analytics e miglioramento (legittimo interesse; consenso per cookie non tecnici)</li>
+              </ul>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>4) Modalità del trattamento e misure di sicurezza</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Il trattamento avviene con strumenti elettronici e misure tecniche/organizzative adeguate (controlli accessi, backup, logging, cifratura ove possibile) per ridurre i rischi di perdita, uso illecito o accesso non autorizzato.</div>
+              <strong>7.4 Destinatari</strong>
+              <div style={{ marginTop: 6 }}>
+                Fornitori tecnici (hosting, email, helpdesk) come responsabili; Stripe; Venditori per gestione ordini; autorità ove necessario.
+              </div>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>5) Destinatari dei dati</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>I dati possono essere comunicati a:{'\n'}Fornitori tecnici (hosting, manutenzione, email, CRM/helpdesk) che operano come responsabili del trattamento.{'\n'}Stripe (pagamenti) come autonomo titolare o responsabile a seconda dei ruoli contrattuali.{'\n'}Venditori: per evasione ordine, spedizione, resi/garanzia, fatturazione (titolari autonomi).{'\n'}Corrieri/Logistica: tipicamente selezionati dal venditore.{'\n'}Autorità: se richiesto dalla legge.</div>
+              <strong>7.5 Trasferimenti extra SEE</strong>
+              <div style={{ marginTop: 6 }}>
+                Possibili per alcuni fornitori: con garanzie adeguate (SCC/adeguatezza).
+              </div>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>6) Trasferimenti extra SEE</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Alcuni fornitori (es. piattaforme email, analytics, social) potrebbero trattare dati fuori dallo Spazio Economico Europeo. In tali casi il trasferimento avverrà con garanzie adeguate (es. decisioni di adeguatezza, SCC).</div>
+              <strong>7.6 Conservazione</strong>
+              <ul style={{ marginTop: 6 }}>
+                <li>account: fino a cancellazione o inattività prolungata (salvo obblighi)</li>
+                <li>ordini e dati amministrativi: secondo legge</li>
+                <li>log sicurezza: per periodi limitati/proporzionati</li>
+              </ul>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>7) Conservazione dei dati</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Dati account: fino a richiesta di cancellazione o inattività prolungata (salvo obblighi di conservazione).{'\n'}Dati ordini/assistenza: per il tempo necessario alla gestione e secondo termini di legge (es. contabilità/fiscale).{'\n'}Log tecnici: per periodi limitati, salvo esigenze di sicurezza.</div>
+              <strong>7.7 Diritti</strong>
+              <div style={{ marginTop: 6 }}>
+                Accesso, rettifica, cancellazione, limitazione, portabilità, opposizione, revoca consenso; reclamo al Garante.
+              </div>
             </div>
+
             <div style={{ marginBottom: 28 }}>
-              <strong>8) Diritti dell'interessato</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>L'utente può esercitare i diritti di cui agli artt. 15-22 GDPR: accesso, rettifica, cancellazione, limitazione, portabilità, opposizione, revoca del consenso (senza pregiudicare i trattamenti pregressi).{'\n'}È possibile presentare reclamo al Garante per la Protezione dei Dati Personali.</div>
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <strong>9) Cookie e strumenti di tracciamento</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Per informazioni dettagliate consultare la Cookie Policy.</div>
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <strong>10) Dati di minori</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>La Piattaforma non è destinata a minori di 18 anni. Se ritieni che un minore ci abbia fornito dati, contattaci per la rimozione.</div>
-            </div>
-            <div style={{ marginBottom: 28 }}>
-              <strong>11) Aggiornamenti della presente informativa</strong>
-              <div style={{ whiteSpace: 'pre-line', marginTop: 6 }}>Potremmo aggiornare questa Privacy Policy per adeguamenti normativi o modifiche del servizio. La versione aggiornata sarà pubblicata sul sito con la data di aggiornamento.</div>
+              <strong>7.8 Minori</strong>
+              <div style={{ marginTop: 6 }}>
+                Piattaforma non destinata a minori di 18 anni.
+              </div>
             </div>
           </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowPrivacyModal(false)}>
             Chiudi
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              setAcceptedTerms(true);
+              setShowPrivacyModal(false);
+            }}
+          >
+            Accetta e Chiudi
           </Button>
         </Modal.Footer>
       </Modal>

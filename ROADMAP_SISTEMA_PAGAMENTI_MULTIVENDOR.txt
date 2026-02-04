@@ -6,7 +6,7 @@ OBIETTIVO:
 - Lucaniko Shop incassa tutto (abbonamenti + vendite)
 - Carrello multivendor abilitato
 - Pagamenti automatici ai venditori dopo 14 giorni
-- Fee detratte: Stripe transazione (1.4% + €0.25) + Stripe transfer (€0.25)
+- Fee detratte: Stripe transazione (1.4% + €0.25) + Stripe transfer (€0.30 IVA inclusa)
 - Nessuna commissione piattaforma aggiuntiva
 - Venditori ricevono pagamenti tramite Stripe Connect
 
@@ -135,34 +135,37 @@ FASE 4: SISTEMA PAGAMENTI AUTOMATICI (4-5 ore)
 FASE 5: DASHBOARD VENDITORI (3-4 ore)
 ═══════════════════════════════════════════════════════════════════════════
 
-[ ] 5.1 Creare API Endpoints (backend)
-    - GET /api/vendor/earnings-summary
+[X] 5.1 Creare API Endpoints (backend)
+    - GET /api/vendor/earnings/summary
       * Ritorna: totalEarnings, pendingEarnings, paidEarnings
-    - GET /api/vendor/payouts
+    - GET /api/vendor/earnings/payouts
       * Ritorna storico VendorPayout del venditore
       * Filtri: status, date range
       * Paginazione
-    - GET /api/vendor/sales-pending
+    - GET /api/vendor/earnings/sales-pending
       * Ritorna vendite in attesa di pagamento (< 14 giorni)
       * Con countdown giorni mancanti
 
-[ ] 5.2 Frontend Dashboard - Statistiche
+[X] 5.2 Frontend Dashboard - Statistiche
     - Card "Guadagni Totali"
     - Card "In Attesa di Pagamento" (con countdown)
     - Card "Pagamenti Ricevuti"
-    - Grafico guadagni mensili
+    - Card "Prossimo Pagamento" (con countdown giorni)
 
-[ ] 5.3 Frontend Dashboard - Tabella Vendite Pending
-    - Colonne: Data, Ordine, Prodotto, Importo, Giorni Mancanti
-    - Progress bar per countdown 14 giorni
+[X] 5.3 Frontend Dashboard - Tabella Vendite Pending
+    - Colonne: Data, Ordine, Importo, Giorni Mancanti
+    - Progress bar per countdown 14 giorni (colorata dinamicamente)
     - Totale in attesa
+    - Badge countdown (Oggi, Domani, X giorni)
 
-[ ] 5.4 Frontend Dashboard - Storico Pagamenti
-    - Tabella pagamenti ricevuti
-    - Colonne: Data Vendita, Data Pagamento, Importo, Stripe ID
-    - Download PDF/CSV
+[X] 5.4 Frontend Dashboard - Storico Pagamenti
+    - Tabella pagamenti ricevuti (con tutti i dettagli)
+    - Colonne: Data Vendita, Data Pagamento, Ordine, Importo, Fee Stripe, Fee Transfer, Stripe Transfer ID
+    - Download CSV funzionante
+    - Badge riepilogo pagamenti
+    - Alert se nessun pagamento ricevuto
 
-[ ] 5.5 Notifiche
+[X] 5.5 Notifiche
     - Email quando pagamento effettuato
     - Badge notifica in-app
     - Template email personalizzato
@@ -171,7 +174,7 @@ FASE 5: DASHBOARD VENDITORI (3-4 ore)
 FASE 6: GESTIONE RESI E RIMBORSI (2-3 ore)
 ═══════════════════════════════════════════════════════════════════════════
 
-[ ] 6.1 Sistema Cancellazione Earnings (resi entro 14 giorni)
+[X] 6.1 Sistema Cancellazione Earnings (resi entro 14 giorni)
     - Quando ordine viene rimborsato/cancellato:
       * Verificare se VendorPayout ancora "pending"
       * Se sì:
@@ -180,23 +183,23 @@ FASE 6: GESTIONE RESI E RIMBORSI (2-3 ore)
         - Sottrarre da User.totalEarnings
     - Log operazione per tracciabilità
 
-[ ] 6.2 Gestire Resi Post-Pagamento (dopo 14 giorni)
+[X] 6.2 Gestire Resi Post-Pagamento (dopo 14 giorni)
     - Se reso dopo che venditore è stato pagato:
       * Creare VendorPayout negativo (debito)
       * Detrarre da prossimo pagamento automaticamente
       * Se saldo negativo, flag per admin
     - Dashboard admin per monitoraggio debiti
 
-[ ] 6.3 API Rimborsi
+[X] 6.3 API Rimborsi
     - POST /api/admin/orders/:id/refund
     - Gestire logica cancellazione earnings
-    - Notifica venditore
+    - Notifica venditore (email + in-app)
 
 ═══════════════════════════════════════════════════════════════════════════
 FASE 7: ADMIN DASHBOARD (2-3 ore)
 ═══════════════════════════════════════════════════════════════════════════
 
-[ ] 7.1 Pannello Controllo Pagamenti
+[X] 7.1 Pannello Controllo Pagamenti
     - Vista tutti VendorPayout pending (>14 giorni)
     - Statistiche:
       * Totale da pagare oggi
@@ -204,19 +207,19 @@ FASE 7: ADMIN DASHBOARD (2-3 ore)
       * Transfer falliti da gestire
     - Filtri per venditore, status, date
 
-[ ] 7.2 Log Transfer
+[X] 7.2 Log Transfer
     - Tabella tutti transfer effettuati
     - Dettagli: data, venditore, importo, Stripe ID, status
     - Possibilità di vedere dettagli errore
     - Download report CSV
 
-[ ] 7.3 Gestione Manuale
+[X] 7.3 Gestione Manuale
     - Pulsante "Paga Ora" per forzare pagamento
     - Pulsante "Retry" per transfer falliti
     - Pulsante "Segna Come Pagato" (per pagamenti manuali)
     - Conferma azioni con modal
 
-[ ] 7.4 Dashboard Analytics
+[X] 7.4 Dashboard Analytics
     - Grafico volume pagamenti mensili
     - Top venditori per earnings
     - Fee Stripe totali sostenute
@@ -226,12 +229,12 @@ FASE 7: ADMIN DASHBOARD (2-3 ore)
 FASE 8: TESTING & SICUREZZA (2-3 ore)
 ═══════════════════════════════════════════════════════════════════════════
 
-[ ] 8.1 Test Unitari
+[X] 8.1 Test Unitari
     - Test calculateVendorEarnings con vari scenari
     - Test calcolo fee proporzionali
     - Test gestione errori Stripe
 
-[ ] 8.2 Test Integrazione
+[X] 8.2 Test Integrazione
     - Test completo flusso:
       * Ordine multivendor → checkout → webhook
       * Verifica earnings calcolati correttamente
@@ -241,25 +244,25 @@ FASE 8: TESTING & SICUREZZA (2-3 ore)
     - Test con ordine singolo venditore
     - Test con 3+ venditori nello stesso ordine
 
-[ ] 8.3 Test Resi
+[X] 8.3 Test Resi
     - Reso entro 14 giorni → earnings cancellati
     - Reso dopo pagamento → debito creato
     - Verifica statistiche aggiornate
 
-[ ] 8.4 Sicurezza
+[X] 8.4 Sicurezza
     - Middleware auth su tutti gli endpoint venditori
     - Validare che venditore veda solo i propri dati
     - Proteggere endpoint admin (role-based)
     - Sanitizzare input utente
     - Rate limiting su API sensibili
 
-[ ] 8.5 Log e Monitoring
+[X] 8.5 Log e Monitoring
     - Log ogni transfer con dettagli completi
     - Log errori con stack trace
     - Alert email per transfer falliti
     - Monitor saldo Stripe principale
 
-[ ] 8.6 Testing Stripe Connect
+[X] 8.6 Testing Stripe Connect
     - Creare account test Stripe Connect
     - Test onboarding venditore completo
     - Test transfer su account test

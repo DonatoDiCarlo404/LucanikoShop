@@ -2382,18 +2382,20 @@ const VendorProfile = () => {
                     variant="outline-primary"
                     size="sm"
                     onClick={() => {
-                      const template = `TERMINI E CONDIZIONI DI VENDITA DEL VENDITORE
+                      const template = `CONDIZIONI GENERALI DI VENDITA DEL VENDITORE
 
 1. Identità del Venditore
 
-I prodotti e/o servizi acquistati tramite la piattaforma Lucaniko Shop sono venduti direttamente dal Venditore, i cui dati identificativi sono i seguenti:
+I prodotti e/o servizi acquistati tramite la piattaforma Lucaniko Shop sono venduti direttamente dal Venditore, soggetto autonomo e indipendente dalla piattaforma.
+
+Dati del Venditore:
 • Ragione sociale: ${formData.shopSettings.termsAndConditions.sellerLegalName || formData.ragioneSociale || '__________'}
 • Sede legale: ${formData.shopSettings.termsAndConditions.sellerLegalAddress || `${formData.businessAddress?.street || ''} ${formData.businessAddress?.city || ''} ${formData.businessAddress?.zipCode || ''}`.trim() || '__________'}
 • Partita IVA / Codice Fiscale: ${formData.shopSettings.termsAndConditions.sellerVatNumber || formData.vatNumber || '__________'}
 • Email di contatto: ${formData.shopSettings.termsAndConditions.sellerEmail || formData.businessEmail || '__________'}
-• Numero di telefono (facoltativo): ${formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || '__________'}
+• Telefono (facoltativo): ${formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || '__________'}
 
-Il Venditore opera in qualità di soggetto autonomo e indipendente rispetto alla piattaforma Lucaniko Shop.
+Il Venditore opera in piena autonomia ed è l'unico responsabile dei prodotti offerti, delle informazioni fornite e dell'esecuzione del contratto di vendita con l'Acquirente.
 
 ⸻
 
@@ -2401,119 +2403,159 @@ Il Venditore opera in qualità di soggetto autonomo e indipendente rispetto alla
 
 Le presenti Condizioni Generali di Vendita disciplinano la vendita dei prodotti e/o servizi offerti dal Venditore tramite la piattaforma Lucaniko Shop agli utenti acquirenti ("Acquirenti").
 
-Con l'invio dell'ordine, l'Acquirente dichiara di aver letto, compreso e accettato integralmente le presenti condizioni.
+Con l'invio dell'ordine e la conferma del checkout, l'Acquirente dichiara di:
+• aver letto e compreso le presenti condizioni;
+• accettarle integralmente.
 
 ⸻
 
-3. Prodotti e Disponibilità
+3. Marketplace e Ordini Multi-Venditore
 
-Le caratteristiche essenziali dei prodotti sono descritte nelle relative schede informative presenti sulla piattaforma.
+Lucaniko Shop è un marketplace che consente l'acquisto di prodotti appartenenti a più Venditori tramite un unico checkout.
 
-La disponibilità dei prodotti è indicativa e può subire variazioni. In caso di indisponibilità successiva all'ordine, il Venditore informerà tempestivamente l'Acquirente e procederà al rimborso delle somme eventualmente già pagate.
+Anche in presenza di un unico pagamento:
+• l'ordine può comprendere più contratti di vendita distinti;
+• ciascun contratto è concluso direttamente tra l'Acquirente e il singolo Venditore;
+• le presenti condizioni si applicano solo ai prodotti venduti dal presente Venditore.
 
-⸻
-
-4. Prezzi
-
-Tutti i prezzi sono espressi in Euro (€) e comprendono l'IVA, salvo diversa indicazione espressamente specificata nella scheda prodotto.
-
-Eventuali costi aggiuntivi (spedizione, imballaggio, commissioni, ecc.) sono chiaramente indicati prima della conferma dell'ordine.
-
-Il Venditore si riserva il diritto di modificare i prezzi in qualsiasi momento, senza pregiudicare gli ordini già confermati.
+Spedizioni, resi, rimborsi, garanzie e documenti fiscali sono gestiti separatamente da ciascun Venditore per la propria parte di ordine.
 
 ⸻
 
-5. Modalità di Ordine
+4. Prodotti e Disponibilità
 
-L'ordine si considera concluso quando l'Acquirente riceve conferma dell'accettazione da parte del Venditore tramite la piattaforma.
+Le caratteristiche essenziali dei prodotti sono descritte nelle relative schede prodotto presenti sulla piattaforma.
 
-Il Venditore si riserva il diritto di rifiutare o annullare ordini in caso di:
-• dati errati o incompleti;
-• sospetto di attività fraudolente;
-• indisponibilità del prodotto.
+Le informazioni (descrizioni, ingredienti, allergeni, misure, compatibilità, certificazioni, immagini) sono fornite dal Venditore sotto la propria responsabilità.
 
-⸻
-
-6. Modalità di Pagamento
-
-I pagamenti avvengono tramite i sistemi messi a disposizione dalla piattaforma Lucaniko Shop.
-
-Il Venditore non gestisce direttamente i dati di pagamento dell'Acquirente.
-
-L'addebito avviene al momento della conferma dell'ordine, salvo diversa indicazione.
+La disponibilità dei prodotti è indicativa. In caso di indisponibilità successiva all'ordine, il Venditore informerà tempestivamente l'Acquirente e procederà al rimborso delle somme eventualmente già corrisposte, secondo le modalità di pagamento utilizzate.
 
 ⸻
 
-7. Spedizione e Consegna
+5. Prezzi
 
-Il Venditore provvede alla spedizione dei prodotti secondo le modalità e i tempi indicati nella scheda prodotto.
+Tutti i prezzi sono espressi in Euro (€) e includono l'IVA, salvo diversa indicazione nella scheda prodotto.
 
-I termini di consegna sono indicativi e non vincolanti. Eventuali ritardi non danno diritto a risarcimenti, salvo i casi previsti dalla legge.
+Eventuali costi aggiuntivi (spedizione, imballaggio, servizi accessori) sono chiaramente indicati prima della conferma dell'ordine.
+
+Il Venditore si riserva il diritto di modificare i prezzi in qualsiasi momento; tali modifiche non si applicano agli ordini già confermati.
+
+⸻
+
+6. Modalità di Ordine
+
+L'ordine si considera concluso quando l'Acquirente riceve conferma tramite la piattaforma Lucaniko Shop.
+
+Il Venditore si riserva il diritto di rifiutare o annullare un ordine, dandone comunicazione all'Acquirente, nei seguenti casi:
+• dati incompleti o errati;
+• indisponibilità del prodotto;
+• sospetto fondato di frode o uso improprio del sistema di pagamento.
+
+In caso di annullamento, l'Acquirente riceverà il rimborso delle somme eventualmente già pagate.
+
+⸻
+
+7. Modalità di Pagamento
+
+I pagamenti sono gestiti tramite i sistemi messi a disposizione da Lucaniko Shop attraverso il provider Stripe.
+
+Il Venditore:
+• non gestisce direttamente i dati di pagamento dell'Acquirente;
+• riceve gli importi delle vendite tramite Stripe Connect.
+
+L'addebito avviene al momento della conferma dell'ordine, salvo diversa indicazione del metodo di pagamento utilizzato.
+
+⸻
+
+8. Accrediti al Venditore e Periodo di Riserva
+
+Gli importi relativi agli ordini vengono trasferiti al Venditore tramite Stripe Connect.
+
+Per consentire la gestione di:
+• richieste di recesso (ove applicabili),
+• resi e rimborsi,
+• mancata o errata consegna,
+• contestazioni o chargeback,
+
+gli accrediti al Venditore avvengono di norma dopo un periodo di riserva di 14 giorni dalla data di incasso dell'ordine, salvo:
+• obblighi di legge diversi,
+• rimborsi già avviati,
+• verifiche o limitazioni richieste da Stripe.
+
+Lucaniko Shop non applica commissioni percentuali sulle vendite; eventuali commissioni del provider di pagamento sono determinate da Stripe.
+
+⸻
+
+9. Spedizione e Consegna
+
+Il Venditore provvede alla spedizione dei prodotti secondo le modalità, i costi e i tempi indicati nella scheda prodotto.
+
+I termini di consegna sono indicativi. Eventuali ritardi imputabili a corrieri o cause di forza maggiore non danno diritto a risarcimenti, salvo i casi previsti dalla legge.
 
 Il rischio di perdita o danneggiamento dei prodotti si trasferisce all'Acquirente al momento della consegna.
 
 ⸻
 
-8. Diritto di Recesso (per Acquirenti Consumatori)
+10. Diritto di Recesso (Acquirenti Consumatori)
 
-Se l'Acquirente è un consumatore ai sensi del D.Lgs. 206/2005 (Codice del Consumo), ha diritto di recedere dal contratto entro 14 giorni dalla ricezione dei prodotti, senza obbligo di motivazione.
+Se l'Acquirente è un consumatore ai sensi del D.Lgs. 206/2005 ("Codice del Consumo"), ha diritto di recedere dal contratto entro 14 giorni dalla ricezione dei prodotti, senza obbligo di motivazione, salvo i casi di esclusione previsti dalla legge.
 
-Il recesso deve essere comunicato per iscritto al Venditore.
+Il recesso deve essere comunicato per iscritto al Venditore entro i termini di legge.
 
-Le spese di restituzione dei prodotti sono a carico dell'Acquirente, salvo diversa indicazione o promozione specifica comunicata dal Venditore.
+Le spese di restituzione sono a carico dell'Acquirente, salvo diversa indicazione.
 
-Il rimborso sarà effettuato entro 14 giorni dal ricevimento della merce resa, previa verifica dell'integrità del prodotto.
+Il rimborso sarà effettuato entro 14 giorni dal ricevimento dei prodotti resi, previa verifica della loro integrità.
 
 ⸻
 
-9. Esclusioni dal Recesso
+11. Esclusioni dal Recesso – Prodotti Deperibili
 
-Il diritto di recesso è escluso nei casi previsti dalla legge, tra cui:
+Il diritto di recesso è escluso, nei casi previsti dalla legge, tra cui a titolo esemplificativo:
 • prodotti personalizzati o realizzati su misura;
-• prodotti deperibili;
-• beni sigillati che non si prestano a essere restituiti per motivi igienici se aperti.
+• prodotti deperibili o alimentari che rischiano di deteriorarsi rapidamente;
+• beni sigillati che non si prestano a essere restituiti per motivi igienici o sanitari se aperti.
+
+Per tali prodotti, l'Acquirente accetta che l'ordine diventi definitivo al momento della conferma.
 
 ⸻
 
-10. Garanzia Legale
+12. Garanzia Legale
 
 I prodotti venduti sono coperti dalla garanzia legale di conformità prevista dagli artt. 128 e seguenti del Codice del Consumo, ove applicabile.
 
-In caso di difetti o non conformità, l'Acquirente dovrà contattare il Venditore entro i termini di legge.
+In caso di difetti o non conformità, l'Acquirente deve contattare il Venditore entro i termini di legge.
 
 ⸻
 
-11. Responsabilità
+13. Responsabilità
 
-Il Venditore è responsabile esclusivamente dei prodotti venduti e delle informazioni fornite.
+Il Venditore è l'unico responsabile:
+• dei prodotti venduti;
+• delle informazioni fornite;
+• dell'esecuzione del contratto di vendita.
 
-La piattaforma Lucaniko Shop non è parte del contratto di vendita tra Venditore e Acquirente e non risponde di eventuali inadempimenti del Venditore.
-
-⸻
-
-12. 12. Protezione dei dati personali
-
-I dati personali dell’Acquirente sono trattati nel rispetto della normativa vigente in materia di protezione dei dati personali (Regolamento UE 2016/679 – GDPR).
-
-Lucaniko Shop opera come titolare del trattamento per i dati raccolti e trattati nell’ambito del funzionamento della piattaforma (registrazione, gestione account, checkout, pagamenti, assistenza e servizi connessi).
-
-Il Venditore, limitatamente ai dati necessari per l’evasione dell’ordine, la spedizione dei prodotti, la gestione di resi, garanzie e obblighi fiscali, opera come titolare autonomo del trattamento, assumendosi ogni responsabilità prevista dalla normativa vigente.
-
-Per maggiori informazioni sulle modalità di trattamento dei dati personali, sui ruoli dei soggetti coinvolti e sui diritti dell’Acquirente, è possibile consultare l’Informativa Privacy di Lucaniko Shop, disponibile sulla piattaforma.
+Lucaniko Shop non è parte del contratto di vendita e non risponde di eventuali inadempimenti del Venditore.
 
 ⸻
 
-13. Legge Applicabile e Foro Competente
+14. Protezione dei Dati Personali
+
+I dati personali dell'Acquirente sono trattati dal Venditore in qualità di titolare autonomo del trattamento, esclusivamente per finalità connesse all'evasione dell'ordine, nel rispetto del Regolamento UE 2016/679 (GDPR).
+
+⸻
+
+15. Legge Applicabile e Foro Competente
 
 Il contratto è regolato dalla legge italiana.
 
-Per le controversie con Acquirenti consumatori, è competente il foro di residenza o domicilio del consumatore, come previsto dalla legge.
+Per le controversie con Acquirenti che rivestono la qualifica di consumatori, è competente in via inderogabile il foro del luogo di residenza o domicilio del consumatore, ai sensi della normativa vigente.
 
 ⸻
 
-14. Modifiche alle Condizioni
+16. Modifiche alle Condizioni
 
-Il Venditore si riserva il diritto di modificare le presenti condizioni in qualsiasi momento. Le modifiche si applicheranno esclusivamente agli ordini effettuati successivamente alla loro pubblicazione.
+Il Venditore si riserva il diritto di modificare le presenti condizioni in qualsiasi momento.
+Le modifiche si applicheranno esclusivamente agli ordini effettuati successivamente alla loro pubblicazione sulla piattaforma.
 
 ⸻
 
@@ -3652,3 +3694,5 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
 };
 
 export default VendorProfile;
+
+

@@ -193,3 +193,123 @@ export const sendVendorSupportEmail = async (nome, azienda, email, telefono, des
     throw error;
   }
 };
+
+// Email notifica pagamento ricevuto
+export const sendPaymentReceivedEmail = async (vendorEmail, companyName, amount, paymentDate, orderNumber, stripeTransferId, dashboardLink = 'https://www.lucanikoshop.it/vendor-dashboard') => {
+  const formattedAmount = new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(amount);
+
+  const formattedDate = new Date(paymentDate).toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const msg = {
+    to: vendorEmail,
+    from: 'pagamenti@lucanikoshop.it',
+    subject: `💰 Pagamento ricevuto: ${formattedAmount}`,
+    text: `Ciao ${companyName},\n\nabbiamo effettuato un bonifico sul tuo conto Stripe Connect.\n\nDettagli pagamento:\n\nImporto: ${formattedAmount}\nData pagamento: ${formattedDate}\nOrdine: #${orderNumber}\nID Trasferimento Stripe: ${stripeTransferId}\n\nAccedi al tuo pannello: ${dashboardLink}\n\nIl pagamento è stato accreditato sul tuo account Stripe. Puoi visualizzare tutti i dettagli nella sezione "Pagamenti Ricevuti" del tuo pannello venditore.\n\nContinua così,\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    html: `Ciao <strong>${companyName}</strong>,<br><br>
+abbiamo effettuato un bonifico sul tuo conto <strong>Stripe Connect</strong>. 💸<br><br>
+<div style="background: #f8f9fa; border-left: 4px solid #28a745; padding: 1.5em; margin: 1.5em 0; border-radius: 4px;">
+  <h3 style="color: #28a745; margin-top: 0;">Dettagli pagamento</h3>
+  <ul style="list-style: none; padding: 0; margin: 0;">
+    <li style="padding: 0.5em 0;"><strong>Importo:</strong> <span style="color: #28a745; font-size: 1.2em; font-weight: bold;">${formattedAmount}</span></li>
+    <li style="padding: 0.5em 0;"><strong>Data pagamento:</strong> ${formattedDate}</li>
+    <li style="padding: 0.5em 0;"><strong>Ordine:</strong> #${orderNumber}</li>
+    <li style="padding: 0.5em 0;"><strong>ID Trasferimento Stripe:</strong> <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">${stripeTransferId}</code></li>
+  </ul>
+</div>
+<p style="margin: 1.5em 0;">
+  <a href="${dashboardLink}" style="background: #004b75; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">📊 Vai al Pannello Venditore</a>
+</p>
+<p>Il pagamento è stato accreditato sul tuo account Stripe. Puoi visualizzare tutti i dettagli nella sezione <strong>"Pagamenti Ricevuti"</strong> del tuo pannello venditore.</p>
+<br>
+Continua così,<br>
+Il team Lucaniko<br><br>
+<a href="https://www.lucanikoshop.it" style="color: #004b75; text-decoration: underline;">www.lucanikoshop.it</a>`
+  };
+
+  try {
+    await sgMail.send(msg);
+  } catch (error) {
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email pagamento ricevuto:', error);
+    console.error('[EMAIL DEBUG] Dettagli errore:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
+    throw error;
+  }
+};
+
+// Email notifica rimborso ordine
+export const sendRefundNotificationEmail = async (vendorEmail, companyName, orderNumber, refundAmount, refundReason, isPostPayment = false, debtInfo = null, dashboardLink = 'https://www.lucanikoshop.it/vendor-dashboard') => {
+  const formattedAmount = new Intl.NumberFormat('it-IT', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(refundAmount);
+
+  // Testo diverso se il rimborso è pre o post-pagamento
+  let bodyText = '';
+  let bodyHtml = '';
+
+  if (isPostPayment && debtInfo) {
+    // Rimborso post-pagamento: venditore già pagato, viene creato un debito
+    bodyText = `L'ordine #${orderNumber} è stato rimborsato al cliente.\n\n⚠️ ATTENZIONE: Hai già ricevuto il pagamento per questo ordine.\n\nAbbiamo registrato un debito di ${formattedAmount} che verrà automaticamente detratto dal tuo prossimo pagamento.\n\nMotivo rimborso: ${refundReason}\n\nIl debito verrà saldato al prossimo pagamento automatico (dopo 14 giorni dalla prossima vendita).\n\nAccedi al tuo pannello: ${dashboardLink}`;
+    
+    bodyHtml = `L'ordine <strong>#${orderNumber}</strong> è stato rimborsato al cliente.<br><br>
+<div style="background: #fff3cd; border-left: 4px solid #ff6b6b; padding: 1.5em; margin: 1.5em 0; border-radius: 4px;">
+  <h3 style="color: #ff6b6b; margin-top: 0;">⚠️ ATTENZIONE: Debito registrato</h3>
+  <p style="margin: 0.5em 0;">Hai già ricevuto il pagamento per questo ordine.</p>
+  <p style="margin: 0.5em 0;">Abbiamo registrato un debito di <strong style="color: #dc3545; font-size: 1.1em;">${formattedAmount}</strong> che verrà automaticamente detratto dal tuo prossimo pagamento.</p>
+  <p style="margin: 0.5em 0;"><strong>Motivo rimborso:</strong> ${refundReason}</p>
+</div>
+<p>Il debito verrà saldato al prossimo pagamento automatico (dopo 14 giorni dalla prossima vendita).</p>
+<p style="margin: 1.5em 0;">
+  <a href="${dashboardLink}" style="background: #004b75; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">📊 Vai al Pannello Venditore</a>
+</p>`;
+  } else {
+    // Rimborso pre-pagamento: earnings cancellati prima del pagamento
+    bodyText = `L'ordine #${orderNumber} è stato rimborsato al cliente.\n\nL'importo di ${formattedAmount} che era in attesa di pagamento è stato cancellato e non verrà trasferito.\n\nMotivo rimborso: ${refundReason}\n\nAccedi al tuo pannello: ${dashboardLink}`;
+    
+    bodyHtml = `L'ordine <strong>#${orderNumber}</strong> è stato rimborsato al cliente.<br><br>
+<div style="background: #f8f9fa; border-left: 4px solid #ffc107; padding: 1.5em; margin: 1.5em 0; border-radius: 4px;">
+  <h3 style="color: #856404; margin-top: 0;">ℹ️ Earnings cancellati</h3>
+  <p style="margin: 0.5em 0;">L'importo di <strong style="color: #856404; font-size: 1.1em;">${formattedAmount}</strong> che era in attesa di pagamento è stato cancellato e non verrà trasferito.</p>
+  <p style="margin: 0.5em 0;"><strong>Motivo rimborso:</strong> ${refundReason}</p>
+</div>
+<p style="margin: 1.5em 0;">
+  <a href="${dashboardLink}" style="background: #004b75; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">📊 Vai al Pannello Venditore</a>
+</p>`;
+  }
+
+  const msg = {
+    to: vendorEmail,
+    from: 'ordini@lucanikoshop.it',
+    subject: `🔄 Rimborso ordine #${orderNumber}`,
+    text: `Ciao ${companyName},\n\n${bodyText}\n\nSe hai domande, contattaci tramite il Centro Assistenza.\n\nCordiali saluti,\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    html: `Ciao <strong>${companyName}</strong>,<br><br>
+${bodyHtml}
+<p>Se hai domande, contattaci tramite il Centro Assistenza.</p>
+<br>
+Cordiali saluti,<br>
+Il team Lucaniko<br><br>
+<a href="https://www.lucanikoshop.it" style="color: #004b75; text-decoration: underline;">www.lucanikoshop.it</a>`
+  };
+
+  try {
+    await sgMail.send(msg);
+  } catch (error) {
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email notifica rimborso:', error);
+    console.error('[EMAIL DEBUG] Dettagli errore:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
+    throw error;
+  }
+};

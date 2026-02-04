@@ -17,6 +17,8 @@ import {
 } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
+import { getEarningsSummary, getSalesPending, getVendorPayouts } from '../services/earningsService';
+import { getNotifications, markNotificationAsRead } from '../services/notificationService';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -30,6 +32,20 @@ const VendorDashboard = () => {
   const [searchProduct, setSearchProduct] = useState("");
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
+
+  // State per earnings (nuova sezione Fase 5.2)
+  const [earnings, setEarnings] = useState(null);
+  const [pendingSales, setPendingSales] = useState(null);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
+
+  // State per storico pagamenti (Fase 5.4)
+  const [paidPayouts, setPaidPayouts] = useState([]);
+  const [loadingPayouts, setLoadingPayouts] = useState(false);
+
+  // State per notifiche (Fase 5.5)
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Tab state for color switching
   const [activeTab, setActiveTab] = useState('orders');
@@ -83,6 +99,7 @@ const VendorDashboard = () => {
       loadDashboardData();
       loadDiscounts();
       loadCategories();
+      loadNotifications();
     }
   }, [user]);
 
@@ -146,10 +163,74 @@ const VendorDashboard = () => {
       const productsData = await productsRes.json();
       setProducts(productsData);
 
+      // Carica earnings (nuova sezione Fase 5.2)
+      await loadEarningsData();
+
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Carica dati earnings (Fase 5.2)
+  const loadEarningsData = async () => {
+    try {
+      setLoadingEarnings(true);
+
+      // Carica riepilogo earnings
+      const earningsData = await getEarningsSummary(user.token);
+      setEarnings(earningsData);
+
+      // Carica vendite in attesa
+      const pendingData = await getSalesPending(user.token);
+      setPendingSales(pendingData);
+
+      // Carica storico pagamenti ricevuti (Fase 5.4)
+      await loadPaidPayouts();
+
+    } catch (err) {
+      console.error('Errore caricamento earnings:', err);
+      // Non blocchiamo la dashboard per errori earnings
+    } finally {
+      setLoadingEarnings(false);
+    }
+  };
+
+  // Carica storico pagamenti ricevuti (Fase 5.4)
+  const loadPaidPayouts = async () => {
+    try {
+      setLoadingPayouts(true);
+      const payoutsData = await getVendorPayouts(user.token, { status: 'paid', limit: 50 });
+      setPaidPayouts(payoutsData.payouts || []);
+    } catch (err) {
+      console.error('Errore caricamento payouts:', err);
+    } finally {
+      setLoadingPayouts(false);
+    }
+  };
+
+  // Carica notifiche (Fase 5.5)
+  const loadNotifications = async () => {
+    try {
+      const { notifications, unreadCount } = await getNotifications();
+      setNotifications(notifications);
+      setUnreadCount(unreadCount);
+    } catch (err) {
+      console.error('Errore caricamento notifiche:', err);
+    }
+  };
+
+  // Segna notifica come letta
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      const { unreadCount } = await markNotificationAsRead(notificationId);
+      setUnreadCount(unreadCount);
+      setNotifications(notifications.map(n => 
+        n._id === notificationId ? { ...n, read: true } : n
+      ));
+    } catch (err) {
+      console.error('Errore aggiornamento notifica:', err);
     }
   };
 
@@ -445,10 +526,99 @@ const VendorDashboard = () => {
     <Container className="mt-4 mb-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 style={{ color: '#004b75' }}>📊 Dashboard Venditore</h2>
-        <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
-          <i className="bi bi-person-badge me-2"></i>
-          Profilo Aziendale
-        </Button>
+        <div className="d-flex align-items-center gap-3">
+          {/* Badge Notifiche */}
+          <div className="position-relative">
+            <Button 
+              variant="outline-secondary" 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="position-relative"
+            >
+              <i className="bi bi-bell fs-5"></i>
+              {unreadCount > 0 && (
+                <Badge 
+                  bg="danger" 
+                  pill 
+                  className="position-absolute top-0 start-100 translate-middle"
+                  style={{ fontSize: '0.7rem' }}
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+            
+            {/* Dropdown notifiche */}
+            {showNotifications && (
+              <Card 
+                className="position-absolute end-0 mt-2 shadow-lg" 
+                style={{ 
+                  width: '350px', 
+                  maxHeight: '400px', 
+                  overflowY: 'auto',
+                  zIndex: 1000 
+                }}
+              >
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                  <strong>Notifiche</strong>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    onClick={() => setShowNotifications(false)}
+                    className="text-decoration-none"
+                  >
+                    ✕
+                  </Button>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  {notifications.length === 0 ? (
+                    <div className="text-center text-muted py-4">
+                      <i className="bi bi-bell-slash fs-1 d-block mb-2"></i>
+                      Nessuna notifica
+                    </div>
+                  ) : (
+                    <div>
+                      {notifications.map((notif) => (
+                        <div 
+                          key={notif._id}
+                          className={`p-3 border-bottom ${!notif.read ? 'bg-light' : ''}`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleMarkAsRead(notif._id)}
+                        >
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div className="flex-grow-1">
+                              <p className="mb-1 small">
+                                {notif.type === 'payment_received' && '💰 '}
+                                {notif.message}
+                              </p>
+                              <small className="text-muted">
+                                {new Date(notif.createdAt).toLocaleString('it-IT', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </small>
+                            </div>
+                            {!notif.read && (
+                              <Badge bg="primary" pill className="ms-2">
+                                Nuovo
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
+          </div>
+          
+          <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
+            <i className="bi bi-person-badge me-2"></i>
+            Profilo Aziendale
+          </Button>
+        </div>
       </div>
 
 
@@ -488,6 +658,182 @@ const VendorDashboard = () => {
             </Card>
           </Col>
         </Row>
+      )}
+
+      {/* Sezione Guadagni e Pagamenti (Fase 5.2) */}
+      {earnings && (
+        <>
+          <div className="d-flex justify-content-between align-items-center mb-3 mt-4">
+            <h4 style={{ color: '#004b75' }}>💰 Guadagni e Pagamenti</h4>
+            {loadingEarnings && <Spinner animation="border" size="sm" />}
+          </div>
+          
+          <Row className="mb-4">
+            {/* Card Guadagni Totali */}
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="text-center border-success">
+                <Card.Body>
+                  <div className="mb-2">
+                    <i className="bi bi-cash-stack fs-2 text-success"></i>
+                  </div>
+                  <h3 className="text-success mb-1">€{earnings.totalEarnings.toFixed(2)}</h3>
+                  <p className="text-muted mb-0 small">Guadagni Totali</p>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            {/* Card In Attesa di Pagamento */}
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="text-center border-warning">
+                <Card.Body>
+                  <div className="mb-2">
+                    <i className="bi bi-hourglass-split fs-2 text-warning"></i>
+                  </div>
+                  <h3 className="text-warning mb-1">€{earnings.pendingEarnings.toFixed(2)}</h3>
+                  <p className="text-muted mb-0 small">In Attesa di Pagamento</p>
+                  {pendingSales && pendingSales.count > 0 && (
+                    <Badge bg="warning" text="dark" className="mt-2">
+                      {pendingSales.count} {pendingSales.count === 1 ? 'vendita' : 'vendite'} in attesa
+                    </Badge>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+
+            {/* Card Pagamenti Ricevuti */}
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="text-center border-primary">
+                <Card.Body>
+                  <div className="mb-2">
+                    <i className="bi bi-check-circle fs-2 text-primary"></i>
+                  </div>
+                  <h3 className="text-primary mb-1">€{earnings.paidEarnings.toFixed(2)}</h3>
+                  <p className="text-muted mb-0 small">Pagamenti Ricevuti</p>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            {/* Card Prossimo Pagamento */}
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="text-center border-info">
+                <Card.Body>
+                  <div className="mb-2">
+                    <i className="bi bi-calendar-event fs-2 text-info"></i>
+                  </div>
+                  {pendingSales && pendingSales.pendingSales && pendingSales.pendingSales.length > 0 ? (
+                    <>
+                      <h5 className="text-info mb-1">
+                        {pendingSales.pendingSales[0].daysRemaining === 0 
+                          ? 'Oggi!' 
+                          : `${pendingSales.pendingSales[0].daysRemaining} giorni`}
+                      </h5>
+                      <p className="text-muted mb-0 small">Al Prossimo Pagamento</p>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.75rem' }}>
+                        €{pendingSales.pendingSales[0].amount.toFixed(2)}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h5 className="text-muted mb-1">-</h5>
+                      <p className="text-muted mb-0 small">Nessun Pagamento Programmato</p>
+                    </>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Tabella Vendite in Attesa (Fase 5.3) */}
+          {pendingSales && pendingSales.pendingSales && pendingSales.pendingSales.length > 0 && (
+            <Card className="mb-4">
+              <Card.Header className="d-flex justify-content-between align-items-center">
+                <h5 className="mb-0">
+                  <i className="bi bi-clock-history me-2"></i>
+                  Vendite in Attesa di Pagamento
+                </h5>
+                <Badge bg="warning" text="dark">
+                  Totale: €{pendingSales.totalPendingAmount.toFixed(2)}
+                </Badge>
+              </Card.Header>
+              <Card.Body className="p-0">
+                <Table responsive hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data Vendita</th>
+                      <th>Ordine</th>
+                      <th>Importo</th>
+                      <th>Countdown</th>
+                      <th>Giorni Mancanti</th>
+                      <th>Pagamento Previsto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingSales.pendingSales.map((sale) => (
+                      <tr key={sale._id}>
+                        <td>
+                          <small>{new Date(sale.saleDate).toLocaleDateString('it-IT', { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}</small>
+                        </td>
+                        <td>
+                          <strong>#{sale.orderNumber || 'N/A'}</strong>
+                        </td>
+                        <td>
+                          <strong className="text-success">€{sale.amount.toFixed(2)}</strong>
+                        </td>
+                        <td style={{ minWidth: '200px' }}>
+                          <div className="mb-1">
+                            <div className="progress" style={{ height: '20px' }}>
+                              <div 
+                                className={`progress-bar ${
+                                  sale.progressPercentage >= 100 ? 'bg-success' :
+                                  sale.progressPercentage >= 70 ? 'bg-info' :
+                                  sale.progressPercentage >= 40 ? 'bg-warning' :
+                                  'bg-secondary'
+                                }`}
+                                role="progressbar" 
+                                style={{ width: `${Math.min(sale.progressPercentage, 100)}%` }}
+                                aria-valuenow={sale.progressPercentage} 
+                                aria-valuemin="0" 
+                                aria-valuemax="100"
+                              >
+                                <small className="fw-bold">{sale.progressPercentage}%</small>
+                              </div>
+                            </div>
+                          </div>
+                          <small className="text-muted">
+                            {sale.daysSinceSale} su 14 giorni trascorsi
+                          </small>
+                        </td>
+                        <td>
+                          {sale.daysRemaining === 0 ? (
+                            <Badge bg="success">Oggi!</Badge>
+                          ) : sale.daysRemaining === 1 ? (
+                            <Badge bg="info">Domani</Badge>
+                          ) : (
+                            <Badge bg="warning" text="dark">
+                              {sale.daysRemaining} giorni
+                            </Badge>
+                          )}
+                        </td>
+                        <td>
+                          <small className="text-muted">
+                            {new Date(sale.estimatedPaymentDate).toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: 'short'
+                            })}
+                          </small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Card.Body>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Tabs per ordini e prodotti */}
@@ -905,6 +1251,132 @@ const VendorDashboard = () => {
             </Card>
           </Tab>
         )}
+
+        {/* Tab Storico Pagamenti (Fase 5.4) */}
+        <Tab eventKey="payouts" title={<span style={{color: activeTab === 'payouts' ? '#00bf63' : '#004b75'}}>💸 Storico Pagamenti</span>}>
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <h5 className="mb-0">Pagamenti Ricevuti</h5>
+              {paidPayouts.length > 0 && (
+                <Button 
+                  variant="outline-success" 
+                  size="sm"
+                  onClick={() => {
+                    // Prepara dati CSV
+                    const csvContent = [
+                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Stripe', 'Fee Transfer', 'Stripe Transfer ID'].join(','),
+                      ...paidPayouts.map(p => [
+                        new Date(p.saleDate).toLocaleDateString('it-IT'),
+                        p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('it-IT') : 'N/A',
+                        p.orderId?.orderNumber || (p.orderId?._id ? p.orderId._id.toString().substring(0, 8) : 'N/A'),
+                        `€${p.amount.toFixed(2)}`,
+                        `€${p.stripeFee.toFixed(2)}`,
+                        `€${p.transferFee.toFixed(2)}`,
+                        p.stripeTransferId || 'N/A'
+                      ].join(','))
+                    ].join('\n');
+                    
+                    // Download CSV
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `pagamenti_ricevuti_${new Date().toISOString().split('T')[0]}.csv`;
+                    link.click();
+                  }}
+                >
+                  <i className="bi bi-download me-2"></i>
+                  Scarica CSV
+                </Button>
+              )}
+            </Card.Header>
+            <Card.Body>
+              {loadingPayouts ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="primary" />
+                  <p className="mt-3 text-muted">Caricamento storico pagamenti...</p>
+                </div>
+              ) : paidPayouts.length === 0 ? (
+                <Alert variant="info" className="text-center">
+                  <i className="bi bi-info-circle me-2"></i>
+                  Nessun pagamento ricevuto ancora. I pagamenti verranno effettuati automaticamente 14 giorni dopo ogni vendita.
+                </Alert>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <Badge bg="success" className="me-2">
+                      {paidPayouts.length} {paidPayouts.length === 1 ? 'pagamento' : 'pagamenti'} ricevuti
+                    </Badge>
+                    <Badge bg="primary">
+                      Totale: €{paidPayouts.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+                    </Badge>
+                  </div>
+
+                  <Table responsive hover>
+                    <thead>
+                      <tr>
+                        <th>Data Vendita</th>
+                        <th>Data Pagamento</th>
+                        <th>Ordine</th>
+                        <th>Importo</th>
+                        <th>Fee Stripe</th>
+                        <th>Fee Transfer</th>
+                        <th>Stripe Transfer ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paidPayouts.map((payout) => (
+                        <tr key={payout._id}>
+                          <td>
+                            <small>{new Date(payout.saleDate).toLocaleDateString('it-IT', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}</small>
+                          </td>
+                          <td>
+                            <small className="text-success">
+                              <i className="bi bi-check-circle me-1"></i>
+                              {payout.paymentDate 
+                                ? new Date(payout.paymentDate).toLocaleDateString('it-IT', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
+                                : 'N/A'}
+                            </small>
+                          </td>
+                          <td>
+                            <strong>
+                              #{payout.orderId?.orderNumber || (payout.orderId?._id ? payout.orderId._id.toString().substring(0, 8) : 'N/A')}
+                            </strong>
+                          </td>
+                          <td>
+                            <strong className="text-success">€{payout.amount.toFixed(2)}</strong>
+                          </td>
+                          <td>
+                            <small className="text-muted">€{payout.stripeFee.toFixed(2)}</small>
+                          </td>
+                          <td>
+                            <small className="text-muted">€{payout.transferFee.toFixed(2)}</small>
+                          </td>
+                          <td>
+                            {payout.stripeTransferId ? (
+                              <small className="font-monospace text-primary">
+                                {payout.stripeTransferId.substring(0, 20)}...
+                              </small>
+                            ) : (
+                              <small className="text-muted">-</small>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
       </Tabs>
 
       {/* Modal Aggiornamento Stato Ordine */}

@@ -35,9 +35,15 @@ import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
+import vendorEarningsRoutes from './routes/vendorEarningsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import adminPaymentRoutes from './routes/adminPaymentRoutes.js';
+import stripeMonitoringRoutes from './routes/stripeMonitoringRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 import cron from 'node-cron';
 import { processVendorPayouts } from './jobs/processVendorPayouts.js';
+import logger from './config/logger.js';
+import { sendCronFailureAlert } from './utils/alertService.js';
 
 const app = express();
 
@@ -92,6 +98,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin/news', adminNewsRoutes); // DEVE essere PRIMA di /api/admin per evitare conflitti
+app.use('/api/admin/payments', adminPaymentRoutes); // Admin payment control panel
+app.use('/api/admin/stripe', stripeMonitoringRoutes); // Admin Stripe monitoring
 app.use('/api/admin', adminRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/orders', orderRoutes);
@@ -101,6 +109,7 @@ app.use('/api/category-attributes', categoryAttributeRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/shop-settings', shopSettingsRoutes);
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/vendor/earnings', vendorEarningsRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 console.log('🔌 Montaggio route /api/payment...');
 app.use('/api/payment', paymentRoutes);
@@ -109,6 +118,7 @@ app.use('/api/stripe-connect', stripeConnectRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/sitemap', sitemapRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -163,16 +173,23 @@ mongoose.connect(process.env.MONGODB_URI)
     
     // Programma il processamento pagamenti venditori ogni giorno alle 3:00 AM
     cron.schedule('0 3 * * *', async () => {
-      console.log('\n⏰ [CRON] Job pagamenti venditori avviato alle', new Date().toISOString());
+      logger.logCron('Job pagamenti venditori avviato', { scheduledTime: '03:00 AM' });
       try {
         const result = await processVendorPayouts();
-        console.log('✅ [CRON] Job completato:', result);
+        logger.logCron('Job completato con successo', result);
       } catch (error) {
-        console.error('❌ [CRON] Errore nel job pagamenti venditori:', error);
+        logger.critical('Job pagamenti venditori fallito', error);
+        
+        // Invia alert email ad admin
+        try {
+          await sendCronFailureAlert(error, 'Automatic Vendor Payouts');
+        } catch (alertError) {
+          logger.error('Errore invio alert cron', { error: alertError.message });
+        }
       }
     });
     
-    console.log('⏰ Cron job pagamenti venditori schedulato: ogni giorno alle 3:00 AM');
+    logger.info('⏰ Cron job pagamenti venditori schedulato: ogni giorno alle 3:00 AM');
   })
   .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
 

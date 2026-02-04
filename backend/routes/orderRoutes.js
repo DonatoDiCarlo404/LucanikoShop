@@ -9,9 +9,12 @@ import {
   getVendorStats,
   updateOrderStatus,
   applyDiscountToOrder,
-  calculateShippingCost
+  calculateShippingCost,
+  refundOrder
 } from '../controllers/orderController.js';
 import { protect, optionalAuth } from '../middlewares/auth.js';
+import { apiLimiter } from '../middlewares/rateLimiter.js';
+import { validateOrderId, validatePagination } from '../middlewares/validators.js';
 import Order from '../models/Order.js';
 
 // 🔧 DEBUG ENDPOINT - Rimuovere in produzione
@@ -69,23 +72,26 @@ router.get('/check-purchased/:productId', protect, async (req, res) => {
 });
 
 // Filtra ordini per query string (productId, buyer, isPaid)
-router.get('/', protect, filterOrders);
+router.get('/', protect, apiLimiter, validatePagination, filterOrders);
 
 // Route specifiche per venditore (devono venire prima di /:id)
-router.get('/vendor/received', protect, getVendorOrders);
-router.get('/vendor/stats', protect, getVendorStats);
-router.put('/:id/status', protect, updateOrderStatus);
+router.get('/vendor/received', protect, apiLimiter, validatePagination, getVendorOrders);
+router.get('/vendor/stats', protect, apiLimiter, getVendorStats);
+router.put('/:id/status', protect, apiLimiter, validateOrderId, updateOrderStatus);
 
 // Calcola costo spedizione per il carrello (accessibile anche a guest)
-router.post('/calculate-shipping', optionalAuth, calculateShippingCost);
+router.post('/calculate-shipping', optionalAuth, apiLimiter, calculateShippingCost);
 
 // Ottieni tutti gli ordini dell'utente loggato
-router.get('/my-orders', protect, getMyOrders);
+router.get('/my-orders', protect, apiLimiter, validatePagination, getMyOrders);
 
 // Applica coupon/sconto a un ordine
-router.post('/:id/apply-discount', protect, applyDiscountToOrder);
+router.post('/:id/apply-discount', protect, apiLimiter, validateOrderId, applyDiscountToOrder);
+
+// Rimborsa un ordine (solo admin)
+router.post('/:id/refund', protect, apiLimiter, validateOrderId, refundOrder);
 
 // Ottieni dettagli di un singolo ordine
-router.get('/:id', protect, getOrderById);
+router.get('/:id', protect, validateOrderId, getOrderById);
 
 export default router;
