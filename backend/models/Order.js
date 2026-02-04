@@ -159,7 +159,37 @@ const orderSchema = new mongoose.Schema(
       updatedAt: {
         type: Date
       }
-    }
+    },
+    // Sistema calcolo earnings per venditori (multivendor)
+    vendorEarnings: [
+      {
+        vendorId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true
+        },
+        productPrice: {
+          type: Number,
+          required: true,
+          default: 0.0
+        },
+        stripeFee: {
+          type: Number,
+          required: true,
+          default: 0.0
+        },
+        transferFee: {
+          type: Number,
+          required: true,
+          default: 0.25
+        },
+        netAmount: {
+          type: Number,
+          required: true,
+          default: 0.0
+        }
+      }
+    ]
   },
   {
     timestamps: true

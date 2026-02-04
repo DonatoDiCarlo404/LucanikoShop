@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -171,6 +172,41 @@ export const handleCheckoutSuccess = async (req, res) => {
       } catch (stockError) {
         console.error(`❌ [SUCCESS] Errore stock:`, stockError);
       }
+    }
+
+    // Invia email di conferma acquisto
+    console.log('📧 [SUCCESS] Invio email di conferma...');
+    try {
+      let recipientEmail, recipientName;
+      
+      if (isGuestOrder) {
+        recipientEmail = guestEmail;
+        recipientName = session.customer_details?.name || 'Guest';
+      } else {
+        recipientEmail = buyerUser?.email;
+        recipientName = buyerUser?.name;
+      }
+
+      if (recipientEmail) {
+        const productsList = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
+        const totalAmount = `€${order.totalPrice.toFixed(2)}`;
+        const shippingAddress = `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`;
+        
+        await sendOrderConfirmationEmail(
+          recipientEmail, 
+          recipientName, 
+          order._id.toString(), 
+          productsList, 
+          totalAmount, 
+          shippingAddress
+        );
+        console.log(`✅ [SUCCESS] Email inviata a: ${recipientEmail}`);
+      } else {
+        console.log('⚠️ [SUCCESS] Email non inviata: recipientEmail mancante');
+      }
+    } catch (emailError) {
+      console.error('❌ [SUCCESS] Errore invio email:', emailError);
+      // Non bloccare la risposta se l'email fallisce
     }
 
     res.json({

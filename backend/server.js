@@ -36,6 +36,8 @@ import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import sitemapRoutes from './routes/sitemapRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
+import cron from 'node-cron';
+import { processVendorPayouts } from './jobs/processVendorPayouts.js';
 
 const app = express();
 
@@ -158,6 +160,19 @@ mongoose.connect(process.env.MONGODB_URI)
           console.error('❌ Errore rinnovo abbonamenti orario:', error);
         });
     }, 60 * 60 * 1000); // Ogni ora
+    
+    // Programma il processamento pagamenti venditori ogni giorno alle 3:00 AM
+    cron.schedule('0 3 * * *', async () => {
+      console.log('\n⏰ [CRON] Job pagamenti venditori avviato alle', new Date().toISOString());
+      try {
+        const result = await processVendorPayouts();
+        console.log('✅ [CRON] Job completato:', result);
+      } catch (error) {
+        console.error('❌ [CRON] Errore nel job pagamenti venditori:', error);
+      }
+    });
+    
+    console.log('⏰ Cron job pagamenti venditori schedulato: ogni giorno alle 3:00 AM');
   })
   .catch((error) => console.error('❌ Errore connessione MongoDB:', error));
 

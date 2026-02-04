@@ -1,0 +1,345 @@
+═══════════════════════════════════════════════════════════════════════════
+    ROADMAP SISTEMA PAGAMENTI MULTIVENDOR - LUCANIKO SHOP
+═══════════════════════════════════════════════════════════════════════════
+
+OBIETTIVO:
+- Lucaniko Shop incassa tutto (abbonamenti + vendite)
+- Carrello multivendor abilitato
+- Pagamenti automatici ai venditori dopo 14 giorni
+- Fee detratte: Stripe transazione (1.4% + €0.25) + Stripe transfer (€0.25)
+- Nessuna commissione piattaforma aggiuntiva
+- Venditori ricevono pagamenti tramite Stripe Connect
+
+TEMPO STIMATO: 19-27 ore
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 1: PREPARAZIONE DATABASE (1-2 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[X] 1.1 Aggiornare Model Order
+    - Aggiungere campo vendorEarnings (array)
+    - Struttura: { vendorId, productPrice, stripeFee, transferFee, netAmount }
+
+[X] 1.2 Creare Model VendorPayout
+    - vendorId (ref User)
+    - orderId (ref Order)
+    - amount (importo netto da trasferire)
+    - stripeFee (fee transazione proporzionale)
+    - transferFee (€0.25)
+    - status (pending/processing/paid/failed)
+    - saleDate (data vendita originale)
+    - paymentDate (data pagamento effettivo)
+    - stripeTransferId (ID transfer Stripe)
+    - failureReason (motivo fallimento, se presente)
+
+[X] 1.3 Aggiornare Model User (venditori)
+    - Verificare campi Stripe Connect esistenti
+    - Aggiungere totalEarnings (totale guadagnato)
+    - Aggiungere pendingEarnings (in attesa di pagamento)
+    - Aggiungere paidEarnings (già pagato)
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 2: MODIFICARE SISTEMA CHECKOUT (2-3 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[X] 2.1 Rimuovere Logica Stripe Connect Direct Charges
+    - Eliminare application_fee_amount da checkoutController.js
+    - Eliminare transfer_data da checkoutController.js
+    - Rimuovere controllo "un solo venditore per carrello" (linea 52)
+
+[X] 2.2 Semplificare Checkout
+    - Tutti i pagamenti vanno a Lucaniko Shop (account principale Stripe)
+    - Verificare che non ci siano riferimenti a primaryVendorStripeAccount
+    - Abilitare carrello multivendor
+
+[X] 2.3 Testare Checkout Multivendor
+    - Test: carrello con prodotti di 2+ venditori
+    - Verificare che pagamento vada a Lucaniko Shop
+    - Verificare che non ci siano errori
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 3: SISTEMA CALCOLO COMMISSIONI (3-4 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[X] 3.1 Creare Utility calculateVendorEarnings
+    - File: backend/utils/vendorEarningsCalculator.js
+    - Funzione: calcolaEarningsPerVenditore(order)
+    - Formula:
+      * Totale ordine (items + shipping)
+      * Fee Stripe transazione = (totale * 0.014) + 0.25
+      * Per ogni venditore:
+        - Prezzo prodotti venditore
+        - Fee proporzionale = (prezzoVenditore / totale) * feeStripeTransazione
+        - Fee transfer = 0.25
+        - Netto = prezzoVenditore - feeProporzionale - feeTransfer
+
+[X] 3.2 Aggiornare Webhook Stripe (webhookController.js)
+    - Dopo creazione ordine, chiamare calculateVendorEarnings
+    - Salvare risultati in Order.vendorEarnings
+    - Per ogni venditore, creare record VendorPayout con:
+      * status: "pending"
+      * saleDate: data odierna
+      * amount, stripeFee, transferFee calcolati
+
+[X] 3.3 Aggiornare User.pendingEarnings
+    - Incrementare pendingEarnings per ogni venditore
+    - Incrementare totalEarnings per statistiche
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 4: SISTEMA PAGAMENTI AUTOMATICI (4-5 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[X] 4.1 Installare node-cron
+    - npm install node-cron
+
+[X] 4.2 Creare Scheduled Job
+    - File: backend/jobs/processVendorPayouts.js
+    - Eseguito ogni giorno alle 3:00 AM
+    - Query VendorPayout:
+      * status = "pending"
+      * saleDate <= (oggi - 14 giorni)
+      * venditore con Stripe Connect attivo
+
+[X] 4.3 Implementare Transfer Stripe Connect
+    - Per ogni payout da processare:
+      * Verificare che venditore abbia stripeConnectAccountId
+      * Verificare che account sia onboardingComplete
+      * Chiamare stripe.transfers.create()
+      * amount: payout.amount * 100 (centesimi)
+      * currency: 'eur'
+      * destination: vendorStripeAccountId
+      * metadata: { orderId, payoutId, vendorId }
+
+[X] 4.4 Gestire Successo Transfer
+    - Aggiornare VendorPayout:
+      * status = "paid"
+      * paymentDate = oggi
+      * stripeTransferId = transfer.id
+    - Aggiornare User venditore:
+      * paidEarnings += amount
+      * pendingEarnings -= amount
+
+[X] 4.5 Gestire Fallimento Transfer
+    - Aggiornare VendorPayout:
+      * status = "failed"
+      * failureReason = error.message
+    - Inviare notifica email ad admin
+    - Log errore per analisi
+
+[X] 4.6 Integrare Cron in server.js
+    - Importare job
+    - Schedulare esecuzione
+    - Log attività job
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 5: DASHBOARD VENDITORI (3-4 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] 5.1 Creare API Endpoints (backend)
+    - GET /api/vendor/earnings-summary
+      * Ritorna: totalEarnings, pendingEarnings, paidEarnings
+    - GET /api/vendor/payouts
+      * Ritorna storico VendorPayout del venditore
+      * Filtri: status, date range
+      * Paginazione
+    - GET /api/vendor/sales-pending
+      * Ritorna vendite in attesa di pagamento (< 14 giorni)
+      * Con countdown giorni mancanti
+
+[ ] 5.2 Frontend Dashboard - Statistiche
+    - Card "Guadagni Totali"
+    - Card "In Attesa di Pagamento" (con countdown)
+    - Card "Pagamenti Ricevuti"
+    - Grafico guadagni mensili
+
+[ ] 5.3 Frontend Dashboard - Tabella Vendite Pending
+    - Colonne: Data, Ordine, Prodotto, Importo, Giorni Mancanti
+    - Progress bar per countdown 14 giorni
+    - Totale in attesa
+
+[ ] 5.4 Frontend Dashboard - Storico Pagamenti
+    - Tabella pagamenti ricevuti
+    - Colonne: Data Vendita, Data Pagamento, Importo, Stripe ID
+    - Download PDF/CSV
+
+[ ] 5.5 Notifiche
+    - Email quando pagamento effettuato
+    - Badge notifica in-app
+    - Template email personalizzato
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 6: GESTIONE RESI E RIMBORSI (2-3 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] 6.1 Sistema Cancellazione Earnings (resi entro 14 giorni)
+    - Quando ordine viene rimborsato/cancellato:
+      * Verificare se VendorPayout ancora "pending"
+      * Se sì:
+        - Eliminare VendorPayout
+        - Sottrarre da User.pendingEarnings
+        - Sottrarre da User.totalEarnings
+    - Log operazione per tracciabilità
+
+[ ] 6.2 Gestire Resi Post-Pagamento (dopo 14 giorni)
+    - Se reso dopo che venditore è stato pagato:
+      * Creare VendorPayout negativo (debito)
+      * Detrarre da prossimo pagamento automaticamente
+      * Se saldo negativo, flag per admin
+    - Dashboard admin per monitoraggio debiti
+
+[ ] 6.3 API Rimborsi
+    - POST /api/admin/orders/:id/refund
+    - Gestire logica cancellazione earnings
+    - Notifica venditore
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 7: ADMIN DASHBOARD (2-3 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] 7.1 Pannello Controllo Pagamenti
+    - Vista tutti VendorPayout pending (>14 giorni)
+    - Statistiche:
+      * Totale da pagare oggi
+      * Totale pagato questo mese
+      * Transfer falliti da gestire
+    - Filtri per venditore, status, date
+
+[ ] 7.2 Log Transfer
+    - Tabella tutti transfer effettuati
+    - Dettagli: data, venditore, importo, Stripe ID, status
+    - Possibilità di vedere dettagli errore
+    - Download report CSV
+
+[ ] 7.3 Gestione Manuale
+    - Pulsante "Paga Ora" per forzare pagamento
+    - Pulsante "Retry" per transfer falliti
+    - Pulsante "Segna Come Pagato" (per pagamenti manuali)
+    - Conferma azioni con modal
+
+[ ] 7.4 Dashboard Analytics
+    - Grafico volume pagamenti mensili
+    - Top venditori per earnings
+    - Fee Stripe totali sostenute
+    - Commissioni (€0.25) incassate
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 8: TESTING & SICUREZZA (2-3 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] 8.1 Test Unitari
+    - Test calculateVendorEarnings con vari scenari
+    - Test calcolo fee proporzionali
+    - Test gestione errori Stripe
+
+[ ] 8.2 Test Integrazione
+    - Test completo flusso:
+      * Ordine multivendor → checkout → webhook
+      * Verifica earnings calcolati correttamente
+      * Verifica VendorPayout creati
+      * Simula +14 giorni → cron esegue transfer
+      * Verifica status aggiornati
+    - Test con ordine singolo venditore
+    - Test con 3+ venditori nello stesso ordine
+
+[ ] 8.3 Test Resi
+    - Reso entro 14 giorni → earnings cancellati
+    - Reso dopo pagamento → debito creato
+    - Verifica statistiche aggiornate
+
+[ ] 8.4 Sicurezza
+    - Middleware auth su tutti gli endpoint venditori
+    - Validare che venditore veda solo i propri dati
+    - Proteggere endpoint admin (role-based)
+    - Sanitizzare input utente
+    - Rate limiting su API sensibili
+
+[ ] 8.5 Log e Monitoring
+    - Log ogni transfer con dettagli completi
+    - Log errori con stack trace
+    - Alert email per transfer falliti
+    - Monitor saldo Stripe principale
+
+[ ] 8.6 Testing Stripe Connect
+    - Creare account test Stripe Connect
+    - Test onboarding venditore completo
+    - Test transfer su account test
+    - Verificare webhook Stripe
+
+═══════════════════════════════════════════════════════════════════════════
+FASE 9: DOCUMENTAZIONE E DEPLOYMENT (1-2 ore)
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] 9.1 Documentazione Tecnica
+    - README per sistema payouts
+    - Diagramma flusso pagamenti
+    - Documentazione API endpoints
+    - Guida troubleshooting
+
+[ ] 9.2 Documentazione Venditori
+    - Guida configurazione Stripe Connect
+    - FAQ su tempistiche pagamenti
+    - Come leggere dashboard earnings
+    - Cosa fare in caso di problemi
+
+[ ] 9.3 Configurazione Produzione
+    - Variabili ambiente per cron schedule
+    - Webhook Stripe configurato
+    - Email templates configurati
+    - Test finale su staging
+
+[ ] 9.4 Deploy
+    - Deploy backend su Railway
+    - Verificare cron job attivo
+    - Monitoring attivo
+    - Backup database pre-deploy
+
+═══════════════════════════════════════════════════════════════════════════
+CHECKLIST PRE-LANCIO
+═══════════════════════════════════════════════════════════════════════════
+
+[ ] ✓ Stripe Connect funzionante per venditori
+[ ] ✓ Checkout multivendor testato
+[ ] ✓ Calcolo commissioni verificato manualmente
+[ ] ✓ Cron job schedulato e testato
+[ ] ✓ Dashboard venditori visualizza dati corretti
+[ ] ✓ Sistema resi funzionante
+[ ] ✓ Admin dashboard completo
+[ ] ✓ Email notifiche configurate
+[ ] ✓ Log e monitoring attivi
+[ ] ✓ Documentazione completa
+[ ] ✓ Test con utenti beta (2-3 venditori)
+
+═══════════════════════════════════════════════════════════════════════════
+NOTE IMPORTANTI
+═══════════════════════════════════════════════════════════════════════════
+
+1. BACKUP DATABASE prima di ogni fase critica
+2. Testare SEMPRE su Stripe Test Mode prima di produzione
+3. Monitorare i primi 30 giorni di transfer automatici
+4. Consultare commercialista per aspetti fiscali/legali
+5. Contratto mandato con venditori PRIMA del lancio
+6. Termini e condizioni aggiornati con nuovo sistema
+
+═══════════════════════════════════════════════════════════════════════════
+PACKAGE NECESSARI
+═══════════════════════════════════════════════════════════════════════════
+
+Backend:
+- node-cron (job scheduling)
+- stripe (già presente)
+
+═══════════════════════════════════════════════════════════════════════════
+CONTATTI UTILI
+═══════════════════════════════════════════════════════════════════════════
+
+- Stripe Support: https://support.stripe.com
+- Stripe Connect Docs: https://stripe.com/docs/connect
+- Stripe Transfers API: https://stripe.com/docs/api/transfers
+
+═══════════════════════════════════════════════════════════════════════════
+STATO AVANZAMENTO: 0% - PRONTO PER INIZIARE
+═══════════════════════════════════════════════════════════════════════════
+
+Data Inizio: _______________
+Data Completamento Prevista: _______________
+Data Completamento Effettiva: _______________

@@ -318,8 +318,22 @@ const userSchema = new mongoose.Schema(
         max: [100, 'L\'aliquota IVA non può superare 100'],
         default: 22
       }
+    },    // Sistema earnings per venditori (multivendor payouts)
+    totalEarnings: {
+      type: Number,
+      default: 0.0,
+      min: [0, 'I guadagni totali non possono essere negativi']
     },
-    // Status e verifiche
+    pendingEarnings: {
+      type: Number,
+      default: 0.0,
+      min: [0, 'I guadagni in attesa non possono essere negativi']
+    },
+    paidEarnings: {
+      type: Number,
+      default: 0.0,
+      min: [0, 'I guadagni pagati non possono essere negativi']
+    },    // Status e verifiche
     isVerified: {
       type: Boolean,
       default: false

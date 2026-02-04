@@ -21,6 +21,11 @@ router.post('/create-account', protect, seller, async (req, res) => {
       });
     }
 
+    // Determina l'URL del profilo venditore (deve essere HTTPS per live mode)
+    const vendorUrl = process.env.FRONTEND_URL?.startsWith('http://localhost') 
+      ? 'https://www.lucanikoshop.it' 
+      : process.env.FRONTEND_URL || 'https://www.lucanikoshop.it';
+
     // Crea un nuovo Stripe Connect Account (Express)
     const account = await stripe.accounts.create({
       type: 'express',
@@ -37,7 +42,7 @@ router.post('/create-account', protect, seller, async (req, res) => {
       },
       business_profile: {
         mcc: '5399', // Miscellaneous general merchandise
-        url: `${process.env.FRONTEND_URL}/vendor/${user._id}`
+        url: vendorUrl
       }
     });
 

@@ -28,7 +28,6 @@ export const createCheckoutSession = async (req, res) => {
 
         // Raggruppa items per venditore
         const itemsByVendor = {};
-        let primaryVendorStripeAccount = null;
 
         for (const item of cartItems) {
             const product = await Product.findById(item._id).populate('seller', 'shopSettings name paymentMethods');
@@ -39,25 +38,12 @@ export const createCheckoutSession = async (req, res) => {
 
             const vendorId = product.seller._id.toString();
 
-            // Verifica se il venditore ha Stripe Connect configurato
-            if (product.seller.paymentMethods?.stripe?.accountId && 
-                product.seller.paymentMethods?.stripe?.onboardingComplete) {
-                if (!primaryVendorStripeAccount) {
-                    primaryVendorStripeAccount = product.seller.paymentMethods.stripe.accountId;
-                } else if (primaryVendorStripeAccount !== product.seller.paymentMethods.stripe.accountId) {
-                    return res.status(400).json({ 
-                        message: 'Impossibile acquistare prodotti da più venditori contemporaneamente. Completa un ordine alla volta.' 
-                    });
-                }
-            }
-
             if (!itemsByVendor[vendorId]) {
                 itemsByVendor[vendorId] = {
                     vendorId,
                     vendorName: product.seller.name,
                     items: [],
-                    vendorShippingSettings: product.seller.shopSettings?.shipping || null,
-                    stripeAccountId: product.seller.paymentMethods?.stripe?.accountId
+                    vendorShippingSettings: product.seller.shopSettings?.shipping || null
                 };
             }
 
@@ -72,6 +58,11 @@ export const createCheckoutSession = async (req, res) => {
                 price: item.price
             });
         }
+
+        // Log carrello multivendor
+        const vendorCount = Object.keys(itemsByVendor).length;
+        console.log(`🏪 [CHECKOUT] Carrello multivendor: ${vendorCount} venditore/i`);
+        console.log('💳 [CHECKOUT] Tutti i pagamenti vanno a Lucaniko Shop');
 
         // Calcola spedizione usando il totale SCONTATO per i range
         const vendorShippingArray = Object.values(itemsByVendor);
@@ -163,19 +154,6 @@ export const createCheckoutSession = async (req, res) => {
                 }))),
             },
         };
-
-        // Se il venditore ha Stripe Connect, usa Direct Charges
-        if (primaryVendorStripeAccount) {
-            console.log('💳 [CHECKOUT] Usando Stripe Connect per account:', primaryVendorStripeAccount);
-            sessionOptions.payment_intent_data = {
-                application_fee_amount: 0, // Nessuna commissione piattaforma
-                transfer_data: {
-                    destination: primaryVendorStripeAccount,
-                },
-            };
-        } else {
-            console.log('⚠️ [CHECKOUT] Nessun account Stripe Connect, usando checkout standard');
-        }
         
         console.log('📦 [CHECKOUT] Metadata preparati:', {
             userId: sessionOptions.metadata.userId,

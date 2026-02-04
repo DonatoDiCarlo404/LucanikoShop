@@ -3,7 +3,9 @@ import Order from '../models/Order.js';
 import Review from '../models/Review.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import VendorPayout from '../models/VendorPayout.js';
 import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
+import { calculateVendorEarnings } from '../utils/vendorEarningsCalculator.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -197,6 +199,63 @@ export const handleStripeWebhook = async (req, res) => {
         } catch (stockError) {
           console.error(`❌ [WEBHOOK] Errore aggiornamento stock per prodotto ${item.product}:`, stockError);
         }
+      }
+
+      // CALCOLA EARNINGS VENDITORI E CREA VENDOR PAYOUTS
+      console.log('💰 [WEBHOOK] Calcolo earnings venditori...');
+      try {
+        // Calcola earnings per ogni venditore
+        const vendorEarnings = calculateVendorEarnings(order);
+        
+        // Salva earnings nell'ordine
+        order.vendorEarnings = vendorEarnings;
+        await order.save();
+        console.log('✅ [WEBHOOK] Earnings salvati nell\'ordine');
+
+        // Crea record VendorPayout per ogni venditore
+        for (const earning of vendorEarnings) {
+          try {
+            const vendorPayout = await VendorPayout.create({
+              vendorId: earning.vendorId,
+              orderId: order._id,
+              amount: earning.netAmount,
+              stripeFee: earning.stripeFee,
+              transferFee: earning.transferFee,
+              status: 'pending',
+              saleDate: new Date()
+            });
+            
+            console.log(`✅ [WEBHOOK] VendorPayout creato per venditore ${earning.vendorId}:`, vendorPayout._id);
+            console.log(`   - Importo netto: €${earning.netAmount}`);
+            console.log(`   - Fee Stripe: €${earning.stripeFee}`);
+            console.log(`   - Fee Transfer: €${earning.transferFee}`);
+
+            // Aggiorna statistiche del venditore
+            try {
+              const vendor = await User.findById(earning.vendorId);
+              if (vendor) {
+                // Incrementa pendingEarnings (in attesa di pagamento)
+                vendor.pendingEarnings = (vendor.pendingEarnings || 0) + earning.netAmount;
+                // Incrementa totalEarnings (statistica totale)
+                vendor.totalEarnings = (vendor.totalEarnings || 0) + earning.netAmount;
+                await vendor.save();
+                
+                console.log(`✅ [WEBHOOK] Statistiche venditore aggiornate:`);
+                console.log(`   - Pending Earnings: €${vendor.pendingEarnings.toFixed(2)}`);
+                console.log(`   - Total Earnings: €${vendor.totalEarnings.toFixed(2)}`);
+              } else {
+                console.error(`⚠️ [WEBHOOK] Venditore ${earning.vendorId} non trovato per aggiornare statistiche`);
+              }
+            } catch (vendorUpdateError) {
+              console.error(`❌ [WEBHOOK] Errore aggiornamento statistiche venditore ${earning.vendorId}:`, vendorUpdateError);
+            }
+          } catch (payoutError) {
+            console.error(`❌ [WEBHOOK] Errore creazione VendorPayout per ${earning.vendorId}:`, payoutError);
+          }
+        }
+      } catch (earningsError) {
+        console.error('❌ [WEBHOOK] Errore calcolo earnings:', earningsError);
+        // Non bloccare il flusso se il calcolo earnings fallisce
       }
 
       // Invia email di conferma acquisto
