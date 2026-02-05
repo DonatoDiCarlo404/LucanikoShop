@@ -39,6 +39,7 @@ import vendorEarningsRoutes from './routes/vendorEarningsRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import adminPaymentRoutes from './routes/adminPaymentRoutes.js';
 import stripeMonitoringRoutes from './routes/stripeMonitoringRoutes.js';
+import cookieConsentRoutes from './routes/cookieConsentRoutes.js';
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 import cron from 'node-cron';
 import { processVendorPayouts } from './jobs/processVendorPayouts.js';
@@ -49,6 +50,10 @@ const app = express();
 
 // Serve i PDF vendor caricati
 app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs')));
+
+// Serve robots.txt per bloccare l'indicizzazione dell'API
+app.use(express.static(path.join(process.cwd(), 'public')));
+
 const PORT = process.env.PORT || 5000;
 
 // IMPORTANTE: Webhook route PRIMA di express.json()
@@ -119,6 +124,7 @@ app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/sitemap', sitemapRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/cookie-consent', cookieConsentRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)

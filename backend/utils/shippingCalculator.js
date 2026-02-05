@@ -181,7 +181,7 @@ export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, tot
     const vendorShippingCosts = {};
     let totalShipping = 0;
 
-    itemsByVendor.forEach(({ vendorId, items, vendorShippingSettings }) => {
+    itemsByVendor.forEach(({ vendorId, vendorName, items, vendorShippingSettings }) => {
         // Calcola il subtotale per questo venditore usando il prezzo dal carrello
         const vendorCartTotal = items.reduce((sum, item) => {
             const price = item.price || 0; // Usa il prezzo dal carrello (può essere scontato)
@@ -194,7 +194,10 @@ export const calculateMultiVendorShipping = (itemsByVendor, shippingAddress, tot
             cartTotal: vendorCartTotal
         });
 
-        vendorShippingCosts[vendorId] = shippingResult;
+        vendorShippingCosts[vendorId] = {
+            ...shippingResult,
+            vendorName: vendorName || 'Venditore'
+        };
         totalShipping += shippingResult.shippingCost;
     });
 

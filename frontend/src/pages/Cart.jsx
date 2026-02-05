@@ -631,13 +631,20 @@ const Cart = () => {
               ) : (
                 <Alert variant="info" className="mt-3 small mb-0">
                   <strong>📦 Spedizione:</strong> I costi variano in base al peso e alla destinazione.
-                  {shippingDetails && (
+                  {shippingDetails && Object.keys(shippingDetails).length > 1 && (
                     <div className="mt-2">
+                      <div className="small fw-bold mb-1">Dettaglio spedizioni per venditore:</div>
                       {Object.entries(shippingDetails).map(([vendorId, details]) => (
-                        <div key={vendorId} className="small text-muted">
-                          • {details.message}
+                        <div key={vendorId} className="small d-flex justify-content-between align-items-center mb-1">
+                          <span className="text-muted">• {details.vendorName || 'Venditore'}</span>
+                          <span className="fw-bold">€{(details.shippingCost || 0).toFixed(2)}</span>
                         </div>
                       ))}
+                      <hr className="my-2" />
+                      <div className="small d-flex justify-content-between align-items-center">
+                        <span className="fw-bold">Totale Spedizione:</span>
+                        <span className="fw-bold text-primary">€{shippingCost.toFixed(2)}</span>
+                      </div>
                     </div>
                   )}
                 </Alert>

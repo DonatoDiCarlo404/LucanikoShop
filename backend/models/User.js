@@ -317,6 +317,10 @@ const userSchema = new mongoose.Schema(
         min: [0, 'L\'aliquota IVA non può essere negativa'],
         max: [100, 'L\'aliquota IVA non può superare 100'],
         default: 22
+      },
+      vacationMode: { // Modalità vacanza - disattiva tutti i prodotti
+        type: Boolean,
+        default: false
       }
     },    // Sistema earnings per venditori (multivendor payouts)
     totalEarnings: {

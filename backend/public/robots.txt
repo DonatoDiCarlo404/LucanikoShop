@@ -1,0 +1,12 @@
+# robots.txt per API Backend
+# Blocca completamente l'indicizzazione dell'API
+
+User-agent: *
+Disallow: /
+
+# Blocca tutti i crawler
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /

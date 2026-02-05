@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Container, Row, Col, Card, Spinner, Alert, Badge, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Modal, Form } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
@@ -19,6 +19,8 @@ const ShopPage = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const productsPerPage = 12;
 
   useEffect(() => {
@@ -260,6 +262,20 @@ const ShopPage = () => {
                     </a>
                   </div>
                 )}
+                {/* LINK TERMINI E CONDIZIONI */}
+                <div className="mt-2">
+                  <a 
+                    href="#" 
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      setShowTermsModal(true); 
+                      setTermsAccepted(false); 
+                    }} 
+                    style={{ fontSize: '14px', textDecoration: 'underline' }}
+                  >
+                    Termini e Condizioni Venditore
+                  </a>
+                </div>
               </div>
               {/* INFO PRIVATE SOLO PER PROPRIETARIO */}
               {isOwner && (
@@ -478,9 +494,40 @@ const ShopPage = () => {
           ← Torna al Catalogo Completo
         </Button>
       </div>
+
+      {/* Modal Termini e Condizioni */}
+      <Modal show={showTermsModal} onHide={() => setShowTermsModal(false)} size="lg" scrollable>
+        <Modal.Header closeButton>
+          <Modal.Title>Termini e Condizioni del Venditore</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+          {shopData?.vendor?.shopSettings?.termsAndConditions?.content ? (
+            <>
+              {shopData.vendor.shopSettings.termsAndConditions.content}
+              <hr className="my-4" />
+              <Form.Check
+                type="checkbox"
+                id="accept-terms"
+                label="Ho letto e accetto i Termini e Condizioni del Venditore"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="fw-bold"
+              />
+            </>
+          ) : (
+            <div className="text-muted">Il venditore non ha ancora pubblicato i propri termini e condizioni.</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
+            Chiudi
+          </Button>
+        </Modal.Footer>
+      </Modal>
       </Container>
     </>
   );
 };
 
 export default ShopPage;
+``

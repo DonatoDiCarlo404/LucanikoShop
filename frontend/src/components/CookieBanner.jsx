@@ -1,7 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const COOKIE_KEY = "lucaniko_cookie_consent";
+const ANONYMOUS_ID_KEY = "lucaniko_anonymous_id";
+
+// Genera ID anonimo univoco
+const getOrCreateAnonymousId = () => {
+  let id = localStorage.getItem(ANONYMOUS_ID_KEY);
+  if (!id) {
+    id = `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem(ANONYMOUS_ID_KEY, id);
+  }
+  return id;
+};
 
 const defaultPrefs = {
   technical: true,
@@ -43,16 +55,59 @@ const CookieBanner = () => {
   const [showPolicy, setShowPolicy] = useState(false);
   const [prefs, setPrefs] = useState(defaultPrefs);
 
-  const handleAccept = () => {
-    localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...prefs, accepted: true }));
+  // Funzione per salvare il consenso nel backend
+  const saveConsentToBackend = async (preferences, action, method = 'banner') => {
+    try {
+      const anonymousId = getOrCreateAnonymousId();
+      
+      await fetch(`${API_URL}/cookie-consent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          anonymousId,
+          preferences,
+          action,
+          policyVersion: '1.0',
+          consentMethod: method
+        })
+      });
+    } catch (error) {
+      console.error('Errore nel salvare il consenso:', error);
+      // Non bloccare l'utente se il salvataggio fallisce
+    }
+  };
+
+  const handleAccept = async () => {
+    const allAccepted = {
+      technical: true,
+      preferences: true,
+      analytics: true,
+      marketing: true
+    };
+    
+    localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...allAccepted, accepted: true }));
+    await saveConsentToBackend(allAccepted, 'accept_all', 'banner');
     setShow(false);
   };
-  const handleReject = () => {
-    localStorage.setItem(COOKIE_KEY, JSON.stringify({ technical: true, preferences: false, analytics: false, marketing: false, accepted: false }));
+
+  const handleReject = async () => {
+    const onlyTechnical = {
+      technical: true,
+      preferences: false,
+      analytics: false,
+      marketing: false
+    };
+    
+    localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...onlyTechnical, accepted: false }));
+    await saveConsentToBackend(onlyTechnical, 'reject_all', 'banner');
     setShow(false);
   };
-  const handleSavePrefs = () => {
+
+  const handleSavePrefs = async () => {
     localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...prefs, accepted: true }));
+    await saveConsentToBackend(prefs, 'customize', 'preferences_center');
     setShow(false);
     setShowPrefs(false);
   };
@@ -63,7 +118,9 @@ const CookieBanner = () => {
     <div style={{ position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 2000, background: "#fff", borderTop: "1px solid #ddd", boxShadow: "0 -2px 12px rgba(0,0,0,0.07)", padding: "1.2rem 1rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <div style={{ maxWidth: 700, textAlign: "center", marginBottom: 12 }}>
         Questo sito utilizza cookie tecnici e, previo consenso, cookie di preferenza, analitici e marketing per migliorare l’esperienza. Consulta la nostra {" "}
-        <span onClick={() => setShowPolicy(true)} style={{ textDecoration: "underline", cursor: "pointer", color: "#0d6efd" }}>Cookie Policy</span>.
+        <span onClick={() => setShowPolicy(true)} style={{ textDecoration: "underline", cursor: "pointer", color: "#0d6efd" }}>Cookie Policy</span>
+        {" "}o il nostro{" "}
+        <a href="/cookie-list" style={{ textDecoration: "underline", color: "#0d6efd" }}>Elenco Cookie</a>.
       </div>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
         <Button variant="secondary" size="sm" onClick={() => setShowPrefs(true)}>

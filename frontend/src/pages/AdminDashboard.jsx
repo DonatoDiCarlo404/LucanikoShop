@@ -914,6 +914,95 @@ const AdminDashboard = () => {
             </Card.Body>
           </Card>
         </Tab>
+
+        {/* TAB REGISTRO CONSENSI COOKIE */}
+        <Tab eventKey="cookie-consent" title={<><i className="bi bi-shield-lock me-2"></i>Registro Cookie</>}>
+          <Card>
+            <Card.Header className="bg-dark text-white">
+              <div>
+                <h5><i className="bi bi-shield-lock-fill me-2"></i>Registro Consensi Cookie (INTERNO)</h5>
+                <small>Registro interno per accountability e conformità GDPR</small>
+              </div>
+            </Card.Header>
+            <Card.Body>
+              <Alert variant="info">
+                <i className="bi bi-info-circle-fill me-2"></i>
+                <strong>Registro Interno:</strong> Questa sezione contiene il log completo di tutti i consensi 
+                cookie raccolti dagli utenti. Accessibile solo agli amministratori per scopi di conformità GDPR 
+                e dimostrare la validità dei consensi in caso di controlli o contestazioni.
+              </Alert>
+
+              <p className="mb-4">
+                Visualizza tutti i consensi registrati con dettagli su:
+              </p>
+
+              <Row className="mb-4">
+                <Col md={6}>
+                  <ul>
+                    <li><strong>Data e ora</strong> del consenso</li>
+                    <li><strong>Utente</strong> (autenticato o anonimo)</li>
+                    <li><strong>Azione</strong> (accetta/rifiuta/personalizza)</li>
+                    <li><strong>Preferenze dettagliate</strong> per categoria</li>
+                  </ul>
+                </Col>
+                <Col md={6}>
+                  <ul>
+                    <li><strong>IP hashato</strong> (privacy protected)</li>
+                    <li><strong>Metodo</strong> (banner/centro preferenze)</li>
+                    <li><strong>Versione policy</strong> accettata</li>
+                    <li><strong>Statistiche aggregate</strong></li>
+                  </ul>
+                </Col>
+              </Row>
+              
+              <div className="d-grid gap-2">
+                <Button 
+                  variant="dark" 
+                  size="lg"
+                  onClick={() => window.location.href = '/admin/cookie-consent'}
+                  className="d-flex align-items-center justify-content-center"
+                >
+                  <i className="bi bi-box-arrow-up-right me-2"></i>
+                  Apri Registro Consensi Cookie
+                </Button>
+              </div>
+
+              <hr className="my-4" />
+
+              <Row className="text-center">
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-people-fill fs-1 text-primary mb-2"></i>
+                    <h6 className="text-muted">Tutti i Consensi</h6>
+                    <p className="small">Visualizza registro completo con filtri avanzati</p>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-graph-up-arrow fs-1 text-success mb-2"></i>
+                    <h6 className="text-muted">Statistiche</h6>
+                    <p className="small">Analytics accettati, marketing, totali ultimi 30gg</p>
+                  </div>
+                </Col>
+                <Col md={4}>
+                  <div className="p-3">
+                    <i className="bi bi-shield-check fs-1 text-info mb-2"></i>
+                    <h6 className="text-muted">Conformità GDPR</h6>
+                    <p className="small">Dati conservati per audit e accountability</p>
+                  </div>
+                </Col>
+              </Row>
+
+              <Alert variant="warning" className="mt-3 mb-0">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <small>
+                  <strong>Nota:</strong> I dati del registro devono essere conservati per almeno 12-24 mesi 
+                  per dimostrare la conformità GDPR. L'accesso è limitato agli amministratori.
+                </small>
+              </Alert>
+            </Card.Body>
+          </Card>
+        </Tab>
       </Tabs>
 
       {/* Modal Sponsor */}

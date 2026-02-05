@@ -1,10 +1,17 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import CookiePreferences from "./CookiePreferences";
 import './Footer.css';
 
 const Footer = () => {
+  const [showCookiePrefs, setShowCookiePrefs] = useState(false);
+
   return (
-    <footer className="bg-light border-top mt-5">
+    <>
+      <CookiePreferences show={showCookiePrefs} onHide={() => setShowCookiePrefs(false)} />
+      
+      <footer className="bg-light border-top mt-5">
       <Container className="pt-5 pb-1">
         {/* Prime 4 colonne */}
         <Row className="gy-4">
@@ -39,6 +46,17 @@ const Footer = () => {
             <ul className="list-unstyled">
               <li><Link className="text-dark text-decoration-none" to="/privacy" onClick={() => window.scrollTo(0,0)}>Privacy Policy</Link></li>
               <li><Link className="text-dark text-decoration-none" to="/cookies" onClick={() => window.scrollTo(0,0)}>Cookie Policy</Link></li>
+              <li><Link className="text-dark text-decoration-none" to="/cookie-list" onClick={() => window.scrollTo(0,0)}>Elenco Cookie</Link></li>
+              <li>
+                <span 
+                  className="text-dark text-decoration-none" 
+                  onClick={() => setShowCookiePrefs(true)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <i className="bi bi-gear-fill me-1"></i>
+                  Gestione Cookie
+                </span>
+              </li>
               <li><Link className="text-dark text-decoration-none" to="/terms-buyers" onClick={() => window.scrollTo(0,0)}>Termini & Condizioni Acquirenti</Link></li>
               <li><Link className="text-dark text-decoration-none" to="/terms-vendors" onClick={() => window.scrollTo(0,0)}>Termini & Condizioni Venditori</Link></li>
             </ul>
@@ -89,6 +107,7 @@ const Footer = () => {
         </small>
       </div>
     </footer>
+    </>
   );
 };
 

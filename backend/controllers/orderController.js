@@ -386,7 +386,7 @@ export const calculateShippingCost = async (req, res) => {
         let totalCartValue = 0;
 
         for (const item of items) {
-            const product = await Product.findById(item.product).populate('seller', 'shopSettings');
+            const product = await Product.findById(item.product).populate('seller', 'shopSettings businessName');
             
             if (!product) {
                 return res.status(404).json({ 
@@ -400,7 +400,7 @@ export const calculateShippingCost = async (req, res) => {
             if (!itemsByVendor[vendorId]) {
                 itemsByVendor[vendorId] = {
                     vendorId,
-                    vendorName: product.seller.name,
+                    vendorName: product.seller.businessName || product.seller.name || 'Venditore',
                     items: [],
                     vendorShippingSettings: product.seller.shopSettings?.shipping || null
                 };

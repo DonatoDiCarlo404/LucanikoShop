@@ -6,5 +6,6 @@ import Discount from './Discount.js';
 import Category from './Category.js';
 import CategoryAttribute from './CategoryAttribute.js';
 import VendorPayout from './VendorPayout.js';
+import CookieConsent from './CookieConsent.js';
 
-export { User, Product, Order, Review, Discount, Category, CategoryAttribute, VendorPayout };
+export { User, Product, Order, Review, Discount, Category, CategoryAttribute, VendorPayout, CookieConsent };

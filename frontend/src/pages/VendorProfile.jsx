@@ -226,6 +226,7 @@ const VendorProfile = () => {
         defaultShippingRate: 0,
         shippingRates: []
       },
+      vacationMode: false,
       productSettings: {
         enableColors: false,
         availableColors: [],
@@ -402,6 +403,7 @@ const VendorProfile = () => {
             defaultShippingRate: data.shopSettings?.shipping?.defaultShippingRate || 0,
             shippingRates: data.shopSettings?.shipping?.shippingRates || []
           },
+          vacationMode: data.shopSettings?.vacationMode || false,
           productSettings: {
             enableColors: data.shopSettings?.productSettings?.enableColors || false,
             availableColors: data.shopSettings?.productSettings?.availableColors || [],
@@ -902,6 +904,89 @@ const VendorProfile = () => {
     } catch (err) {
       setError(err.message);
       setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Toggle vacation mode - disattiva/riattiva tutti i prodotti
+  const handleToggleVacationMode = async (currentVacationMode) => {
+    try {
+      setSaving(true);
+      const newVacationMode = !currentVacationMode;
+
+      // Aggiorna il vacation mode nel profilo
+      const updatedFormData = {
+        ...formData,
+        shopSettings: {
+          ...formData.shopSettings,
+          vacationMode: newVacationMode
+        }
+      };
+
+      await saveProfile(updatedFormData, newVacationMode ? 'Modalità vacanza attivata - tutti i prodotti sono stati disattivati' : 'Modalità vacanza disattivata - i prodotti con stock sono stati riattivati');
+
+      if (newVacationMode) {
+        // ATTIVA vacation mode: disattiva tutti i prodotti
+        const updatePromises = products.map(product => 
+          fetch(`${API_URL}/products/${product._id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ isActive: false })
+          })
+        );
+
+        await Promise.all(updatePromises);
+
+        // Aggiorna lo stato locale
+        setProducts(prevProducts =>
+          prevProducts.map(p => ({ ...p, isActive: false }))
+        );
+      } else {
+        // DISATTIVA vacation mode: riattiva i prodotti che hanno stock
+        const updatePromises = products.map(product => {
+          const totalStock = product.hasVariants
+            ? (product.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0)
+            : product.stock;
+          const hasStock = totalStock > 0;
+
+          // Riattiva solo se ha stock
+          if (hasStock) {
+            return fetch(`${API_URL}/products/${product._id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${user.token}`
+              },
+              body: JSON.stringify({ isActive: true })
+            });
+          }
+          return Promise.resolve();
+        });
+
+        await Promise.all(updatePromises);
+
+        // Aggiorna lo stato locale: riattiva solo quelli con stock
+        setProducts(prevProducts =>
+          prevProducts.map(p => {
+            const totalStock = p.hasVariants
+              ? (p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0)
+              : p.stock;
+            const hasStock = totalStock > 0;
+            return { ...p, isActive: hasStock };
+          })
+        );
+      }
+
+      // Aggiorna formData
+      setFormData(updatedFormData);
+
+    } catch (err) {
+      setError(err.message);
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1594,23 +1679,50 @@ const VendorProfile = () => {
                 <div>
                   <h5 className="mb-1">Prodotti di {profileData?.businessName || 'questo venditore'}</h5>
                   <p className="text-muted mb-0">
-                    {products.length} prodotto{products.length !== 1 ? 'i' : ''} totale{products.length !== 1 ? 'i' : ''}
+                    {products.length} {products.length === 1 ? 'prodotto totale' : 'prodotti totali'}
                   </p>
                 </div>
-                <Button 
-                  variant="success" 
-                  onClick={() => {
-                    if (user.role === 'admin' && sellerId) {
-                      // Admin crea prodotto per questo venditore
-                      navigate(`/products/new?sellerId=${sellerId}`);
-                    } else {
-                      navigate('/products/new');
-                    }
-                  }}
-                >
-                  <i className="bi bi-plus-circle"></i> Nuovo Prodotto
-                </Button>
+                <div className="d-flex align-items-center gap-3">
+                  {/* Switch Vacation Mode */}
+                  <div className="d-flex align-items-center">
+                    <Form.Check
+                      type="switch"
+                      id="vacation-mode-switch"
+                      checked={formData.shopSettings.vacationMode}
+                      onChange={() => handleToggleVacationMode(formData.shopSettings.vacationMode)}
+                      label={
+                        <span>
+                          <i className="bi bi-calendar-x me-1"></i>
+                          {formData.shopSettings.vacationMode ? 'Negozio in vacanza' : 'Modalità vacanza'}
+                        </span>
+                      }
+                      className={formData.shopSettings.vacationMode ? 'text-warning fw-bold' : ''}
+                      disabled={saving}
+                    />
+                  </div>
+                  <Button 
+                    variant="success" 
+                    onClick={() => {
+                      if (user.role === 'admin' && sellerId) {
+                        // Admin crea prodotto per questo venditore
+                        navigate(`/products/new?sellerId=${sellerId}`);
+                      } else {
+                        navigate('/products/new');
+                      }
+                    }}
+                  >
+                    <i className="bi bi-plus-circle"></i> Nuovo Prodotto
+                  </Button>
+                </div>
               </div>
+
+              {/* Alert Vacation Mode Attivo */}
+              {formData.shopSettings.vacationMode && (
+                <Alert variant="warning" className="mb-3">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  <strong>Modalità Vacanza Attiva:</strong> Tutti i tuoi prodotti sono attualmente disattivati e non visibili ai clienti. Disattiva la modalità vacanza per riattivare il negozio.
+                </Alert>
+              )}
 
               {products.length === 0 ? (
                 <Alert variant="info">
@@ -1726,15 +1838,16 @@ const VendorProfile = () => {
                                 : product.stock;
                               const hasStock = totalStock > 0;
                               const isAvailable = hasStock && product.isActive;
+                              const isVacationMode = formData.shopSettings.vacationMode;
 
                               return (
                                 <Form.Check
                                   type="switch"
                                   id={`disponibile-switch-${product._id}`}
-                                  checked={isAvailable}
-                                  disabled={!hasStock}
+                                  checked={isAvailable && !isVacationMode}
+                                  disabled={!hasStock || isVacationMode}
                                   onChange={() => handleToggleProductAvailability(product._id, product.isActive)}
-                                  label={isAvailable ? 'Disponibile' : 'Non disponibile'}
+                                  label={isVacationMode ? 'In vacanza' : (isAvailable ? 'Disponibile' : 'Non disponibile')}
                                   style={{ minWidth: 120 }}
                                 />
                               );
@@ -2354,9 +2467,10 @@ const VendorProfile = () => {
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Numero di Telefono (facoltativo)</Form.Label>
+                      <Form.Label>Numero di Telefono <span style={{color:'red'}}>*</span></Form.Label>
                       <Form.Control
                         type="tel"
+                        required
                         value={formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || ''}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
@@ -2393,7 +2507,7 @@ Dati del Venditore:
 • Sede legale: ${formData.shopSettings.termsAndConditions.sellerLegalAddress || `${formData.businessAddress?.street || ''} ${formData.businessAddress?.city || ''} ${formData.businessAddress?.zipCode || ''}`.trim() || '__________'}
 • Partita IVA / Codice Fiscale: ${formData.shopSettings.termsAndConditions.sellerVatNumber || formData.vatNumber || '__________'}
 • Email di contatto: ${formData.shopSettings.termsAndConditions.sellerEmail || formData.businessEmail || '__________'}
-• Telefono (facoltativo): ${formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || '__________'}
+• Telefono: ${formData.shopSettings.termsAndConditions.sellerPhone || formData.phone || '__________'}
 
 Il Venditore opera in piena autonomia ed è l'unico responsabile dei prodotti offerti, delle informazioni fornite e dell'esecuzione del contratto di vendita con l'Acquirente.
 
