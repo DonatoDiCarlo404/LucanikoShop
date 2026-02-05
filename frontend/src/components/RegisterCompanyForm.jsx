@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Form, Button, Alert, InputGroup, Dropdown, Badge, Modal } from 'react-bootstrap';
-import { categoriesAPI, authAPI } from '../services/api';
+import { authAPI } from '../services/api';
 
 const RegisterCompanyForm = ({ onSuccess }) => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [vatNumber, setVatNumber] = useState('');
   const [address, setAddress] = useState('');
@@ -11,7 +13,6 @@ const RegisterCompanyForm = ({ onSuccess }) => {
   const [uniqueCode, setUniqueCode] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [password, setPassword] = useState('');
   const [subscription, setSubscription] = useState('1anno');
@@ -22,32 +23,36 @@ const RegisterCompanyForm = ({ onSuccess }) => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await categoriesAPI.getAll();
-        setCategories(data || []);
-      } catch (err) {
-        setCategories([]);
-      }
-    };
-    loadCategories();
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    
     if (!acceptTerms) {
       setError('Devi accettare i Termini & Condizioni Venditore di Lucaniko Shop');
       return;
     }
+    
+    if (!firstName.trim()) {
+      setError('Il nome è obbligatorio');
+      return;
+    }
+    
+    if (!lastName.trim()) {
+      setError('Il cognome è obbligatorio');
+      return;
+    }
+    
     setLoading(true);
     try {
+      const fullName = `${firstName} ${lastName}`.trim();
       const result = await authAPI.register({
+        name: fullName,
         businessName,
         vatNumber,
         address,
+        city,
+        zipCode,
         uniqueCode,
         email,
         phoneNumber,
@@ -55,13 +60,18 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         subscription,
         password,
         role: 'seller',
+        registeredByAdmin: true,
       });
       if (result && result._id) {
         setSuccess(true);
         if (onSuccess) onSuccess();
+        setFirstName('');
+        setLastName('');
         setBusinessName('');
         setVatNumber('');
         setAddress('');
+        setCity('');
+        setZipCode('');
         setUniqueCode('');
         setEmail('');
         setPhoneNumber('');
@@ -82,6 +92,31 @@ const RegisterCompanyForm = ({ onSuccess }) => {
       <h5>Registra Azienda per conto terzi</h5>
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">Azienda registrata con successo!</Alert>}
+      
+      <Form.Group className="mb-3" controlId="firstName">
+        <Form.Label>Nome Referente <span style={{color: 'red'}}>*</span></Form.Label>
+        <Form.Control
+          type="text"
+          placeholder="Es: Mario"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          autoComplete="given-name"
+          required
+        />
+      </Form.Group>
+      
+      <Form.Group className="mb-3" controlId="lastName">
+        <Form.Label>Cognome Referente <span style={{color: 'red'}}>*</span></Form.Label>
+        <Form.Control
+          type="text"
+          placeholder="Es: Rossi"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          autoComplete="family-name"
+          required
+        />
+      </Form.Group>
+      
       <Form.Group className="mb-3" controlId="businessName">
         <Form.Label>Ragione Sociale <span style={{color: 'red'}}>*</span></Form.Label>
         <Form.Control
@@ -179,23 +214,36 @@ const RegisterCompanyForm = ({ onSuccess }) => {
               : `${selectedCategories.length} categoria/e selezionate`}
           </Dropdown.Toggle>
           <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto', width: '100%' }}>
-            {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(cat => (
+            {/* Mostra solo le macrocategorie predefinite come nel catalogo */}
+            {[
+              { name: 'Cibi e Bevande' },
+              { name: 'Abbigliamento e Accessori' },
+              { name: 'Benessere e Salute' },
+              { name: 'Calzature' },
+              { name: 'Casa, Arredi e Ufficio' },
+              { name: 'Elettronica e Informatica' },
+              { name: 'Industria, Ferramenta e Artigianato' },
+              { name: 'Libri, Media e Giocattoli' },
+              { name: 'Orologi e Gioielli' },
+              { name: 'Ricambi e accessori per auto e moto' },
+              { name: 'Sport, Hobby e Viaggi' }
+            ].map(cat => (
               <Dropdown.Item
-                key={cat._id}
+                key={cat.name}
                 as="div"
                 onClick={(e) => e.stopPropagation()}
                 style={{ cursor: 'pointer' }}
               >
                 <Form.Check
                   type="checkbox"
-                  id={`category-${cat._id}`}
+                  id={`category-${cat.name}`}
                   label={cat.name}
-                  checked={selectedCategories.includes(cat._id)}
+                  checked={selectedCategories.includes(cat.name)}
                   onChange={() => {
-                    if (selectedCategories.includes(cat._id)) {
-                      setSelectedCategories(selectedCategories.filter(c => c !== cat._id));
+                    if (selectedCategories.includes(cat.name)) {
+                      setSelectedCategories(selectedCategories.filter(c => c !== cat.name));
                     } else {
-                      setSelectedCategories([...selectedCategories, cat._id]);
+                      setSelectedCategories([...selectedCategories, cat.name]);
                     }
                   }}
                 />
@@ -205,19 +253,18 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         </Dropdown>
         {selectedCategories.length > 0 && (
           <div className="mt-2">
-            {selectedCategories.map(catId => {
-              const catObj = categories.find(c => c._id === catId);
-              return catObj ? (
+            {selectedCategories.map(catName => {
+              return (
                 <Badge 
-                  key={catObj._id} 
+                  key={catName} 
                   bg="primary" 
                   className="me-1 mb-1"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => setSelectedCategories(selectedCategories.filter(c => c !== catObj._id))}
+                  onClick={() => setSelectedCategories(selectedCategories.filter(c => c !== catName))}
                 >
-                  {catObj.name} ×
+                  {catName} ×
                 </Badge>
-              ) : null;
+              );
             })}
           </div>
         )}

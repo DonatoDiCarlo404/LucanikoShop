@@ -365,6 +365,24 @@ const userSchema = new mongoose.Schema(
     subscriptionEndDate: {
       type: Date
     },
+    // Flag per indicare se l'abbonamento è stato pagato
+    subscriptionPaid: {
+      type: Boolean,
+      default: false
+    },
+    // Data dell'ultimo pagamento abbonamento
+    subscriptionPaidAt: {
+      type: Date
+    },
+    // ID del pagamento Stripe per riferimento
+    subscriptionPaymentId: {
+      type: String
+    },
+    // Tipo di abbonamento (1anno, 2anni, 3anni)
+    subscriptionType: {
+      type: String,
+      enum: ['1anno', '2anni', '3anni']
+    },
     // Flag per sospendere rinnovo automatico abbonamento (solo admin)
     subscriptionSuspended: {
       type: Boolean,

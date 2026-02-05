@@ -313,3 +313,29 @@ Il team Lucaniko<br><br>
     throw error;
   }
 };
+
+// Email approvazione account venditore
+export const sendApprovalEmail = async (userEmail, userName) => {
+  const msg = {
+    to: userEmail,
+    from: 'info@lucanikoshop.it',
+    subject: '✅ Account approvato - Benvenuto su Lucaniko Shop',
+    text: `Ciao ${userName},\n\nCongratulazioni! Il tuo account venditore su Lucaniko Shop è stato approvato.\n\nOra puoi accedere al tuo profilo e iniziare a vendere i tuoi prodotti.\n\nAccedi qui: https://www.lucanikoshop.it/login\n\nBuon lavoro,\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    html: `Ciao <strong>${userName}</strong>,<br><br>
+<strong>Congratulazioni!</strong> Il tuo account venditore su <strong>Lucaniko Shop</strong> è stato approvato.<br><br>
+Ora puoi accedere al tuo profilo e iniziare a vendere i tuoi prodotti.<br><br>
+<p style="margin: 1.5em 0;">
+  <a href="https://www.lucanikoshop.it/login" style="background: #00bf63; color: #fff; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-weight: bold;">👉 Accedi al tuo account</a>
+</p>
+Buon lavoro,<br>
+Il team Lucaniko<br><br>
+<a href="https://www.lucanikoshop.it" style="color: #004b75; text-decoration: underline;">www.lucanikoshop.it</a>`
+  };
+
+  try {
+    await sgMail.send(msg);
+  } catch (error) {
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email approvazione:', error);
+    throw error;
+  }
+};

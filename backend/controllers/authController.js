@@ -85,7 +85,7 @@ export const updateProfile = async (req, res) => {
 };
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
-import { sendWelcomeEmail } from '../utils/emailTemplates.js';
+import { sendWelcomeEmail, sendApprovalEmail, sendVendorRegistrationEmail } from '../utils/emailTemplates.js';
 
 // @desc    Registra un nuovo utente
 // @route   POST /api/auth/register
@@ -108,7 +108,9 @@ export const register = async (req, res) => {
       paymentIntentId,
       subscriptionType,
       subscriptionPaid,
-      cardDetails
+      cardDetails,
+      registeredByAdmin,
+      subscription
     } = req.body;
 
     console.log('[Backend] Registrazione ricevuta:', { name, email, role, businessName, vatNumber });
@@ -139,6 +141,11 @@ export const register = async (req, res) => {
         userData.businessCategories = selectedCategories;
       }
 
+      // Se registrato dall'admin, approva automaticamente
+      if (registeredByAdmin) {
+        userData.isApproved = true;
+      }
+
       // Indirizzo aziendale
       if (address || city || zipCode) {
         userData.businessAddress = {
@@ -157,21 +164,33 @@ export const register = async (req, res) => {
       }
 
       // Calcola e salva la scadenza abbonamento
-      if (subscriptionType) {
-        // 1, 2 o 3 anni
+      if (subscriptionType || subscription) {
+        // 1, 2 o 3 anni (subscription viene dal form admin: '1anno', '2anni', '3anni')
         let years = 1;
-        if (String(subscriptionType) === '2') years = 2;
-        if (String(subscriptionType) === '3') years = 3;
+        const subValue = subscriptionType || subscription;
+        if (String(subValue) === '2' || String(subValue) === '2anni') years = 2;
+        if (String(subValue) === '3' || String(subValue) === '3anni') years = 3;
         const now = new Date();
         const endDate = new Date(now.setFullYear(now.getFullYear() + years));
         userData.subscriptionEndDate = endDate;
       }
 
-      // Salva info abbonamento nei metadata (opzionale, per tracking)
+      // Se registrato dall'admin, attiva automaticamente l'abbonamento
+      if (registeredByAdmin) {
+        userData.subscriptionPaid = true;
+        userData.subscriptionPaidAt = new Date();
+        userData.subscriptionPaymentId = `ADMIN_REG_${Date.now()}`;
+        userData.subscriptionType = subscription || subscriptionType;
+      }
+
+      // Salva info abbonamento nei metadata (opzionale, per tracking) - solo se c'è un paymentIntentId
       if (paymentIntentId) {
         userData.subscriptionPaymentId = paymentIntentId;
         userData.subscriptionType = subscriptionType;
         userData.subscriptionPaid = subscriptionPaid;
+        if (subscriptionPaid) {
+          userData.subscriptionPaidAt = new Date();
+        }
       }
 
       // Salva dati non sensibili della carta se presenti
@@ -197,13 +216,26 @@ export const register = async (req, res) => {
     if (user) {
       console.log('[Backend] Utente creato con successo:', user._id);
       
-      // Invia email di benvenuto (non blocca la registrazione se fallisce)
+      // Invia email appropriata in base al tipo di registrazione (non blocca la registrazione se fallisce)
       try {
-        console.log('[AUTH CONTROLLER] Tentativo invio email di benvenuto...');
-        await sendWelcomeEmail(user.email, user.name);
-        console.log('[AUTH CONTROLLER] ✅ Email di benvenuto inviata');
+        if (role === 'seller' && registeredByAdmin) {
+          // Admin registra azienda: invio email di approvazione (già approvato)
+          console.log('[AUTH CONTROLLER] Tentativo invio email di approvazione (registrazione admin)...');
+          await sendApprovalEmail(user.email, user.name);
+          console.log('[AUTH CONTROLLER] ✅ Email di approvazione inviata');
+        } else if (role === 'seller') {
+          // Seller si auto-registra: invio email di registrazione in attesa
+          console.log('[AUTH CONTROLLER] Tentativo invio email registrazione venditore...');
+          await sendVendorRegistrationEmail(user.email, user.businessName || user.name);
+          console.log('[AUTH CONTROLLER] ✅ Email registrazione venditore inviata');
+        } else {
+          // Buyer si registra: invio email di benvenuto
+          console.log('[AUTH CONTROLLER] Tentativo invio email di benvenuto...');
+          await sendWelcomeEmail(user.email, user.name);
+          console.log('[AUTH CONTROLLER] ✅ Email di benvenuto inviata');
+        }
       } catch (emailError) {
-        console.error('[AUTH CONTROLLER] ❌ ERRORE invio email di benvenuto:', emailError);
+        console.error('[AUTH CONTROLLER] ❌ ERRORE invio email:', emailError);
         console.error('[AUTH CONTROLLER] Dettagli errore:', {
           message: emailError.message,
           code: emailError.code,
@@ -385,6 +417,11 @@ export const updateVendorProfile = async (req, res) => {
     user.name = req.body.name || user.name;
     user.phone = req.body.phone || user.phone;
     user.avatar = req.body.avatar || user.avatar;
+
+    // Aggiorna password se fornita
+    if (req.body.password && req.body.password.length >= 8) {
+      user.password = req.body.password;
+    }
 
     // Aggiorna indirizzo personale
     if (req.body.address) {

@@ -11,13 +11,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // @access  Private (Seller only)
 router.post('/create-account', protect, seller, async (req, res) => {
   try {
+    console.log('[STRIPE CONNECT] Inizio creazione account per user:', req.user._id);
     const user = await User.findById(req.user._id);
+    console.log('[STRIPE CONNECT] User trovato:', { 
+      id: user._id, 
+      email: user.email, 
+      businessName: user.businessName,
+      vatNumber: user.vatNumber 
+    });
 
     // Verifica se l'utente ha già un account Stripe Connect
-    if (user.paymentMethods?.stripe?.accountId) {
+    if (user.shopSettings?.paymentMethods?.stripe?.accountId) {
+      console.log('[STRIPE CONNECT] Account già esistente:', user.shopSettings.paymentMethods.stripe.accountId);
       return res.status(400).json({ 
         message: 'Account Stripe già collegato',
-        accountId: user.paymentMethods.stripe.accountId 
+        accountId: user.shopSettings.paymentMethods.stripe.accountId 
       });
     }
 
@@ -26,7 +34,10 @@ router.post('/create-account', protect, seller, async (req, res) => {
       ? 'https://www.lucanikoshop.it' 
       : process.env.FRONTEND_URL || 'https://www.lucanikoshop.it';
 
+    console.log('[STRIPE CONNECT] Vendor URL:', vendorUrl);
+
     // Crea un nuovo Stripe Connect Account (Express)
+    console.log('[STRIPE CONNECT] Tentativo creazione account Stripe...');
     const account = await stripe.accounts.create({
       type: 'express',
       country: 'IT',
@@ -37,8 +48,8 @@ router.post('/create-account', protect, seller, async (req, res) => {
       },
       business_type: 'company',
       company: {
-        name: user.companyName || user.name,
-        tax_id: user.address?.taxCode || undefined
+        name: user.businessName || user.name,
+        tax_id: user.vatNumber || undefined
       },
       business_profile: {
         mcc: '5399', // Miscellaneous general merchandise
@@ -46,22 +57,39 @@ router.post('/create-account', protect, seller, async (req, res) => {
       }
     });
 
+    console.log('[STRIPE CONNECT] Account Stripe creato:', account.id);
+
+    console.log('[STRIPE CONNECT] Account Stripe creato:', account.id);
+
     // Salva l'account ID nel database
-    user.paymentMethods = user.paymentMethods || {};
-    user.paymentMethods.stripe = {
+    if (!user.shopSettings) {
+      user.shopSettings = {};
+    }
+    if (!user.shopSettings.paymentMethods) {
+      user.shopSettings.paymentMethods = {};
+    }
+    user.shopSettings.paymentMethods.stripe = {
       enabled: false,
       accountId: account.id,
       onboardingComplete: false
     };
 
+    console.log('[STRIPE CONNECT] Salvataggio nel database...');
     await user.save();
+    console.log('[STRIPE CONNECT] Account salvato nel database');
 
     res.json({
       message: 'Account Stripe Connect creato con successo',
       accountId: account.id
     });
   } catch (error) {
-    console.error('Errore creazione account Stripe Connect:', error);
+    console.error('[STRIPE CONNECT] ❌ ERRORE:', error);
+    console.error('[STRIPE CONNECT] Errore dettagli:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode
+    });
     res.status(500).json({ 
       message: 'Errore durante la creazione dell\'account Stripe',
       error: error.message 
@@ -76,7 +104,7 @@ router.post('/create-onboarding-link', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    if (!user.paymentMethods?.stripe?.accountId) {
+    if (!user.shopSettings?.paymentMethods?.stripe?.accountId) {
       return res.status(400).json({ 
         message: 'Devi prima creare un account Stripe Connect' 
       });
@@ -84,7 +112,7 @@ router.post('/create-onboarding-link', protect, seller, async (req, res) => {
 
     // Crea un Account Link per l'onboarding
     const accountLink = await stripe.accountLinks.create({
-      account: user.paymentMethods.stripe.accountId,
+      account: user.shopSettings.paymentMethods.stripe.accountId,
       refresh_url: `${process.env.FRONTEND_URL}/vendor/dashboard?stripe_refresh=true`,
       return_url: `${process.env.FRONTEND_URL}/vendor/dashboard?stripe_onboarding=success`,
       type: 'account_onboarding'
@@ -110,7 +138,7 @@ router.get('/account-status', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    if (!user.paymentMethods?.stripe?.accountId) {
+    if (!user.shopSettings?.paymentMethods?.stripe?.accountId) {
       return res.json({ 
         connected: false,
         message: 'Nessun account Stripe collegato' 
@@ -118,15 +146,15 @@ router.get('/account-status', protect, seller, async (req, res) => {
     }
 
     // Recupera i dettagli dell'account da Stripe
-    const account = await stripe.accounts.retrieve(user.paymentMethods.stripe.accountId);
+    const account = await stripe.accounts.retrieve(user.shopSettings.paymentMethods.stripe.accountId);
 
     // Verifica se l'onboarding è completo
     const onboardingComplete = account.charges_enabled && account.payouts_enabled;
 
     // Aggiorna lo stato nel database se è cambiato
-    if (onboardingComplete !== user.paymentMethods.stripe.onboardingComplete) {
-      user.paymentMethods.stripe.onboardingComplete = onboardingComplete;
-      user.paymentMethods.stripe.enabled = onboardingComplete;
+    if (onboardingComplete !== user.shopSettings.paymentMethods.stripe.onboardingComplete) {
+      user.shopSettings.paymentMethods.stripe.onboardingComplete = onboardingComplete;
+      user.shopSettings.paymentMethods.stripe.enabled = onboardingComplete;
       await user.save();
     }
 
@@ -155,7 +183,7 @@ router.get('/dashboard-link', protect, seller, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    if (!user.paymentMethods?.stripe?.accountId) {
+    if (!user.shopSettings?.paymentMethods?.stripe?.accountId) {
       return res.status(400).json({ 
         message: 'Nessun account Stripe collegato' 
       });
@@ -163,7 +191,7 @@ router.get('/dashboard-link', protect, seller, async (req, res) => {
 
     // Crea un login link per la dashboard Express
     const loginLink = await stripe.accounts.createLoginLink(
-      user.paymentMethods.stripe.accountId
+      user.shopSettings.paymentMethods.stripe.accountId
     );
 
     res.json({

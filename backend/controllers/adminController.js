@@ -1,4 +1,5 @@
 import { User, Product, Order } from '../models/index.js';
+import { sendApprovalEmail } from '../utils/emailTemplates.js';
 
 // @desc    Get tutti i venditori in attesa di approvazione
 // @route   GET /api/admin/pending-sellers
@@ -54,6 +55,13 @@ export const approveSeller = async (req, res) => {
 
     seller.isApproved = true;
     await seller.save();
+
+    // Invia email di approvazione
+    try {
+      await sendApprovalEmail(seller.email, seller.name);
+    } catch (emailError) {
+      console.error('[ADMIN] Errore invio email approvazione:', emailError);
+    }
 
     res.status(200).json({
       message: 'Venditore approvato con successo',

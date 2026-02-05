@@ -135,6 +135,15 @@ const VendorProfile = () => {
   const [savingNews, setSavingNews] = useState(false);
   const [editingNews, setEditingNews] = useState(false);
 
+  // State per cambio password
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+
   // State per form
   const [formData, setFormData] = useState({
     name: '',
@@ -667,14 +676,20 @@ const VendorProfile = () => {
 
   const handleStripeConnectOnboarding = async () => {
     try {
+      console.log('[FRONTEND] Inizio onboarding Stripe Connect');
       setStripeConnectStatus(prev => ({ ...prev, loading: true }));
       setError('');
       
       const token = localStorage.getItem('token');
+      console.log('[FRONTEND] Token presente:', !!token);
       
       // Step 1: Crea account Stripe Connect se non esiste
       if (!stripeConnectStatus.connected) {
-        const createResponse = await fetch(`${API_URL}/stripe-connect/create-account`, {
+        console.log('[FRONTEND] Creazione account Stripe Connect...');
+        const url = `${API_URL}/stripe-connect/create-account`;
+        console.log('[FRONTEND] URL chiamata:', url);
+        
+        const createResponse = await fetch(url, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -682,10 +697,16 @@ const VendorProfile = () => {
           }
         });
         
+        console.log('[FRONTEND] Risposta status:', createResponse.status);
+        
         if (!createResponse.ok) {
           const errorData = await createResponse.json();
+          console.error('[FRONTEND] Errore risposta:', errorData);
           throw new Error(errorData.message || 'Errore creazione account Stripe');
         }
+        
+        const createData = await createResponse.json();
+        console.log('[FRONTEND] Account creato:', createData);
       }
       
       // Step 2: Crea link onboarding
@@ -3042,6 +3063,17 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     </Card.Body>
                   </Card>
                 </Col>
+                <Col md={6} className="mb-3">
+                  <Card className="h-100">
+                    <Card.Body>
+                      <h5>🔐 Cambia Password</h5>
+                      <p className="text-muted">Modifica la tua password di accesso</p>
+                      <Button variant="secondary" onClick={() => setShowPasswordModal(true)}>
+                        Cambia Password
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
               </Row>
             </Card.Body>
           </Card>
@@ -3797,6 +3829,113 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                   </>
                 ) : (
                   editingDiscount ? 'Salva Modifiche' : 'Crea Sconto'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Cambio Password */}
+      <Modal show={showPasswordModal} onHide={() => {
+        setShowPasswordModal(false);
+        setPasswordForm({ newPassword: '', confirmPassword: '' });
+        setPasswordError('');
+        setPasswordSuccess('');
+      }}>
+        <Modal.Header closeButton>
+          <Modal.Title>🔐 Cambia Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {passwordError && <Alert variant="danger">{passwordError}</Alert>}
+          {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
+          
+          <Form onSubmit={async (e) => {
+            e.preventDefault();
+            setPasswordError('');
+            setPasswordSuccess('');
+
+            if (passwordForm.newPassword.length < 8) {
+              setPasswordError('La password deve essere di almeno 8 caratteri');
+              return;
+            }
+
+            if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+              setPasswordError('Le password non coincidono');
+              return;
+            }
+
+            try {
+              setSaving(true);
+              const res = await fetch(`${API_URL}/auth/vendor-profile`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ password: passwordForm.newPassword })
+              });
+
+              if (!res.ok) {
+                throw new Error('Errore durante il cambio password');
+              }
+
+              setPasswordSuccess('✅ Password cambiata con successo!');
+              setTimeout(() => {
+                setShowPasswordModal(false);
+                setPasswordForm({ newPassword: '', confirmPassword: '' });
+                setPasswordSuccess('');
+              }, 2000);
+            } catch (err) {
+              setPasswordError(err.message || 'Errore durante il cambio password');
+            } finally {
+              setSaving(false);
+            }
+          }}>
+            <Form.Group className="mb-3">
+              <Form.Label>Nuova Password <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Inserisci nuova password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                required
+                minLength={8}
+              />
+              <Form.Text className="text-muted">
+                La password deve essere di almeno 8 caratteri
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Conferma Password <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Conferma nuova password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                required
+                minLength={8}
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="secondary" onClick={() => {
+                setShowPasswordModal(false);
+                setPasswordForm({ newPassword: '', confirmPassword: '' });
+                setPasswordError('');
+                setPasswordSuccess('');
+              }}>
+                Annulla
+              </Button>
+              <Button variant="primary" type="submit" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  'Cambia Password'
                 )}
               </Button>
             </div>

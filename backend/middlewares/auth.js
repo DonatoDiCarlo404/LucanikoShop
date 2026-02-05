@@ -5,6 +5,9 @@ import User from '../models/User.js';
 export const protect = async (req, res, next) => {
   let token;
 
+  console.log('[AUTH] Richiesta:', req.method, req.path);
+  console.log('[AUTH] Headers authorization:', req.headers.authorization ? 'presente' : 'mancante');
+
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       // Estrai il token dall'header
@@ -16,14 +19,16 @@ export const protect = async (req, res, next) => {
       // Aggiungi l'utente alla request (senza password)
       req.user = await User.findById(decoded.id).select('-password');
 
+      console.log('[AUTH] User autenticato:', req.user._id, req.user.role);
       next();
     } catch (error) {
-      console.error(error);
+      console.error('[AUTH] Errore verifica token:', error.message);
       return res.status(401).json({ message: 'Non autorizzato, token non valido' });
     }
   }
 
   if (!token) {
+    console.log('[AUTH] Token mancante');
     return res.status(401).json({ message: 'Non autorizzato, token mancante' });
   }
 };
@@ -39,13 +44,17 @@ export const admin = (req, res, next) => {
 
 // Middleware per verificare se l'utente è seller
 export const seller = (req, res, next) => {
+  console.log('[SELLER MIDDLEWARE] User role:', req.user?.role, 'isApproved:', req.user?.isApproved);
+  
   if (req.user && (req.user.role === 'seller' || req.user.role === 'admin')) {
     // Gli admin bypassano sempre il controllo isApproved
     if (req.user.role === 'admin') {
+      console.log('[SELLER MIDDLEWARE] Admin bypass');
       return next();
     }
     // I seller devono essere approvati
     if (req.user.role === 'seller' && !req.user.isApproved) {
+      console.log('[SELLER MIDDLEWARE] Seller non approvato');
       return res.status(403).json({ 
         message: 'Account in attesa di approvazione',
         needsApproval: true 
@@ -53,6 +62,7 @@ export const seller = (req, res, next) => {
     }
     next();
   } else {
+    console.log('[SELLER MIDDLEWARE] Accesso negato - ruolo:', req.user?.role);
     res.status(403).json({ message: 'Accesso negato, solo seller' });
   }
 };
