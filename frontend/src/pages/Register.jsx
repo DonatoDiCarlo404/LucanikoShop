@@ -7,8 +7,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import StripePaymentForm from '../components/StripePaymentForm';
 
-// Chiave pubblica Stripe
-const stripePromise = loadStripe('pk_live_51SrKuwK9Lxisu9UDKKX60Lgx23xWmVDcP1H6Or0TCYAvqWDBqDQ0id912MUmaUMy7bdl1XO9ytBpXpdc56V7AAuX001BqzRaTY');
+// Chiave pubblica Stripe dalla variabile d'ambiente
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Prezzi Piano di Adesione 2026 (IVA inclusa)
 const SUBSCRIPTION_PRICES = {
