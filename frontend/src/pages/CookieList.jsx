@@ -2,7 +2,7 @@ import React from 'react';
 import { Container, Row, Col, Card, Table, Badge } from 'react-bootstrap';
 import SEOHelmet from '../components/SEOHelmet';
 
-const CookieRegister = () => {
+const CookieList = () => {
   const cookieData = [
     // Cookie Tecnici/Necessari
     {
