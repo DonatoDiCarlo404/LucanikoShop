@@ -15,8 +15,8 @@ dist-ssr
 # Environment variables
 .env
 .env.local
-.env.production
 .env.development
+# .env.production is safe to commit (public keys only)
 
 # Editor directories and files
 .vscode/*
