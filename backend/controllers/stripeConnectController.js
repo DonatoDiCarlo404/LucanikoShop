@@ -45,8 +45,8 @@ export const createConnectAccount = async (req, res) => {
       if (!account.details_submitted) {
         const accountLink = await stripe.accountLinks.create({
           account: vendor.stripeConnectAccountId,
-          refresh_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/refresh`,
-          return_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/complete`,
+          refresh_url: `${process.env.FRONTEND_URL}/vendor/profile`,
+          return_url: `${process.env.FRONTEND_URL}/vendor/profile`,
           type: 'account_onboarding'
         });
 
@@ -103,8 +103,8 @@ export const createConnectAccount = async (req, res) => {
     // Genera link di onboarding
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
-      refresh_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/refresh`,
-      return_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/complete`,
+      refresh_url: `${process.env.FRONTEND_URL}/vendor/profile`,
+      return_url: `${process.env.FRONTEND_URL}/vendor/profile`,
       type: 'account_onboarding'
     });
 
@@ -204,14 +204,14 @@ export const refreshOnboardingLink = async (req, res) => {
     // Genera nuovo link
     const accountLink = await stripe.accountLinks.create({
       account: vendor.stripeConnectAccountId,
-      refresh_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/refresh`,
-      return_url: `${process.env.FRONTEND_URL}/dashboard/venditor/stripe-connect/complete`,
+      refresh_url: `${process.env.FRONTEND_URL}/vendor/profile`,
+      return_url: `${process.env.FRONTEND_URL}/vendor/profile`,
       type: 'account_onboarding'
     });
 
     res.json({
       success: true,
-      onboardingUrl: accountLink.url
+      url: accountLink.url  // Fix: frontend cerca "url" non "onboardingUrl"
     });
 
   } catch (error) {
