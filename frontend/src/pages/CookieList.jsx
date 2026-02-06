@@ -220,7 +220,7 @@ const CookieList = () => {
       <Container className="py-5">
         <Row className="justify-content-center">
           <Col lg={11} xl={10}>
-            <h1 className="text-center mb-4" style={{ color: '#2c3e50', fontWeight: 700 }}>
+            <h1 className="mb-4" style={{ color: '#2c3e50', fontWeight: 700 }}>
               🍪 Elenco Cookie Utilizzati
             </h1>
             
@@ -365,7 +365,7 @@ const CookieList = () => {
               </Card.Body>
             </Card>
 
-            <div className="text-center mt-4">
+            <div className="mt-4">
               <p className="text-muted mb-0">
                 Per domande o richieste relative ai cookie, contattaci all'indirizzo:{' '}
                 <a href="mailto:info@lucanikoshop.it" className="text-decoration-none">

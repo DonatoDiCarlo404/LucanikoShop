@@ -2,7 +2,7 @@ import { Container } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 const SpazioVenditoriLucani = () => (
-  <Container className="policy-container py-4 text-center">
+  <Container className="policy-container py-4">
     <h2 className="mb-4">Spazio Venditori Lucani – Lucaniko Shop</h2>
     <p className="mb-3">Lucaniko Shop è un progetto dedicato alle imprese lucane per offrire:</p>
     <ul className="mb-4 d-flex flex-column align-items-center">
@@ -34,15 +34,13 @@ const SpazioVenditoriLucani = () => (
 
     <h5 className="mt-4 mb-2">Piano di Adesione 2026</h5>
     <ul className="mb-3 d-flex flex-column align-items-center">
-      <li>€299 (IVA inclusa) / 1 anno</li>
-      <li>€499 (IVA inclusa) / 2 anni</li>
-      <li>€599 (IVA inclusa) / 3 anni</li>
+      <li>€290 + IVA (22%) / 1 anno</li>
     </ul>
     <p className="mb-2"><strong>Include:</strong> accesso piattaforma, onboarding, supporto, community WhatsApp.</p>
     <p className="mb-4">
       Attivazione dopo approvazione candidatura + pagamento + emissione fattura da INSIDE di Di Pietro Vito.
     </p>
-    <p className="mb-4"><strong>Rinnovo e disdetta:</strong> se previsto rinnovo automatico, le modalità e i termini (es. 60 giorni) sono indicati nei Termini Venditori. In mancanza di disdetta nei termini, il rinnovo potrà essere applicato.</p>
+    <p className="mb-4"><strong>Rinnovo e disdetta:</strong> se previsto rinnovo automatico, le modalità e i termini (es. 30 giorni) sono indicati nei Termini Venditori. In mancanza di disdetta nei termini, il rinnovo potrà essere applicato.</p>
 
     <p className="mt-4">
       Per ulteriori informazioni consulta i <Link to="/terms-vendors">termini e condizioni venditore</Link>

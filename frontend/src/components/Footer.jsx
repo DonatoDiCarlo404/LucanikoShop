@@ -79,10 +79,10 @@ const Footer = () => {
             <img src="/Lucaniko Shop PNG solo testo-01.png" alt="Logo Altro" style={{ maxWidth: 250, marginBottom: 12 }} />
             <ul className="list-unstyled">
               <li>
-                <a href="https://www.instagram.com/lucaniko.it?igsh=cGlyaTNoNzc3cWEw" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>
+                <a href="https://www.instagram.com/lucanikoshop/" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>
                   <i className="bi bi-instagram" style={{ fontSize: '1rem' }}></i>
                 </a>
-                <a href="https://www.facebook.com/share/1AfmHyH7tD/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>
+                <a href="https://www.facebook.com/lucanikoshop" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>
                   <i className="bi bi-facebook" style={{ fontSize: '1rem' }}></i>
                 </a>
                 <a href="https://www.tiktok.com/@lucaniko.it?_r=1&_t=ZN-935zwrCWLJ8" target="_blank" rel="noopener noreferrer" className="footer-social-icon" style={{ marginLeft: 8, verticalAlign: 'middle' }}>

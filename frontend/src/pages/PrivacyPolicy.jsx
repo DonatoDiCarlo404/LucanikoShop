@@ -1,7 +1,7 @@
 import { Container } from "react-bootstrap";
 
 const PrivacyPolicy = () => (
-  <Container className="py-5 text-center" style={{ maxWidth: 800 }}>
+  <Container className="py-5" style={{ maxWidth: 800 }}>
     <h2 className="mb-4">Privacy Policy – Lucaniko Shop</h2>
     <div className="mb-3 text-muted" style={{ fontSize: '0.98rem' }}>Ultimo aggiornamento: 4 febbraio 2026</div>
     <div className="mb-4" style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>

@@ -17,7 +17,7 @@ const activateVendor = async () => {
     });
 
     rl.question('Inserisci email del venditore da attivare: ', async (email) => {
-      rl.question('Durata abbonamento (1anno/2anni/3anni): ', async (subscription) => {
+      rl.question('Durata abbonamento (1anno): ', async (subscription) => {
         try {
           const vendor = await User.findOne({ email, role: 'seller' });
 
@@ -33,12 +33,9 @@ const activateVendor = async () => {
           console.log(`Approvato: ${vendor.isApproved ? '✅' : '❌'}`);
           console.log(`Abbonamento attivo: ${vendor.subscriptionPaid ? '✅' : '❌'}`);
 
-          // Calcola scadenza abbonamento
-          let years = 1;
-          if (subscription === '2anni') years = 2;
-          if (subscription === '3anni') years = 3;
+          // Calcola scadenza abbonamento (Piano unico: 1 anno)
           const now = new Date();
-          const endDate = new Date(now.setFullYear(now.getFullYear() + years));
+          const endDate = new Date(now.setFullYear(now.getFullYear() + 1));
 
           // Aggiorna dati
           vendor.isApproved = true;

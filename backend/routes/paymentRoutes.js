@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Crea PaymentIntent per abbonamento venditore
+// Crea PaymentIntent per abbonamento venditore (Piano unico: €290 + IVA)
 router.post('/create-payment-intent', async (req, res) => {
   try {
     const { amount, email, subscriptionType, metadata } = req.body;
@@ -17,7 +17,7 @@ router.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe usa centesimi
       currency: 'eur',
-      description: `Abbonamento ${subscriptionType} - Lucaniko Shop`,
+      description: `Abbonamento 1 Anno - Lucaniko Shop`,
       receipt_email: email,
       metadata: {
         subscriptionType,

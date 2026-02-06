@@ -40,7 +40,7 @@ const updateUserSubscription = async () => {
     }
     
     if (!user.subscriptionType) {
-      user.subscriptionType = '1anno'; // Sostituisci con il tipo corretto
+      user.subscriptionType = '1anno'; // Piano unico
     }
 
     await user.save();

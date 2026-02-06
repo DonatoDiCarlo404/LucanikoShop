@@ -163,15 +163,10 @@ export const register = async (req, res) => {
         };
       }
 
-      // Calcola e salva la scadenza abbonamento
+      // Calcola e salva la scadenza abbonamento (Piano unico: 1 anno)
       if (subscriptionType || subscription) {
-        // 1, 2 o 3 anni (subscription viene dal form admin: '1anno', '2anni', '3anni')
-        let years = 1;
-        const subValue = subscriptionType || subscription;
-        if (String(subValue) === '2' || String(subValue) === '2anni') years = 2;
-        if (String(subValue) === '3' || String(subValue) === '3anni') years = 3;
         const now = new Date();
-        const endDate = new Date(now.setFullYear(now.getFullYear() + years));
+        const endDate = new Date(now.setFullYear(now.getFullYear() + 1));
         userData.subscriptionEndDate = endDate;
       }
 

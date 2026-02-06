@@ -1,7 +1,7 @@
 import { Container } from "react-bootstrap";
 
 const TermsVendors = () => (
-  <Container className="py-5 text-center" style={{ maxWidth: 800 }}>
+  <Container className="py-5" style={{ maxWidth: 800 }}>
     <h2 className="mb-4">Termini & Condizioni Venditori – Lucaniko Shop</h2>
     <div style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
       <div style={{ marginBottom: 28 }}>
@@ -23,9 +23,7 @@ const TermsVendors = () => (
         <div style={{ marginTop: 6 }}>
           <strong>Piano di Adesione 2026</strong> (come da offerta in piattaforma):
           <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
-            <li>€299 (IVA inclusa) / 1 anno</li>
-            <li>€499 (IVA inclusa) / 2 anni</li>
-            <li>€599 (IVA inclusa) / 3 anni</li>
+            <li>€290 + IVA (22%) / 1 anno</li>
           </ul>
           <strong>INCLUDE:</strong>
           <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
@@ -145,7 +143,7 @@ const TermsVendors = () => (
           <br />
           <strong>Nessuna commissione % Lucaniko Shop</strong>
           <br /><br />
-          Lucaniko Shop non applica commissioni percentuali sulle vendite. È trattenuto esclusivamente un importo fisso di €0,30 per ciascun trasferimento al Venditore, quale costo operativo di trasferimento/accredito, soggetto a fatturazione e IVA secondo la normativa vigente.
+          Lucaniko Shop non applica commissioni percentuali sulle vendite.
           <br /><br />
           Le commissioni Stripe non sono stabilite da Lucaniko Shop e possono variare in base al metodo di pagamento e al paese.
           <br /><br />
@@ -158,7 +156,7 @@ const TermsVendors = () => (
             <li>mancata consegna</li>
             <li>contestazioni/chargeback</li>
           </ul>
-          i trasferimenti ai Venditori vengono effettuati in genere dopo 14 giorni dall'incasso (o dalla conferma ordine/pagamento, secondo eventi tecnici), salvo:
+          i trasferimenti ai Venditori potrebbero essere effettuati dopo 14 giorni dall'incasso (o dalla conferma ordine/pagamento, secondo eventi tecnici), salvo:
           <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
             <li>casi in cui la legge impone diversamente,</li>
             <li>richieste di rimborso già attive,</li>

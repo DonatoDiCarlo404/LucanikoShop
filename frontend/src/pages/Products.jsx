@@ -26,7 +26,7 @@ const Products = () => {
   const [showSplash, setShowSplash] = useState(false);
   const [adminNews, setAdminNews] = useState([]);
 
-  // Carica le news attive all'avvio
+  // Carica le news attive all'avvio e ogni 30 secondi
   useEffect(() => {
     const loadNews = async () => {
       try {
@@ -39,6 +39,9 @@ const Products = () => {
       }
     };
     loadNews();
+    // Polling ogni 30 secondi per aggiornare le news
+    const interval = setInterval(loadNews, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Inizializzazione: carica categorie e leggi parametri URL
@@ -263,42 +266,41 @@ const Products = () => {
 
       {/* Filtro Categorie con pulsanti */}
       <div className="mb-4">
-        <div className="category-buttons-container d-flex gap-2">
-          <style>{`
+        <style>{`
+          .category-buttons-container {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+          .category-buttons-container .btn {
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 14px;
+          }
+          @media (max-width: 768px) {
             .category-buttons-container {
-              flex-wrap: wrap;
-              justify-content: center;
+              overflow-x: auto;
+              white-space: nowrap;
+              flex-wrap: nowrap;
+              padding-bottom: 8px;
+              justify-content: flex-start;
             }
             .category-buttons-container .btn {
-              font-size: 0.85rem;
-              padding: 2px 8px;
-              border-radius: 14px;
+              font-size: 0.95rem;
+              padding: 4px 12px;
+              border-radius: 16px;
             }
-            @media (max-width: 768px) {
-              .category-buttons-container {
-                overflow-x: auto;
-                white-space: nowrap;
-                flex-wrap: nowrap;
-                padding-bottom: 8px;
-                justify-content: flex-start;
-              }
-              .category-buttons-container .btn {
-                font-size: 0.95rem;
-                padding: 4px 12px;
-                border-radius: 16px;
-              }
-            }
-          `}</style>
+          }
+        `}</style>
+        
+        {/* Prima riga: 7 categorie */}
+        <div className="category-buttons-container d-flex gap-2 mb-2">
           <button
             className="btn"
             style={{
               backgroundColor: !category ? '#004b75' : '#fff',
               color: !category ? '#fff' : '#004b75',
               border: '2px solid #004b75',
-              borderRadius: '16px',
-              padding: '4px 12px',
               fontWeight: 600,
-              fontSize: '0.95rem',
               transition: 'all 0.3s ease',
               minHeight: 0
             }}
@@ -320,10 +322,7 @@ const Products = () => {
                   backgroundColor: category === cat.name ? '#004b75' : '#fff',
                   color: category === cat.name ? '#fff' : '#004b75',
                   border: '2px solid #004b75',
-                  borderRadius: '16px',
-                  padding: '4px 12px',
                   fontWeight: 600,
-                  fontSize: '0.95rem',
                   transition: 'all 0.3s ease',
                   minHeight: 0
                 }}
@@ -344,9 +343,13 @@ const Products = () => {
                 {cat.name}
               </button>
             ))}
-          {/* Altre categorie in ordine alfabetico */}
+          {/* Prime 5 categorie alfabeticamente (esclusi Cibi e Bevande e Industria) */}
           {categories
-            .filter(cat => cat.name !== 'Cibi e Bevande')
+            .filter(cat => 
+              cat.name !== 'Cibi e Bevande' && 
+              cat.name !== 'Industria, Ferramenta e Artigianato'
+            )
+            .slice(0, 5)
             .map(cat => (
               <button
                 key={cat._id}
@@ -355,10 +358,61 @@ const Products = () => {
                   backgroundColor: category === cat.name ? '#004b75' : '#fff',
                   color: category === cat.name ? '#fff' : '#004b75',
                   border: '2px solid #004b75',
-                  borderRadius: '16px',
-                  padding: '4px 12px',
                   fontWeight: 600,
-                  fontSize: '0.95rem',
+                  transition: 'all 0.3s ease',
+                  minHeight: 0
+                }}
+                onClick={() => {
+                  setCategory(cat.name);
+                  setSubcategory('');
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+        </div>
+
+        {/* Seconda riga: 5 categorie */}
+        <div className="category-buttons-container d-flex gap-2">
+          {/* Industria, Ferramenta e Artigianato */}
+          {categories
+            .filter(cat => cat.name === 'Industria, Ferramenta e Artigianato')
+            .map(cat => (
+              <button
+                key={cat._id}
+                className="btn"
+                style={{
+                  backgroundColor: category === cat.name ? '#004b75' : '#fff',
+                  color: category === cat.name ? '#fff' : '#004b75',
+                  border: '2px solid #004b75',
+                  fontWeight: 600,
+                  transition: 'all 0.3s ease',
+                  minHeight: 0
+                }}
+                onClick={() => {
+                  setCategory(cat.name);
+                  setSubcategory('');
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+          {/* Restanti categorie (dalla 6 in poi, escluse Cibi e Bevande e Industria) */}
+          {categories
+            .filter(cat => 
+              cat.name !== 'Cibi e Bevande' && 
+              cat.name !== 'Industria, Ferramenta e Artigianato'
+            )
+            .slice(5)
+            .map(cat => (
+              <button
+                key={cat._id}
+                className="btn"
+                style={{
+                  backgroundColor: category === cat.name ? '#004b75' : '#fff',
+                  color: category === cat.name ? '#fff' : '#004b75',
+                  border: '2px solid #004b75',
+                  fontWeight: 600,
                   transition: 'all 0.3s ease',
                   minHeight: 0
                 }}

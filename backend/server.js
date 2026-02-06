@@ -72,6 +72,7 @@ console.log('✅ Route /api/stripe-connect/webhook montata con successo');
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173', // Dev locale
+  'http://localhost:5174', // Dev locale (porta alternativa)
   'http://localhost:3000'  // Dev locale alternativo
 ].filter(Boolean);
 

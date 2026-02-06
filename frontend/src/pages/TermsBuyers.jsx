@@ -1,7 +1,7 @@
 import { Container } from "react-bootstrap";
 
 const TermsBuyers = () => (
-  <Container className="py-5 text-center" style={{ maxWidth: 800 }}>
+  <Container className="py-5" style={{ maxWidth: 800 }}>
     <h2 className="mb-4">Termini & Condizioni Acquirenti – Lucaniko Shop</h2>
     <div style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
       <div style={{ marginBottom: 28 }}>

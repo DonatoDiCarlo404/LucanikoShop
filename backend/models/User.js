@@ -415,10 +415,10 @@ const userSchema = new mongoose.Schema(
     subscriptionPaymentId: {
       type: String
     },
-    // Tipo di abbonamento (1anno, 2anni, 3anni)
+    // Tipo di abbonamento (1anno)
     subscriptionType: {
       type: String,
-      enum: ['1anno', '2anni', '3anni']
+      enum: ['1anno']
     },
     // Flag per sospendere rinnovo automatico abbonamento (solo admin)
     subscriptionSuspended: {

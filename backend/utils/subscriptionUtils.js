@@ -2,7 +2,7 @@ import User from '../models/User.js';
 
 /**
  * Rinnova automaticamente l'abbonamento dei venditori scaduti.
- * Se la subscriptionEndDate è passata, prolunga di 1, 2 o 3 anni in base a subscriptionType.
+ * Se la subscriptionEndDate è passata, prolunga di 1 anno (piano unico).
  * Non rinnova se subscriptionSuspended = true.
  */
 export const renewExpiredSubscriptions = async () => {
@@ -11,7 +11,7 @@ export const renewExpiredSubscriptions = async () => {
   const expiredSellers = await User.find({
     role: 'seller',
     subscriptionEndDate: { $lte: now },
-    subscriptionType: { $in: ['1', '2', '3', 1, 2, 3] },
+    subscriptionType: '1anno',
     subscriptionSuspended: { $ne: true } // Escludi i sospesi
   });
 
@@ -19,9 +19,7 @@ export const renewExpiredSubscriptions = async () => {
   const renewedList = []; // Per notifica admin
   
   for (const seller of expiredSellers) {
-    let years = 1;
-    if (String(seller.subscriptionType) === '2') years = 2;
-    if (String(seller.subscriptionType) === '3') years = 3;
+    const years = 1; // Piano unico: sempre 1 anno
     
     const newEndDate = new Date(now);
     newEndDate.setFullYear(newEndDate.getFullYear() + years);
