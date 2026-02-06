@@ -138,6 +138,9 @@ export const createCheckoutSession = async (req, res) => {
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
             billing_address_collection: 'auto',
+            shipping_address_collection: {
+                allowed_countries: ['IT', 'FR', 'DE', 'ES', 'AT', 'BE', 'NL', 'PT', 'GR', 'IE', 'LU', 'MT', 'CY', 'SI', 'SK', 'EE', 'LV', 'LT', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR'],
+            },
             metadata: {
                 userId: req.user ? req.user._id.toString() : 'guest',
                 guestEmail: guestEmail || '',

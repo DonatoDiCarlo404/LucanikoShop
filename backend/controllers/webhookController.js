@@ -86,20 +86,31 @@ export const handleStripeWebhook = async (req, res) => {
         ivaPercent: productsMap[item.productId],
       }));
 
-      // Ottieni indirizzo di spedizione da Stripe
+      // Ottieni indirizzo di spedizione da Stripe (ora raccolto automaticamente)
       const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
+      const shippingName = session.shipping_details?.name || session.customer_details?.name;
+      const shippingPhone = session.shipping_details?.phone || session.customer_details?.phone;
 
-      console.log('📍 [WEBHOOK] Stripe shippingAddress:', shippingAddress);
+      console.log('📍 [WEBHOOK] Stripe shipping_details:', session.shipping_details);
+      console.log('📍 [WEBHOOK] Stripe customer_details:', session.customer_details);
       console.log('📍 [WEBHOOK] User address nel DB:', buyerUser?.address);
+      
+      // Dividi il nome completo in firstName e lastName
+      const fullName = shippingName || buyerUser?.name || 'N/A';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || 'N/A';
+      const lastName = nameParts.slice(1).join(' ') || 'N/A';
       
       // Utilizza indirizzo salvato nel profilo se Stripe non fornisce dati completi
       let finalShippingAddress = {
+        firstName: firstName,
+        lastName: lastName,
         street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
         city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
         state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
         zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
         country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
-        phone: session.customer_details?.phone || buyerUser?.phone || 'N/A',
+        phone: shippingPhone || buyerUser?.phone || 'N/A',
       };
       console.log('📍 [WEBHOOK] Indirizzo spedizione finale:', finalShippingAddress);
 
@@ -159,9 +170,17 @@ export const handleStripeWebhook = async (req, res) => {
       
       console.log('💾 [WEBHOOK] Order data completo:', JSON.stringify(orderData, null, 2));
       
-      const order = await Order.create(orderData);
+      // Controlla se l'ordine esiste già (può essere stato creato dal SUCCESS handler)
+      let order = await Order.findOne({ stripeSessionId: session.id });
+      
+      if (order) {
+        console.log('🔄 [WEBHOOK] Ordine già esistente, lo uso per processare earnings:', order._id);
+      } else {
+        order = await Order.create(orderData);
+        console.log('✅ [WEBHOOK] Ordine creato con successo!');
+      }
 
-      console.log('✅ [WEBHOOK] Ordine creato con successo!');
+      //console.log('✅ [WEBHOOK] Ordine creato con successo!');
       console.log('✅ [WEBHOOK] Order ID:', order._id);
       console.log('✅ [WEBHOOK] Buyer salvato come:', order.buyer || 'Guest');
       console.log('✅ [WEBHOOK] Guest email:', order.guestEmail);
@@ -203,9 +222,14 @@ export const handleStripeWebhook = async (req, res) => {
 
       // CALCOLA EARNINGS VENDITORI E CREA VENDOR PAYOUTS
       console.log('💰 [WEBHOOK] Calcolo earnings venditori...');
-      try {
-        // Calcola earnings per ogni venditore
-        const vendorEarnings = calculateVendorEarnings(order);
+      
+      // Controlla se earnings già calcolati
+      if (order.vendorEarnings && order.vendorEarnings.length > 0) {
+        console.log('⏭️  [WEBHOOK] Earnings già calcolati, skippo per evitare duplicati');
+      } else {
+        try {
+          // Calcola earnings per ogni venditore
+          const vendorEarnings = calculateVendorEarnings(order);
         
         // Salva earnings nell'ordine
         order.vendorEarnings = vendorEarnings;
@@ -314,9 +338,10 @@ export const handleStripeWebhook = async (req, res) => {
             console.error(`❌ [WEBHOOK] Errore creazione VendorPayout per ${earning.vendorId}:`, payoutError);
           }
         }
-      } catch (earningsError) {
-        console.error('❌ [WEBHOOK] Errore calcolo earnings:', earningsError);
-        // Non bloccare il flusso se il calcolo earnings fallisce
+        } catch (earningsError) {
+          console.error('❌ [WEBHOOK] Errore calcolo earnings:', earningsError);
+          // Non bloccare il flusso se il calcolo earnings fallisce
+        }
       }
 
       // Invia email di conferma acquisto
