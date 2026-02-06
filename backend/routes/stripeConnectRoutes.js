@@ -4,15 +4,13 @@ import {
   createConnectAccount,
   getAccountStatus,
   refreshOnboardingLink,
-  createDashboardLink,
-  handleConnectWebhook
+  createDashboardLink
 } from '../controllers/stripeConnectController.js';
 
 const router = express.Router();
 
-// Webhook pubblico (verificato con Stripe signature)
-// IMPORTANTE: Deve essere raw body, non JSON parsed
-router.post('/webhook', express.raw({ type: 'application/json' }), handleConnectWebhook);
+// NOTA: Il webhook Connect è montato direttamente in server.js PRIMA di express.json()
+// per garantire che riceva il raw body necessario alla verifica Stripe
 
 // Routes protette per venditori
 router.post('/create-account', protect, seller, createConnectAccount);

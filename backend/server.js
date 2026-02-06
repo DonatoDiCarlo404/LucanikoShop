@@ -31,6 +31,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 console.log('✅ paymentRoutes importato con successo');
 
 import stripeConnectRoutes from './routes/stripeConnectRoutes.js';
+import { handleConnectWebhook } from './controllers/stripeConnectController.js';
 import adminNewsRoutes from './routes/adminNewsRoutes.js';
 import sponsorRoutes from './routes/sponsorRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
@@ -56,11 +57,16 @@ app.use(express.static(path.join(process.cwd(), 'public')));
 
 const PORT = process.env.PORT || 5000;
 
-// IMPORTANTE: Webhook route PRIMA di express.json()
+// IMPORTANTE: Webhook routes PRIMA di express.json()
 // Stripe ha bisogno del raw body per verificare la firma
 console.log('🔌 Montaggio route /api/webhook...');
 app.use('/api/webhook', webhookRoutes);
 console.log('✅ Route /api/webhook montata con successo');
+
+// Webhook Stripe Connect (anche questo raw body)
+console.log('🔌 Montaggio route /api/stripe-connect/webhook...');
+app.post('/api/stripe-connect/webhook', express.raw({ type: 'application/json' }), handleConnectWebhook);
+console.log('✅ Route /api/stripe-connect/webhook montata con successo');
 
 // Middleware CORS configurato per produzione
 const allowedOrigins = [
