@@ -345,6 +345,43 @@ const userSchema = new mongoose.Schema(
       min: [0, 'Il saldo debito non può essere negativo']
     },
     
+    // Stripe Connect Express (per venditori aziende)
+    stripeConnectAccountId: {
+      type: String,
+      default: null,
+      sparse: true, // Permette null ma deve essere unico se presente
+      index: true
+    },
+    stripeAccountStatus: {
+      type: String,
+      enum: ['not_created', 'pending', 'active', 'restricted', 'disabled'],
+      default: 'not_created'
+    },
+    stripeOnboardingCompleted: {
+      type: Boolean,
+      default: false
+    },
+    stripeChargesEnabled: {
+      type: Boolean,
+      default: false
+    },
+    stripePayoutsEnabled: {
+      type: Boolean,
+      default: false
+    },
+    stripeDetailsSubmitted: {
+      type: Boolean,
+      default: false
+    },
+    stripeOnboardingUrl: {
+      type: String,
+      default: null
+    },
+    stripeConnectedAt: {
+      type: Date,
+      default: null
+    },
+    
     // Status e verifiche
     isVerified: {
       type: Boolean,

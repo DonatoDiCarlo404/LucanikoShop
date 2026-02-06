@@ -1,6 +1,7 @@
 /**
  * Calcola gli earnings per ogni venditore in un ordine multivendor
- * Applica le fee Stripe (transazione + transfer) in modo proporzionale
+ * Applica le fee Stripe (1.5% + €0.25 per transazione) in modo proporzionale
+ * Transfer interni tramite Stripe Connect Express: GRATUITI
  * 
  * @param {Object} order - Oggetto ordine con items, totalPrice, shippingPrice
  * @returns {Array} Array di oggetti con vendorId e calcoli earnings
@@ -10,8 +11,8 @@ export const calculateVendorEarnings = (order) => {
     // 1. Calcola totale ordine (items + shipping)
     const totalOrder = order.totalPrice; // già include items + shipping
 
-    // 2. Calcola fee Stripe transazione totale: 1.4% + €0.25
-    const stripeTransactionFee = (totalOrder * 0.014) + 0.25;
+    // 2. Calcola fee Stripe transazione totale: 1.5% + €0.25
+    const stripeTransactionFee = (totalOrder * 0.015) + 0.25;
 
     console.log('\n💰 [EARNINGS] ============ CALCOLO EARNINGS VENDITORI ============');
     console.log('💰 [EARNINGS] Totale ordine:', totalOrder.toFixed(2), '€');
@@ -52,8 +53,8 @@ export const calculateVendorEarnings = (order) => {
       // Fee Stripe proporzionale al valore dei prodotti del venditore
       const proportionalStripeFee = (productPrice / totalOrder) * stripeTransactionFee;
 
-      // Fee transfer Stripe: €0.30 per ogni transfer (IVA inclusa)
-      const transferFee = 0.30;
+      // Fee transfer Stripe Connect Express: GRATIS
+      const transferFee = 0.00;
 
       // Netto che riceverà il venditore
       const netAmount = productPrice - proportionalStripeFee - transferFee;

@@ -243,6 +243,67 @@ export const handleStripeWebhook = async (req, res) => {
                 console.log(`✅ [WEBHOOK] Statistiche venditore aggiornate:`);
                 console.log(`   - Pending Earnings: €${vendor.pendingEarnings.toFixed(2)}`);
                 console.log(`   - Total Earnings: €${vendor.totalEarnings.toFixed(2)}`);
+
+                // STRIPE CONNECT EXPRESS: Transfer automatico se account attivo
+                if (vendor.stripeConnectAccountId && vendor.stripeChargesEnabled && vendor.stripePayoutsEnabled) {
+                  console.log(`\n💸 [STRIPE TRANSFER] Inizio transfer automatico a venditore ${earning.vendorId}`);
+                  
+                  try {
+                    // Converti importo in centesimi (Stripe richiede importi interi)
+                    const amountInCents = Math.round(earning.netAmount * 100);
+                    
+                    // Crea transfer verso account Connect venditore
+                    const transfer = await stripe.transfers.create({
+                      amount: amountInCents,
+                      currency: 'eur',
+                      destination: vendor.stripeConnectAccountId,
+                      transfer_group: order._id.toString(),
+                      description: `Vendita ordine #${order._id} - ${vendor.businessName || vendor.name}`,
+                      metadata: {
+                        orderId: order._id.toString(),
+                        vendorId: earning.vendorId,
+                        payoutId: vendorPayout._id.toString()
+                      }
+                    });
+
+                    console.log(`✅ [STRIPE TRANSFER] Transfer completato: ${transfer.id}`);
+                    console.log(`   - Importo: €${earning.netAmount.toFixed(2)}`);
+                    console.log(`   - Destinazione: ${vendor.stripeConnectAccountId}`);
+
+                    // Aggiorna VendorPayout con info transfer
+                    vendorPayout.status = 'processing';
+                    vendorPayout.stripeTransferId = transfer.id;
+                    vendorPayout.paymentDate = new Date();
+                    await vendorPayout.save();
+
+                    // Aggiorna statistiche venditore
+                    vendor.pendingEarnings = Math.max(0, (vendor.pendingEarnings || 0) - earning.netAmount);
+                    vendor.paidEarnings = (vendor.paidEarnings || 0) + earning.netAmount;
+                    await vendor.save();
+
+                    console.log(`✅ [STRIPE TRANSFER] VendorPayout aggiornato a 'processing'`);
+
+                  } catch (transferError) {
+                    console.error(`❌ [STRIPE TRANSFER] Errore transfer per venditore ${earning.vendorId}:`, transferError);
+                    console.error(`   - Messaggio: ${transferError.message}`);
+                    console.error(`   - Tipo: ${transferError.type}`);
+                    
+                    // Salva errore nel payout ma non bloccare il flusso
+                    vendorPayout.status = 'failed';
+                    vendorPayout.failureReason = transferError.message;
+                    await vendorPayout.save();
+                  }
+                } else {
+                  console.log(`⚠️ [STRIPE TRANSFER] Venditore ${earning.vendorId} non ha Stripe Connect attivo - transfer manuale richiesto`);
+                  if (!vendor.stripeConnectAccountId) {
+                    console.log(`   - Nessun account Connect creato`);
+                  } else if (!vendor.stripeChargesEnabled || !vendor.stripePayoutsEnabled) {
+                    console.log(`   - Account Connect non completamente attivato`);
+                    console.log(`   - Charges enabled: ${vendor.stripeChargesEnabled}`);
+                    console.log(`   - Payouts enabled: ${vendor.stripePayoutsEnabled}`);
+                  }
+                }
+
               } else {
                 console.error(`⚠️ [WEBHOOK] Venditore ${earning.vendorId} non trovato per aggiornare statistiche`);
               }

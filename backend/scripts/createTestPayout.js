@@ -48,8 +48,8 @@ const createTestPayout = async () => {
     vendorId: vendor._id,
     orderId: order._id,
     amount: 25.50,
-    stripeFee: 0.40,
-    transferFee: 0.30,
+    stripeFee: 0.41,  // 1.5% + €0.25 su esempio
+    transferFee: 0.00,  // GRATIS con Stripe Connect Express
     saleDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 giorni fa
     expectedPaymentDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // tra 4 giorni
     status: 'pending'
