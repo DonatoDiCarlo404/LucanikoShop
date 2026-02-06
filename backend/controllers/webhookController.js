@@ -380,36 +380,6 @@ export const handleStripeWebhook = async (req, res) => {
         console.error('Errore invio email conferma acquisto:', emailError);
       }
 
-      // Recensione automatica per ogni prodotto acquistato
-      for (const item of order.items) {
-        // Controlla se esiste già una review di questo utente per questo prodotto
-        const alreadyReviewed = await Review.findOne({
-          product: item.product,
-          user: userId
-        });
-
-        if (!alreadyReviewed) {
-          // Recupera nome utente per la review
-          const user = await User.findById(userId);
-          await Review.create({
-            product: item.product,
-            user: userId,
-            name: user ? user.name : 'Acquirente',
-            rating: 5,
-            comment: 'Recensione automatica!',
-            isVerified: true
-          });
-
-          // Aggiorna rating medio e numero recensioni del prodotto
-          const reviews = await Review.find({ product: item.product });
-          const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
-          await Product.findByIdAndUpdate(item.product, {
-            rating: avgRating,
-            numReviews: reviews.length
-          });
-        }
-      }
-
     } catch (error) {
       console.error('❌ Errore creazione ordine:', error);
       return res.status(500).send('Errore creazione ordine');
