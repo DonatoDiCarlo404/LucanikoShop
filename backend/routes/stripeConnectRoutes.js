@@ -16,6 +16,8 @@ const router = express.Router();
 router.post('/create-account', protect, seller, createConnectAccount);
 router.get('/account-status', protect, seller, getAccountStatus);
 router.post('/refresh-onboarding', protect, seller, refreshOnboardingLink);
-router.post('/dashboard-link', protect, seller, createDashboardLink);
+router.post('/create-onboarding-link', protect, seller, refreshOnboardingLink); // Alias per compatibilità frontend
+router.get('/dashboard-link', protect, seller, createDashboardLink); // Frontend chiama GET
+router.post('/dashboard-link', protect, seller, createDashboardLink); // Supporta anche POST
 
 export default router;
