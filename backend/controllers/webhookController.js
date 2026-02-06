@@ -40,10 +40,25 @@ export const handleStripeWebhook = async (req, res) => {
     console.log('📋 [WEBHOOK] Session ID:', session.id);
 
     try {
-      // Recupera i dettagli completi della sessione con line_items
+      // Recupera i dettagli completi della sessione con line_items e payment_intent
       const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-        expand: ['line_items'],
+        expand: ['line_items', 'payment_intent'],
       });
+
+      // Estrai charge ID per source_transaction nei transfer
+      const paymentIntentId = session.payment_intent;
+      let chargeId = null;
+      if (paymentIntentId) {
+        // Se payment_intent è già expanded (è un oggetto), usa direttamente
+        if (typeof fullSession.payment_intent === 'object' && fullSession.payment_intent.latest_charge) {
+          chargeId = fullSession.payment_intent.latest_charge;
+        } else {
+          // Altrimenti recupera il payment_intent
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+          chargeId = paymentIntent.latest_charge;
+        }
+        console.log('💳 [WEBHOOK] Charge ID per transfer:', chargeId);
+      }
 
       // Estrai userId dai metadata
       console.log('📦 [WEBHOOK] Metadata completi:', JSON.stringify(session.metadata, null, 2));
@@ -277,7 +292,7 @@ export const handleStripeWebhook = async (req, res) => {
                     const amountInCents = Math.round(earning.netAmount * 100);
                     
                     // Crea transfer verso account Connect venditore
-                    const transfer = await stripe.transfers.create({
+                    const transferParams = {
                       amount: amountInCents,
                       currency: 'eur',
                       destination: vendor.stripeConnectAccountId,
@@ -288,7 +303,15 @@ export const handleStripeWebhook = async (req, res) => {
                         vendorId: earning.vendorId,
                         payoutId: vendorPayout._id.toString()
                       }
-                    });
+                    };
+
+                    // Aggiungi source_transaction se disponibile (preleva dalla transazione specifica)
+                    if (chargeId) {
+                      transferParams.source_transaction = chargeId;
+                      console.log(`💳 [STRIPE TRANSFER] Usando source_transaction: ${chargeId}`);
+                    }
+
+                    const transfer = await stripe.transfers.create(transferParams);
 
                     console.log(`✅ [STRIPE TRANSFER] Transfer completato: ${transfer.id}`);
                     console.log(`   - Importo: €${earning.netAmount.toFixed(2)}`);
