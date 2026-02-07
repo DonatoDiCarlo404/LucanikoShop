@@ -10,7 +10,10 @@ export const getWishlist = async (req, res) => {
       .populate('product', 'name price images stock seller category rating numReviews hasActiveDiscount discountedPrice discountPercentage')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(wishlist);
+    // Filtra solo i prodotti esistenti (esclude quelli null/eliminati)
+    const validWishlist = wishlist.filter(item => item.product != null);
+
+    res.status(200).json(validWishlist);
   } catch (error) {
     console.error('[getWishlist] Errore:', error);
     res.status(500).json({ message: 'Errore nel recupero della wishlist' });

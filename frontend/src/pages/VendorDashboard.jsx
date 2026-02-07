@@ -335,7 +335,7 @@ const VendorDashboard = () => {
       .filter(item => {
         const sellerId = item.seller?._id || item.seller;
         const userId = user._id;
-        return sellerId.toString() === userId.toString() || user.role === 'admin';
+        return (sellerId && userId && sellerId.toString() === userId.toString()) || user.role === 'admin';
       })
       .reduce((sum, item) => sum + (item.price * item.quantity), 0)
       .toFixed(2);
@@ -905,7 +905,7 @@ const VendorDashboard = () => {
                                   .filter(item => {
                                     const sellerId = item.seller?._id || item.seller;
                                     const userId = user._id;
-                                    return sellerId.toString() === userId.toString() || user.role === 'admin';
+                                    return (sellerId && userId && sellerId.toString() === userId.toString()) || user.role === 'admin';
                                   })
                                   .map((item, idx) => (
                                     <div key={idx}>
@@ -1264,13 +1264,12 @@ const VendorDashboard = () => {
                   onClick={() => {
                     // Prepara dati CSV
                     const csvContent = [
-                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Stripe', 'Fee Transfer', 'Stripe Transfer ID'].join(','),
+                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Transfer', 'Stripe Transfer ID'].join(','),
                       ...paidPayouts.map(p => [
                         new Date(p.saleDate).toLocaleDateString('it-IT'),
                         p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('it-IT') : 'N/A',
                         p.orderId?.orderNumber || (p.orderId?._id ? p.orderId._id.toString().substring(0, 8) : 'N/A'),
                         `€${p.amount.toFixed(2)}`,
-                        `€${p.stripeFee.toFixed(2)}`,
                         `€${p.transferFee.toFixed(2)}`,
                         p.stripeTransferId || 'N/A'
                       ].join(','))
@@ -1318,7 +1317,6 @@ const VendorDashboard = () => {
                         <th>Data Pagamento</th>
                         <th>Ordine</th>
                         <th>Importo</th>
-                        <th>Fee Stripe</th>
                         <th>Fee Transfer</th>
                         <th>Stripe Transfer ID</th>
                       </tr>
@@ -1352,9 +1350,6 @@ const VendorDashboard = () => {
                           </td>
                           <td>
                             <strong className="text-success">€{payout.amount.toFixed(2)}</strong>
-                          </td>
-                          <td>
-                            <small className="text-muted">€{payout.stripeFee.toFixed(2)}</small>
                           </td>
                           <td>
                             <small className="text-muted">€{payout.transferFee.toFixed(2)}</small>
