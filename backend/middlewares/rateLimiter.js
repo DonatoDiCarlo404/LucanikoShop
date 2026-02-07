@@ -36,3 +36,12 @@ export const exportLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+
+// Rate limiter per operazioni admin - limiti più permissivi
+export const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minuti
+  max: 50, // 50 richieste per IP (permette registrazioni multiple)
+  message: 'Troppe richieste admin. Riprova tra 15 minuti.',
+  standardHeaders: true,
+  legacyHeaders: false
+});

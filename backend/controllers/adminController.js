@@ -322,3 +322,93 @@ export const getAllOrders = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Registra un nuovo venditore (admin)
+// @route   POST /api/admin/register-vendor
+// @access  Private/Admin
+export const registerVendor = async (req, res) => {
+  try {
+    const { 
+      name, 
+      email, 
+      password,
+      businessName,
+      vatNumber,
+      phoneNumber,
+      address,
+      city,
+      zipCode,
+      uniqueCode,
+      selectedCategories,
+      subscription
+    } = req.body;
+
+    console.log('[ADMIN] Registrazione venditore ricevuta:', { name, email, businessName, vatNumber });
+
+    // Verifica se l'utente esiste già
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      return res.status(400).json({ message: 'Utente già registrato con questa email' });
+    }
+
+    // Prepara i dati del venditore
+    const userData = {
+      name,
+      email,
+      password,
+      role: 'seller',
+      businessName,
+      vatNumber,
+      phone: phoneNumber,
+      codiceSDI: uniqueCode,
+      businessCategories: selectedCategories || [],
+      isApproved: true, // Approvato automaticamente
+      subscriptionPaid: true,
+      subscriptionPaidAt: new Date(),
+      subscriptionPaymentId: `ADMIN_REG_${Date.now()}`,
+      subscriptionType: subscription || '1anno'
+    };
+
+    // Indirizzo aziendale
+    if (address || city || zipCode) {
+      userData.businessAddress = {
+        street: address || '',
+        city: city || '',
+        zipCode: zipCode || '',
+        country: 'IT'
+      };
+      userData.storeAddress = {
+        street: address || '',
+        city: city || '',
+        zipCode: zipCode || '',
+        country: 'IT'
+      };
+    }
+
+    // Calcola scadenza abbonamento (1 anno)
+    const now = new Date();
+    const endDate = new Date(now.setFullYear(now.getFullYear() + 1));
+    userData.subscriptionEndDate = endDate;
+
+    // Crea l'utente
+    const user = await User.create(userData);
+
+    console.log('[ADMIN] Venditore registrato con successo:', user._id);
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      businessName: user.businessName,
+      isApproved: user.isApproved,
+      subscriptionEndDate: user.subscriptionEndDate,
+      createdAt: user.createdAt
+    });
+
+  } catch (error) {
+    console.error('[ADMIN] Errore registrazione venditore:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

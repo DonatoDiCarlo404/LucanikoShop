@@ -23,7 +23,7 @@ const PrivacyPolicy = () => (
 
       <div style={{ marginBottom: 28 }}>
         <strong>1.2 Dati trattati</strong>
-        <ul className="d-flex flex-column align-items-center" style={{ marginTop: 6 }}>
+        <ul className="d-flex flex-column" style={{ marginTop: 6 }}>
           <li>dati account acquirente (nome, contatti, indirizzi)</li>
           <li>dati ordine (prodotti acquistati, importi, stato)</li>
           <li>dati account venditore (azienda, P.IVA, SDI, referente, documentazione)</li>
@@ -35,7 +35,7 @@ const PrivacyPolicy = () => (
 
       <div style={{ marginBottom: 28 }}>
         <strong>1.3 Finalità e basi giuridiche</strong>
-        <ul className="d-flex flex-column align-items-center" style={{ marginTop: 6 }}>
+        <ul className="d-flex flex-column" style={{ marginTop: 6 }}>
           <li>erogazione servizio e gestione account/ordini (art. 6(1)(b))</li>
           <li>sicurezza e prevenzione frodi (art. 6(1)(f))</li>
           <li>adempimenti legali (art. 6(1)(c))</li>
@@ -61,7 +61,7 @@ const PrivacyPolicy = () => (
 
       <div style={{ marginBottom: 28 }}>
         <strong>1.6 Conservazione</strong>
-        <ul className="d-flex flex-column align-items-center" style={{ marginTop: 6 }}>
+        <ul className="d-flex flex-column" style={{ marginTop: 6 }}>
           <li>account: fino a cancellazione o inattività prolungata (salvo obblighi)</li>
           <li>ordini e dati amministrativi: secondo legge</li>
           <li>log sicurezza: per periodi limitati/proporzionati</li>

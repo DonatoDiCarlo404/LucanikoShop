@@ -10,13 +10,18 @@ import {
   updateSellerProfile,
   getAllProducts,
   getAllOrders,
+  registerVendor,
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middlewares/auth.js';
+import { adminLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
 // Tutte le route sono protette da protect + admin
 router.use(protect, admin);
+
+// Registra venditore (admin)
+router.post('/register-vendor', adminLimiter, registerVendor);
 
 // Get statistiche
 router.get('/stats', getAdminStats);

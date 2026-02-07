@@ -5,7 +5,7 @@ const SpazioVenditoriLucani = () => (
   <Container className="policy-container py-4">
     <h2 className="mb-4">Spazio Venditori Lucani – Lucaniko Shop</h2>
     <p className="mb-3">Lucaniko Shop è un progetto dedicato alle imprese lucane per offrire:</p>
-    <ul className="mb-4 d-flex flex-column align-items-center">
+    <ul className="mb-4 d-flex flex-column">
       <li>uno store digitale</li>
       <li>strumenti di vendita online</li>
       <li>pagamenti digitali sicuri</li>
@@ -14,7 +14,7 @@ const SpazioVenditoriLucani = () => (
 
     <h5 className="mt-4 mb-2">1.1 Requisiti di partecipazione</h5>
     <p className="mb-2">Possono candidarsi aziende che:</p>
-    <ul className="mb-3 d-flex flex-column align-items-center">
+    <ul className="mb-3 d-flex flex-column">
       <li>hanno sede legale/operativa in Basilicata e/o</li>
       <li>vendono prodotti riconducibili al territorio lucano secondo criteri indicati nei Termini Venditori.</li>
     </ul>
@@ -24,7 +24,7 @@ const SpazioVenditoriLucani = () => (
     <p className="mb-4">Categorie disponibili (esemplificative): abbigliamento, casa, cibi e bevande, artigianato, elettronica, ricambi, ecc.</p>
 
     <h5 className="mt-4 mb-2">1.3 Vantaggi</h5>
-    <ul className="mb-4 d-flex flex-column align-items-center">
+    <ul className="mb-4 d-flex flex-column">
       <li>nessuna commissione percentuale sulle vendite (ad eccezione di Stripe)</li>
       <li>pagamenti con Stripe Connect</li>
       <li>pagina aziendale dedicata</li>
@@ -33,7 +33,7 @@ const SpazioVenditoriLucani = () => (
     </ul>
 
     <h5 className="mt-4 mb-2">Piano di Adesione 2026</h5>
-    <ul className="mb-3 d-flex flex-column align-items-center">
+    <ul className="mb-3 d-flex flex-column">
       <li>€290 + IVA (22%) / 1 anno</li>
     </ul>
     <p className="mb-2"><strong>Include:</strong> accesso piattaforma, onboarding, supporto, community WhatsApp.</p>

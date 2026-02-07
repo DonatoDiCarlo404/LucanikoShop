@@ -269,6 +269,19 @@ export const adminAPI = {
     });
     return handleResponse(response);
   },
+
+  // Registra venditore (admin)
+  registerVendor: async (vendorData, token) => {
+    const response = await fetch(`${API_URL}/admin/register-vendor`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(vendorData),
+    });
+    return handleResponse(response);
+  },
 };
 
 // Order API

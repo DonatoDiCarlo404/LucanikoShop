@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Form, Button, Alert, InputGroup, Dropdown, Badge, Modal } from 'react-bootstrap';
-import { authAPI } from '../services/api';
+import { authAPI, adminAPI } from '../services/api';
+import { useAuth } from '../context/authContext';
 
 const RegisterCompanyForm = ({ onSuccess }) => {
+  const { token } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -46,7 +48,7 @@ const RegisterCompanyForm = ({ onSuccess }) => {
     setLoading(true);
     try {
       const fullName = `${firstName} ${lastName}`.trim();
-      const result = await authAPI.register({
+      const result = await adminAPI.registerVendor({
         name: fullName,
         businessName,
         vatNumber,
@@ -56,12 +58,11 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         uniqueCode,
         email,
         phoneNumber,
-        categories: selectedCategories,
+        selectedCategories,
         subscription,
         password,
-        role: 'seller',
-        registeredByAdmin: true,
-      });
+      }, token);
+      
       if (result && result._id) {
         setSuccess(true);
         if (onSuccess) onSuccess();
@@ -77,10 +78,12 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         setPhoneNumber('');
         setSelectedCategories([]);
         setPassword('');
+        setAcceptTerms(false);
       } else {
         setError(result.message || 'Errore nella registrazione');
       }
     } catch (err) {
+      console.error('Errore registrazione venditore:', err);
       setError(err.message || 'Errore nella registrazione');
     }
     setLoading(false);

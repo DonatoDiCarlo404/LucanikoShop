@@ -22,11 +22,11 @@ const TermsVendors = () => (
         <strong>3) Piano di Adesione e attivazione</strong>
         <div style={{ marginTop: 6 }}>
           <strong>Piano di Adesione 2026</strong> (come da offerta in piattaforma):
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>€290 + IVA (22%) / 1 anno</li>
           </ul>
           <strong>INCLUDE:</strong>
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>Registrazione e accesso alla piattaforma</li>
             <li>Onboarding e formazione iniziale</li>
             <li>Supporto operativo</li>
@@ -34,7 +34,7 @@ const TermsVendors = () => (
           </ul>
           <br />
           L'accesso è attivato dopo:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>approvazione della richiesta</li>
             <li>pagamento effettuato online</li>
             <li>emissione fattura da parte di INSIDE DI DI PIETRO VITO</li>
@@ -49,7 +49,7 @@ const TermsVendors = () => (
         <strong>4) Obblighi del Venditore (prodotti, conformità e leggi)</strong>
         <div style={{ marginTop: 6 }}>
           Il Venditore è l'unico responsabile di:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>veridicità delle schede prodotto (descrizioni, ingredienti, taglie, compatibilità ricambi, certificazioni)</li>
             <li>conformità normativa (es. etichettatura alimentare, sicurezza prodotti, marcatura, RAEE, garanzie)</li>
             <li>disponibilità, prezzi, IVA, emissione documenti fiscali (fattura/scontrino dove previsto)</li>
@@ -78,7 +78,7 @@ const TermsVendors = () => (
         <strong>7) Pagina venditore e contenuti</strong>
         <div style={{ marginTop: 6 }}>
           Il Venditore può avere una pagina dedicata con:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>logo e descrizione</li>
             <li>contatti cliccabili (telefono, email, sito, social)</li>
             <li>indirizzo</li>
@@ -92,7 +92,7 @@ const TermsVendors = () => (
         <strong>8) Uso della Piattaforma e condotte vietate</strong>
         <div style={{ marginTop: 6 }}>
           È vietato:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>utilizzare la Piattaforma per finalità illecite</li>
             <li>inserire contenuti ingannevoli o non conformi</li>
             <li>aggirare i flussi di pagamento della Piattaforma se non autorizzato</li>
@@ -105,7 +105,7 @@ const TermsVendors = () => (
         <strong>9) Sospensione e cessazione</strong>
         <div style={{ marginTop: 6 }}>
           Lucaniko Shop può sospendere o disattivare l'account venditore (anche senza preavviso nei casi gravi) in caso di:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>violazioni normative o dei presenti Termini</li>
             <li>contestazioni ripetute, frodi, prodotti vietati</li>
             <li>inadempimenti gravi nella gestione ordini/resi</li>
@@ -134,7 +134,7 @@ const TermsVendors = () => (
           Lucaniko Shop è un marketplace che utilizza Stripe Connect per gestire correttamente i flussi multi-venditore.
           <br /><br />
           <strong>Flusso economico in breve</strong>
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>L'Acquirente paga tramite Stripe al checkout.</li>
             <li>Stripe applica le proprie commissioni di elaborazione (variabili per carta/paese/metodo).</li>
             <li>L'importo viene contabilizzato nei flussi Stripe della Piattaforma e destinato ai Venditori interessati.</li>
@@ -150,14 +150,14 @@ const TermsVendors = () => (
           <strong>Periodo di riserva: trasferimenti dopo 14 giorni</strong>
           <br /><br />
           Per ridurre rischi di contestazioni e gestire correttamente eventuali:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>richieste di recesso (quando applicabile)</li>
             <li>resi/rimborsi</li>
             <li>mancata consegna</li>
             <li>contestazioni/chargeback</li>
           </ul>
           i trasferimenti ai Venditori potrebbero essere effettuati dopo 14 giorni dall'incasso (o dalla conferma ordine/pagamento, secondo eventi tecnici), salvo:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>casi in cui la legge impone diversamente,</li>
             <li>richieste di rimborso già attive,</li>
             <li>verifiche/limitazioni imposte da Stripe (KYC, rischio, frodi),</li>
@@ -168,7 +168,7 @@ const TermsVendors = () => (
           <strong>Resi e rimborsi: chi decide e come avvengono</strong>
           <br /><br />
           Il Venditore è responsabile di valutare e gestire:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>richieste di recesso (se applicabile)</li>
             <li>resi per difetti/non conformità</li>
             <li>rimborsi totali o parziali</li>
@@ -178,7 +178,7 @@ const TermsVendors = () => (
           <strong>Contestazioni/chargeback</strong>
           <br /><br />
           Se l'Acquirente avvia una contestazione tramite banca/circuito:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>Stripe può trattenere l'importo contestato e applicare costi di gestione disputa;</li>
             <li>il Venditore deve fornire prove (tracking, consegna, comunicazioni, policy);</li>
             <li>in caso di esito sfavorevole, gli importi possono essere stornati secondo regole Stripe.</li>
@@ -191,7 +191,7 @@ const TermsVendors = () => (
           <strong>IVA e documenti fiscali</strong>
           <br /><br />
           Il Venditore è responsabile di:
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>IVA e regime fiscale</li>
             <li>emissione fattura/scontrino ove previsto</li>
             <li>conservazione documentale</li>

@@ -43,7 +43,7 @@ const TermsBuyers = () => (
         <strong>1.6 Recesso (consumatori) e eccezioni – deperibili</strong>
         <div style={{ marginTop: 6 }}>
           Il consumatore può recedere entro 14 giorni salvo eccezioni previste dal Codice del Consumo, tra cui (a titolo esemplificativo):
-          <ul className="d-flex flex-column align-items-center" style={{ marginTop: 8 }}>
+          <ul className="d-flex flex-column" style={{ marginTop: 8 }}>
             <li>beni deperibili o che rischiano di deteriorarsi rapidamente (molti alimentari)</li>
             <li>beni sigillati non restituibili per motivi igienici/sanitari se aperti</li>
             <li>beni personalizzati</li>
