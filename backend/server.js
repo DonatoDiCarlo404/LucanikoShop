@@ -49,6 +49,9 @@ import { sendCronFailureAlert } from './utils/alertService.js';
 
 const app = express();
 
+// Trust proxy per ottenere IP reali in produzione (Railway, Vercel, etc.)
+app.set('trust proxy', 1);
+
 // Serve i PDF vendor caricati
 app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs')));
 

@@ -3,11 +3,11 @@ import rateLimit from 'express-rate-limit';
 // Rate limiter per login/registrazione - previene brute force
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 5, // 5 tentativi per IP
+  max: 20, // 20 tentativi per IP
   message: 'Troppi tentativi di login. Riprova tra 15 minuti.',
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false // Conta anche i login riusciti
+  skipSuccessfulRequests: true // Non contare i login riusciti
 });
 
 // Rate limiter per operazioni di pagamento - previene abusi

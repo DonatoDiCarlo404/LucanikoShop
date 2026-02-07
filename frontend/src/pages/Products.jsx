@@ -278,24 +278,40 @@ const Products = () => {
             padding: 2px 10px;
             border-radius: 14px;
           }
+          .category-buttons-row {
+            display: block;
+          }
+          .category-buttons-mobile-single {
+            display: none;
+          }
           @media (max-width: 768px) {
-            .category-buttons-container {
+            .category-buttons-row {
+              display: none;
+            }
+            .category-buttons-mobile-single {
+              display: block;
               overflow-x: auto;
               white-space: nowrap;
-              flex-wrap: nowrap;
               padding-bottom: 8px;
+              -webkit-overflow-scrolling: touch;
+            }
+            .category-buttons-mobile-single .d-flex {
+              flex-wrap: nowrap;
               justify-content: flex-start;
             }
-            .category-buttons-container .btn {
+            .category-buttons-mobile-single .btn {
               font-size: 0.95rem;
               padding: 4px 12px;
               border-radius: 16px;
+              flex-shrink: 0;
             }
           }
         `}</style>
         
-        {/* Prima riga: categorie */}
-        <div className="category-buttons-container d-flex gap-2 mb-2">
+        {/* Desktop: due righe */}
+        <div className="category-buttons-row">
+          {/* Prima riga: categorie */}
+          <div className="category-buttons-container d-flex gap-2 mb-2">
           {/* Cibi e Bevande sempre prima */}
           {categories
             .filter(cat => cat.name === 'Cibi e Bevande')
@@ -409,6 +425,49 @@ const Products = () => {
                 {cat.name}
               </button>
             ))}
+        </div>
+        </div>
+
+        {/* Mobile: tutte le categorie in una riga con scrolling */}
+        <div className="category-buttons-mobile-single">
+          <div className="d-flex gap-2">
+            {/* Tutte le categorie in ordine: Cibi e Bevande prima, poi tutte le altre alfabeticamente */}
+            {categories
+              .sort((a, b) => {
+                if (a.name === 'Cibi e Bevande') return -1;
+                if (b.name === 'Cibi e Bevande') return 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map(cat => (
+                <button
+                  key={cat._id}
+                  className="btn"
+                  style={{
+                    backgroundColor: category === cat.name ? '#004b75' : '#fff',
+                    color: category === cat.name ? '#fff' : '#004b75',
+                    border: '2px solid #004b75',
+                    fontWeight: 600,
+                    transition: 'all 0.3s ease',
+                    minHeight: 0
+                  }}
+                  onClick={() => {
+                    if (cat.name === 'Cibi e Bevande') {
+                      setShowSplash(true);
+                      setTimeout(() => {
+                        setShowSplash(false);
+                        setCategory(cat.name);
+                        setSubcategory('');
+                      }, 2000);
+                    } else {
+                      setCategory(cat.name);
+                      setSubcategory('');
+                    }
+                  }}
+                >
+                  {cat.name}
+                </button>
+              ))}
+          </div>
         </div>
       </div>
 
