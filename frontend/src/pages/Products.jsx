@@ -11,7 +11,7 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('Cibi e Bevande');
   const [subcategory, setSubcategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -51,6 +51,8 @@ const Products = () => {
       const categoryParam = searchParams.get('category');
       if (categoryParam) {
         setCategory(decodeURIComponent(categoryParam));
+      } else {
+        setCategory('Cibi e Bevande');
       }
       setIsInitialized(true);
     };
@@ -292,25 +294,8 @@ const Products = () => {
           }
         `}</style>
         
-        {/* Prima riga: 7 categorie */}
+        {/* Prima riga: categorie */}
         <div className="category-buttons-container d-flex gap-2 mb-2">
-          <button
-            className="btn"
-            style={{
-              backgroundColor: !category ? '#004b75' : '#fff',
-              color: !category ? '#fff' : '#004b75',
-              border: '2px solid #004b75',
-              fontWeight: 600,
-              transition: 'all 0.3s ease',
-              minHeight: 0
-            }}
-            onClick={() => {
-              setCategory('');
-              setSubcategory('');
-            }}
-          >
-            Tutte le categorie
-          </button>
           {/* Cibi e Bevande sempre prima */}
           {categories
             .filter(cat => cat.name === 'Cibi e Bevande')
