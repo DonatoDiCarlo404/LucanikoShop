@@ -221,16 +221,20 @@ const Negozi = () => {
                   {category}
                 </h3>
 
-                <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+                <Row xs={1} md={2} lg={3} className="g-4">
                   {filteredVendors.map(vendor => (
                     <Col key={vendor._id}>
-                      <Card 
+                      <Card
                         className="h-100"
-                        style={{ 
-                          cursor: 'pointer', 
+                        style={{
+                          cursor: 'pointer',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
                           transition: 'all 0.3s ease',
-                          border: '2px solid transparent',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)'
+                          maxWidth: '320px',
+                          margin: '0 auto',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)',
+                          border: '2px solid transparent'
                         }}
                         onClick={() => navigate(`/shop/${vendor.slug || vendor._id}`)}
                         onMouseEnter={(e) => {
@@ -244,79 +248,66 @@ const Negozi = () => {
                           e.currentTarget.style.borderColor = 'transparent';
                         }}
                       >
-                        <div 
-                          style={{ 
-                            height: '180px', 
-                            overflow: 'hidden', 
-                            backgroundColor: '#f8f9fa',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '20px'
-                          }}
-                        >
-                          {vendor.logo?.url ? (
-                            <img
-                              src={vendor.logo.url}
-                              alt={vendor.businessName || vendor.name}
-                              style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                objectFit: 'contain'
-                              }}
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div 
-                              className="d-flex align-items-center justify-content-center"
-                              style={{ 
-                                width: '100%', 
-                                height: '100%',
-                                backgroundColor: '#e9ecef',
-                                borderRadius: '8px'
-                              }}
-                            >
-                              <i 
-                                className="bi bi-building" 
-                                style={{ fontSize: '4rem', color: '#6c757d' }}
-                              ></i>
-                            </div>
-                          )}
-                        </div>
-                        <Card.Body>
-                          <Card.Title 
-                            style={{ 
-                              color: '#004b75', 
-                              fontWeight: 700,
-                              fontSize: '1.1rem',
-                              minHeight: '50px',
+                        {vendor.logo?.url ? (
+                          <Card.Img
+                            variant="top"
+                            src={vendor.logo.url}
+                            alt={vendor.businessName || vendor.name}
+                            style={{
+                              height: '200px',
+                              objectFit: 'contain',
+                              padding: '1rem',
+                              backgroundColor: '#fff'
+                            }}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              height: '200px',
                               display: 'flex',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: '1rem',
+                              backgroundColor: '#fff'
                             }}
                           >
+                            <i
+                              className="bi bi-building"
+                              style={{ fontSize: '4rem', color: '#6c757d' }}
+                            ></i>
+                          </div>
+                        )}
+                        <Card.Body className="d-flex flex-column">
+                          <Card.Title style={{ color: '#004b75', fontWeight: 600 }}>
                             {vendor.businessName || vendor.name}
                           </Card.Title>
-                          {vendor.businessDescription && (
-                            <Card.Text 
-                              className="text-muted small"
-                              style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                minHeight: '40px'
-                              }}
-                            >
-                              {vendor.businessDescription}
-                            </Card.Text>
-                          )}
-                          {vendor.city && (
-                            <div className="mt-2">
-                              <i className="bi bi-geo-alt-fill text-danger me-1"></i>
-                              <small className="text-muted">{vendor.city}</small>
-                            </div>
-                          )}
+                          <Card.Text className="text-muted small mb-3" style={{ flexGrow: 1 }}>
+                            {vendor.businessDescription || ''}
+                          </Card.Text>
+                          
+                          <div className="mb-2">
+                            {vendor.city && (
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                <i className="bi bi-geo-alt-fill" style={{ color: '#00bf63' }}></i>
+                                <small className="text-muted">{vendor.city}</small>
+                              </div>
+                            )}
+                            {vendor.phone && (
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                <i className="bi bi-telephone-fill" style={{ color: '#00bf63' }}></i>
+                                <small className="text-muted">{vendor.phone}</small>
+                              </div>
+                            )}
+                          </div>
+
+                          <div
+                            className="mt-auto d-inline-flex align-items-center justify-content-center"
+                            style={{ fontSize: '1.5rem', color: '#004b75', textDecoration: 'none', borderRadius: '8px' }}
+                            title="Visita Negozio"
+                          >
+                            <i className="bi bi-shop"></i>
+                          </div>
                         </Card.Body>
                       </Card>
                     </Col>

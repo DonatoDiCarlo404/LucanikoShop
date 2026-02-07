@@ -218,6 +218,16 @@ export const adminAPI = {
       });
       return handleResponse(response);
     },
+    // Elimina documento PDF per venditore
+    deleteVendorDocument: async (vendorId, filename, token) => {
+      const response = await fetch(`${API_URL}/upload/vendor/${vendorId}/document/${filename}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      return handleResponse(response);
+    },
   // Get statistiche
   getStats: async (token) => {
     const response = await fetch(`${API_URL}/admin/stats`, {
@@ -261,6 +271,17 @@ export const adminAPI = {
 
   // Rifiuta venditore
   rejectSeller: async (id, token) => {
+    const response = await fetch(`${API_URL}/admin/reject-seller/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Elimina venditore definitivamente
+  deleteSeller: async (id, token) => {
     const response = await fetch(`${API_URL}/admin/reject-seller/${id}`, {
       method: 'DELETE',
       headers: {

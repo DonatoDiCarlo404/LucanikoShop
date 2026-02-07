@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI, API_URL } from '../services/api';
+import { authAPI, API_URL, productsAPI } from '../services/api';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Container,
@@ -265,10 +265,8 @@ const VendorProfile = () => {
       loadDiscounts();
       // Carica categorie
       loadCategories();
-      // Non caricare documenti se admin sta visualizzando profilo altrui
-      if (!(user.role === 'admin' && sellerId)) {
-        loadVendorDocuments();
-      }
+      // Carica documenti sempre
+      loadVendorDocuments();
     }
   }, [user, navigate, sellerId]);
 
@@ -291,17 +289,22 @@ const VendorProfile = () => {
   // Carica documenti PDF del venditore
   const loadVendorDocuments = async () => {
     try {
-      const res = await fetch(`${API_URL}/upload/vendor/${user._id}/list`, {
+      const vendorIdToUse = sellerId || user._id;
+      console.log('🔍 Caricamento documenti per vendorId:', vendorIdToUse);
+      const res = await fetch(`${API_URL}/upload/vendor/${vendorIdToUse}/list`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
       });
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Documenti caricati:', data.files);
         setVendorDocs(data.files || []);
+      } else {
+        console.error('❌ Errore risposta API:', res.status);
       }
     } catch (err) {
-      console.error('Errore caricamento documenti:', err);
+      console.error('❌ Errore caricamento documenti:', err);
     }
   };
 
@@ -875,6 +878,28 @@ const VendorProfile = () => {
       loadDiscounts();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  // Elimina prodotto
+  const handleDeleteProduct = async (productId, productName) => {
+    if (!window.confirm(`Sei sicuro di voler eliminare il prodotto "${productName}"?\n\nQuesta azione è irreversibile!`)) {
+      return;
+    }
+
+    try {
+      await productsAPI.delete(productId, user.token);
+      setSuccess('Prodotto eliminato con successo!');
+      setTimeout(() => setSuccess(''), 3000);
+      
+      // Aggiorna la lista prodotti
+      setProducts(prevProducts => prevProducts.filter(p => p._id !== productId));
+      
+      // Ricarica statistiche
+      loadStats();
+    } catch (err) {
+      setError(err.message || 'Errore nell\'eliminazione del prodotto');
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -1897,6 +1922,14 @@ const VendorProfile = () => {
                                 title="Visualizza"
                               >
                                 <i className="bi bi-eye"></i>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline-danger"
+                                onClick={() => handleDeleteProduct(product._id, product.name)}
+                                title="Elimina"
+                              >
+                                <i className="bi bi-trash"></i>
                               </Button>
                             </div>
                           </td>

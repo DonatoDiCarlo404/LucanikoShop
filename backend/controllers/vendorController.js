@@ -12,12 +12,12 @@ export const getPublicVendorProfile = async (req, res) => {
     if (idOrSlug.match(/^[0-9a-fA-F]{24}$/)) {
       // È un ID MongoDB valido
       vendor = await User.findById(idOrSlug).select(
-        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug'
+        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug storeAddress'
       );
     } else {
       // È uno slug
       vendor = await User.findOne({ slug: idOrSlug }).select(
-        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug'
+        'name businessName ragioneSociale businessDescription logo businessEmail businessPhone businessWhatsapp website socialLinks isApproved createdAt role shopSettings news businessCategories slug storeAddress'
       );
     }
 

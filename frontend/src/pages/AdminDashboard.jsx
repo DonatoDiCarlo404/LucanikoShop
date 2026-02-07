@@ -142,6 +142,36 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleDeleteDocument = async (sellerId, filename) => {
+    if (!confirm(`Sei sicuro di voler eliminare il documento "${filename}"?`)) return;
+
+    try {
+      await adminAPI.deleteVendorDocument(sellerId, filename, user.token);
+      alert('✅ Documento eliminato con successo!');
+      
+      // Aggiorna la lista documenti
+      const res = await adminAPI.getVendorDocuments(sellerId, user.token);
+      setVendorDocs((prev) => ({ ...prev, [sellerId]: res.files || [] }));
+    } catch (err) {
+      alert('❌ Errore eliminazione documento: ' + err.message);
+    }
+  };
+
+  const handleDeleteSeller = async (sellerId, sellerName) => {
+    if (!confirm(`ATTENZIONE: Sei sicuro di voler ELIMINARE DEFINITIVAMENTE il venditore "${sellerName}"?\n\nQuesta azione eliminerà:\n- L'account venditore\n- Tutti i suoi prodotti\n- Tutti i dati associati\n\nQuesta azione è IRREVERSIBILE!`)) return;
+
+    try {
+      setActionLoading(sellerId);
+      await adminAPI.deleteSeller(sellerId, user.token);
+      alert('✅ Venditore eliminato definitivamente');
+      await loadData();
+    } catch (err) {
+      alert('❌ Errore eliminazione venditore: ' + err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // Funzioni per gestione News
   const loadNews = async () => {
     try {
@@ -547,6 +577,7 @@ const AdminDashboard = () => {
                       <th>Documenti Allegati</th>
                       <th>Data Registrazione</th>
                       <th>Data Scadenza Abbonamento</th>
+                      <th>Azioni</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -638,10 +669,19 @@ const AdminDashboard = () => {
                             {vendorDocs[seller._id] && vendorDocs[seller._id].length > 0 ? (
                               <ul style={{ margin: 0, paddingLeft: '1em', fontSize: '0.95em' }}>
                                 {vendorDocs[seller._id].map((file, idx) => (
-                                  <li key={idx}>
+                                  <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5em', marginBottom: '0.3em' }}>
                                     <a href={file.url} target="_blank" rel="noopener noreferrer">
                                       {file.name || file.url.split('/').pop()}
                                     </a>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline-danger" 
+                                      style={{ padding: '0.1rem 0.4rem', fontSize: '0.75rem' }}
+                                      onClick={() => handleDeleteDocument(seller._id, file.filename)}
+                                      title="Elimina documento"
+                                    >
+                                      <i className="bi bi-trash"></i>
+                                    </Button>
                                   </li>
                                 ))}
                               </ul>
@@ -652,6 +692,23 @@ const AdminDashboard = () => {
                         </td>
                         <td>{new Date(seller.createdAt).toLocaleDateString('it-IT')}</td>
                         <td>{seller.subscriptionEndDate ? new Date(seller.subscriptionEndDate).toLocaleDateString('it-IT') : '-'}</td>
+                        <td>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDeleteSeller(seller._id, seller.name || seller.email)}
+                            disabled={actionLoading === seller._id}
+                            title="Elimina venditore definitivamente"
+                          >
+                            {actionLoading === seller._id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <>
+                                <i className="bi bi-trash"></i> Elimina
+                              </>
+                            )}
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

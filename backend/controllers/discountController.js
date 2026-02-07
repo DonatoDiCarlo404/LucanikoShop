@@ -67,7 +67,7 @@ export const createDiscount = async (req, res) => {
       applicationType,
       products,
       categories,
-      couponCode,
+      couponCode: couponCode && couponCode.trim() !== '' ? couponCode : undefined, // Converti stringa vuota in undefined
       startDate,
       endDate,
       usageLimit,
@@ -192,10 +192,16 @@ export const updateDiscount = async (req, res) => {
       await removeDiscountFromProducts(discount);
     }
 
+    // Prepara i dati da aggiornare, convertendo stringhe vuote in undefined
+    const updateData = { ...req.body };
+    if (updateData.couponCode !== undefined && (!updateData.couponCode || updateData.couponCode.trim() === '')) {
+      updateData.couponCode = undefined;
+    }
+
     // Aggiorna lo sconto
     discount = await Discount.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       {
         new: true,
         runValidators: true

@@ -12,17 +12,26 @@ export const protect = async (req, res, next) => {
     try {
       // Estrai il token dall'header
       token = req.headers.authorization.split(' ')[1];
+      console.log('[AUTH] Token ricevuto:', token.substring(0, 20) + '...');
 
       // Verifica il token
+      console.log('[AUTH] JWT_SECRET disponibile:', process.env.JWT_SECRET ? 'SI' : 'NO');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('[AUTH] Token decodificato, user ID:', decoded.id);
 
       // Aggiungi l'utente alla request (senza password)
       req.user = await User.findById(decoded.id).select('-password');
+      
+      if (!req.user) {
+        console.error('[AUTH] ❌ Utente non trovato nel database con ID:', decoded.id);
+        return res.status(401).json({ message: 'Non autorizzato, utente non trovato' });
+      }
 
-      console.log('[AUTH] User autenticato:', req.user._id, req.user.role);
+      console.log('[AUTH] ✅ User autenticato:', req.user._id, req.user.role, req.user.email);
       next();
     } catch (error) {
-      console.error('[AUTH] Errore verifica token:', error.message);
+      console.error('[AUTH] ❌ Errore verifica token:', error.message);
+      console.error('[AUTH] Tipo errore:', error.name);
       return res.status(401).json({ message: 'Non autorizzato, token non valido' });
     }
   }

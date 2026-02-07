@@ -1,13 +1,25 @@
 import express from 'express';
-import { uploadProductImage, uploadAvatarImage, deleteImage, uploadVendorDocument, listVendorDocuments } from '../controllers/uploadController.js';
+import { uploadProductImage, uploadAvatarImage, deleteImage, uploadVendorDocument, listVendorDocuments, deleteVendorDocument } from '../controllers/uploadController.js';
 import { uploadProduct, uploadAvatar } from '../config/cloudinary.js';
 import multer from 'multer';
-import { protect, seller } from '../middlewares/auth.js';
+import { protect, seller, admin } from '../middlewares/auth.js';
+import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
 
+// Crea directory vendor_docs se non esiste
+const vendorDocsDir = path.join(process.cwd(), 'uploads', 'vendor_docs');
+if (!fs.existsSync(vendorDocsDir)) {
+  fs.mkdirSync(vendorDocsDir, { recursive: true });
+  console.log('✅ Directory vendor_docs creata');
+}
+
 // Lista PDF venditore
 router.get('/vendor/:vendorId/list', listVendorDocuments);
+
+// Elimina documento PDF venditore (solo admin)
+router.delete('/vendor/:vendorId/document/:filename', protect, admin, deleteVendorDocument);
 
 // Middleware per gestire errori di multer
 const handleMulterError = (err, req, res, next) => {

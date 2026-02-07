@@ -227,6 +227,17 @@ const ShopPage = () => {
               </div>
               {/* CONTATTI PUBBLICI */}
               <div style={{ fontSize: 15 }}>
+                {vendor.storeAddress && Object.values(vendor.storeAddress).some(v => typeof v === 'string' ? v.trim() : v) && (
+                  <div>
+                    <strong>Indirizzo punto vendita:</strong> {[
+                      vendor.storeAddress.street,
+                      vendor.storeAddress.city,
+                      vendor.storeAddress.state,
+                      vendor.storeAddress.zipCode,
+                      vendor.storeAddress.country
+                    ].filter(Boolean).join(', ')}
+                  </div>
+                )}
                 {vendor.businessEmail && <div><strong>Email:</strong> <a href={`mailto:${vendor.businessEmail}`}>{vendor.businessEmail}</a></div>}
                 {vendor.businessPhone && <div><strong>Telefono:</strong> <a href={`tel:${vendor.businessPhone}`}>{vendor.businessPhone}</a></div>}
                 {/* SOCIAL ICONS: Facebook, Instagram, WhatsApp, Sito Web */}

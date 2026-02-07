@@ -7,20 +7,62 @@ export const listVendorDocuments = async (req, res) => {
   try {
     const vendorId = req.params.vendorId;
     const dirPath = path.join(process.cwd(), 'uploads', 'vendor_docs');
+    
+    console.log('🔍 Ricerca documenti per vendorId:', vendorId);
+    console.log('📁 Directory:', dirPath);
+    
     if (!fs.existsSync(dirPath)) {
+      console.log('⚠️ Directory non esiste');
       return res.json({ files: [] });
     }
-    const files = fs.readdirSync(dirPath)
+    
+    // Costruisci URL dinamicamente basato su req
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    const allFiles = fs.readdirSync(dirPath);
+    console.log('📄 Tutti i file nella directory:', allFiles);
+    
+    const files = allFiles
       .filter(f => f.endsWith('.pdf') && f.startsWith(vendorId))
       .map(f => ({
         name: f.replace(`${vendorId}-`, '').replace(/^\d+-/, ''),
-        url: `http://localhost:5000/uploads/vendor_docs/${f}`
+        url: `${baseUrl}/uploads/vendor_docs/${f}`,
+        filename: f  // Nome completo del file per eliminazione
       }));
+    
+    console.log('✅ File trovati per questo vendor:', files.length);
     res.json({ files });
+  } catch (error) {
+    console.error('❌ Errore in listVendorDocuments:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Elimina documento PDF venditore
+// @route   DELETE /api/upload/vendor/:vendorId/document/:filename
+// @access  Admin
+export const deleteVendorDocument = async (req, res) => {
+  try {
+    const { vendorId, filename } = req.params;
+    const filePath = path.join(process.cwd(), 'uploads', 'vendor_docs', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File non trovato' });
+    }
+
+    // Verifica che il file appartenga al venditore
+    if (!filename.startsWith(vendorId)) {
+      return res.status(403).json({ message: 'Non autorizzato' });
+    }
+
+    fs.unlinkSync(filePath);
+    
+    res.status(200).json({ message: 'Documento eliminato con successo' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Upload PDF documento venditore
 // @route   POST /api/upload/vendor/:vendorId
 // @access  Admin

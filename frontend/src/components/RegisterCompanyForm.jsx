@@ -4,7 +4,7 @@ import { authAPI, adminAPI } from '../services/api';
 import { useAuth } from '../context/authContext';
 
 const RegisterCompanyForm = ({ onSuccess }) => {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -61,7 +61,7 @@ const RegisterCompanyForm = ({ onSuccess }) => {
         selectedCategories,
         subscription,
         password,
-      }, token);
+      }, user.token);
       
       if (result && result._id) {
         setSuccess(true);
