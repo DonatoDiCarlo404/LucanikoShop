@@ -1264,13 +1264,13 @@ const VendorDashboard = () => {
                   onClick={() => {
                     // Prepara dati CSV
                     const csvContent = [
-                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Transfer', 'Stripe Transfer ID'].join(','),
+                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Stripe', 'Stripe Transfer ID'].join(','),
                       ...paidPayouts.map(p => [
                         new Date(p.saleDate).toLocaleDateString('it-IT'),
                         p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('it-IT') : 'N/A',
                         p.orderId?.orderNumber || (p.orderId?._id ? p.orderId._id.toString().substring(0, 8) : 'N/A'),
                         `€${p.amount.toFixed(2)}`,
-                        `€${p.transferFee.toFixed(2)}`,
+                        `€${p.stripeFee.toFixed(2)}`,
                         p.stripeTransferId || 'N/A'
                       ].join(','))
                     ].join('\n');
@@ -1317,7 +1317,7 @@ const VendorDashboard = () => {
                         <th>Data Pagamento</th>
                         <th>Ordine</th>
                         <th>Importo</th>
-                        <th>Fee Transfer</th>
+                        <th>Fee Stripe</th>
                         <th>Stripe Transfer ID</th>
                       </tr>
                     </thead>
@@ -1352,7 +1352,7 @@ const VendorDashboard = () => {
                             <strong className="text-success">€{payout.amount.toFixed(2)}</strong>
                           </td>
                           <td>
-                            <small className="text-muted">€{payout.transferFee.toFixed(2)}</small>
+                            <small className="text-muted">€{payout.stripeFee.toFixed(2)}</small>
                           </td>
                           <td>
                             {payout.stripeTransferId ? (
