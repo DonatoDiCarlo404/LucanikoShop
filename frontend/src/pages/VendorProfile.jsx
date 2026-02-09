@@ -205,10 +205,6 @@ const VendorProfile = () => {
           bankName: '',
           accountHolder: ''
         },
-        paypal: {
-          enabled: false,
-          email: ''
-        },
         stripe: {
           enabled: false,
           accountId: '',
@@ -389,10 +385,6 @@ const VendorProfile = () => {
               iban: data.shopSettings?.paymentMethods?.bankTransfer?.iban || data.bankAccount?.iban || '',
               bankName: data.shopSettings?.paymentMethods?.bankTransfer?.bankName || data.bankAccount?.bankName || '',
               accountHolder: data.shopSettings?.paymentMethods?.bankTransfer?.accountHolder || data.name || ''
-            },
-            paypal: { 
-              enabled: data.shopSettings?.paymentMethods?.paypal?.enabled || false, 
-              email: data.shopSettings?.paymentMethods?.paypal?.email || '' 
             },
             stripe: { 
               enabled: data.shopSettings?.paymentMethods?.stripe?.enabled || false, 
@@ -2067,53 +2059,9 @@ const VendorProfile = () => {
             <Card.Body>
               <Form onSubmit={handleSubmit}>
                 <Alert variant="warning">
-                  <strong>Importante:</strong> Configura i metodi di pagamento che vuoi offrire ai tuoi clienti
+                  <strong>Importante:</strong> Clicca su Configura Stripe Connect e segui tutta la procedura per ricevere i tuoi pagamenti. Se hai già completato la configurazione, assicurati che lo stato sia "Configurazione Stripe completata".
                 </Alert>
 
-
-                <h5 className="mb-3">PayPal</h5>
-                <Form.Check 
-                  type="checkbox"
-                  label="Abilita PayPal"
-                  checked={formData.shopSettings.paymentMethods.paypal.enabled}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    shopSettings: {
-                      ...prev.shopSettings,
-                      paymentMethods: {
-                        ...prev.shopSettings.paymentMethods,
-                        paypal: {
-                          ...prev.shopSettings.paymentMethods.paypal,
-                          enabled: e.target.checked
-                        }
-                      }
-                    }
-                  }))}
-                  className="mb-3"
-                />
-                <Form.Group className="mb-3">
-                  <Form.Label>Email PayPal</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={formData.shopSettings.paymentMethods.paypal.email}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      shopSettings: {
-                        ...prev.shopSettings,
-                        paymentMethods: {
-                          ...prev.shopSettings.paymentMethods,
-                          paypal: {
-                            ...prev.shopSettings.paymentMethods.paypal,
-                            email: e.target.value
-                          }
-                        }
-                      }
-                    }))}
-                    placeholder="tuo@email.com"
-                  />
-                </Form.Group>
-
-                <hr className="my-4" />
 
                 <h5 className="mb-3">Stripe (Carta di Credito)</h5>
                 <Alert variant="info">

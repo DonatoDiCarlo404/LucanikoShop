@@ -71,7 +71,8 @@ export const getPublicVendorProfile = async (req, res) => {
         shopSettings: vendor.shopSettings,
         news: vendor.news,
         businessCategories: vendor.businessCategories,
-        slug: vendor.slug
+        slug: vendor.slug,
+        storeAddress: vendor.storeAddress
       },
       products,
       stats: {

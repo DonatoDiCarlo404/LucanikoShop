@@ -4,6 +4,7 @@ import { Container, Row, Col, Spinner, Alert, Form, InputGroup, Button } from 'r
 import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, API_URL } from '../services/api';
 import ProductCard from '../components/ProductCard';
+import SEOHelmet from '../components/SEOHelmet';
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -170,9 +171,16 @@ const Products = () => {
   }
 
   return (
-    <main>
-      <Container className="pt-2 pb-5">
-      <div className="text-center mb-4 payoff-custom">
+    <>
+      <SEOHelmet
+        title="Lucaniko Shop - Il primo centro commerciale della Basilicata"
+        description="Il primo centro commerciale della Basilicata. Acquista online prodotti tipici lucani: salumi artigianali, formaggi, pasta, conserve, vini e specialità della tradizione lucana."
+        keywords="lucaniko shop, lucaniko, prodotti tipici lucani, prodotti tipici della Basilicata, specialità lucane, salumi lucani, formaggi lucani, pasta artigianale lucana"
+        url="https://lucanikoshop.it/products"
+      />
+      <main>
+        <Container className="pt-2 pb-5">
+        <div className="text-center mb-4 payoff-custom">
         <span style={{ fontSize: '1.5rem', fontWeight: 500, letterSpacing: 1 }}>
           <span style={{ color: '#004b75' }}>La Basilicata</span>
           <span style={{ color: '#00bf63' }}> in un click!</span>
@@ -581,6 +589,7 @@ const Products = () => {
       )}
     </Container>
     </main>
+    </>
   );
 };
 

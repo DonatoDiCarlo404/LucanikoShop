@@ -804,7 +804,7 @@ const ProductDetail = () => {
                       {'☆'.repeat(5 - r.rating)}
                     </span>
 
-                    <strong className="ms-2">{r.user?.name}</strong>
+                    <strong className="ms-2">{r.user?.name?.split(' ')[0]}</strong>
 
                     <small className="text-muted ms-2">
                       {new Date(r.createdAt).toLocaleDateString()}

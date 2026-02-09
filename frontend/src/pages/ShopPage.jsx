@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Modal, Form, ListGroup } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
@@ -21,6 +21,9 @@ const ShopPage = () => {
   const [pages, setPages] = useState(1);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [allReviews, setAllReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const productsPerPage = 12;
 
   useEffect(() => {
@@ -33,11 +36,9 @@ const ShopPage = () => {
     }
   }, [shopData]);
 
-  // Aggiorna meta tag quando caricano i dati
   useEffect(() => {
-    if (shopData?.vendor) {
-      const { businessName, businessDescription } = shopData.vendor;
-      document.title = `${businessName || 'Negozio'} - Lucaniko Shop`;
+    if (shopData?.products) {
+      loadAllReviews();
     }
   }, [shopData]);
 
@@ -97,6 +98,39 @@ const ShopPage = () => {
       setSubcategories(subs);
     } catch (err) {
       console.error('❌ Errore caricamento sottocategorie:', err);
+    }
+  };
+
+  const loadAllReviews = async () => {
+    if (!shopData?.products || shopData.products.length === 0) {
+      setAllReviews([]);
+      return;
+    }
+    
+    try {
+      setReviewsLoading(true);
+      const reviewsPromises = shopData.products.map(async (product) => {
+        try {
+          const res = await fetch(`${API_URL}/reviews/${product._id}`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data.map(review => ({ ...review, productName: product.name, productId: product._id }));
+        } catch (err) {
+          console.error(`Errore caricamento recensioni prodotto ${product._id}:`, err);
+          return [];
+        }
+      });
+      
+      const reviewsArrays = await Promise.all(reviewsPromises);
+      const allReviewsFlat = reviewsArrays.flat();
+      // Ordina per data, più recenti prima
+      allReviewsFlat.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setAllReviews(allReviewsFlat);
+    } catch (err) {
+      console.error('Errore caricamento recensioni:', err);
+      setAllReviews([]);
+    } finally {
+      setReviewsLoading(false);
     }
   };
 
@@ -227,7 +261,13 @@ const ShopPage = () => {
               </div>
               {/* CONTATTI PUBBLICI */}
               <div style={{ fontSize: 15 }}>
-                {vendor.storeAddress && Object.values(vendor.storeAddress).some(v => typeof v === 'string' ? v.trim() : v) && (
+                {vendor.storeAddress && [
+                  vendor.storeAddress.street,
+                  vendor.storeAddress.city,
+                  vendor.storeAddress.state,
+                  vendor.storeAddress.zipCode,
+                  vendor.storeAddress.country
+                ].filter(Boolean).length > 0 && (
                   <div>
                     <strong>Indirizzo punto vendita:</strong> {[
                       vendor.storeAddress.street,
@@ -308,7 +348,16 @@ const ShopPage = () => {
                     </span>
                   </div>
                   <h5 className="mb-1">{stats.avgRating}/5.0</h5>
-                  <small className="text-muted">{stats.totalReviews} recensioni</small>
+                  <small className="text-muted d-block mb-2">{stats.totalReviews} recensioni</small>
+                  {stats.totalReviews > 0 && (
+                    <Button 
+                      variant="outline-primary" 
+                      size="sm"
+                      onClick={() => setShowReviewsModal(true)}
+                    >
+                      Vedi tutte le recensioni
+                    </Button>
+                  )}
                 </div>
                 <div className="d-flex flex-column justify-content-center align-items-center text-center p-3 flex-fill">
                   <h3 className="mb-1" style={{ color: '#004b75' }}>{stats.totalProducts}</h3>
@@ -531,6 +580,65 @@ const ShopPage = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowTermsModal(false)}>
+            Chiudi
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Recensioni */}
+      <Modal 
+        show={showReviewsModal} 
+        onHide={() => setShowReviewsModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Tutte le recensioni</Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {reviewsLoading ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" />
+              <p className="mt-2">Caricamento recensioni...</p>
+            </div>
+          ) : allReviews.length === 0 ? (
+            <p>Nessuna recensione disponibile.</p>
+          ) : (
+            <ListGroup variant="flush">
+              {allReviews.map((r) => (
+                <ListGroup.Item key={r._id}>
+                  <div className="d-flex align-items-center mb-1">
+                    <span style={{ color: '#FFD700' }}>
+                      {'★'.repeat(r.rating)}
+                      {'☆'.repeat(5 - r.rating)}
+                    </span>
+
+                    <strong className="ms-2">{r.user?.name?.split(' ')[0]}</strong>
+
+                    <small className="text-muted ms-2">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+
+                  <div className="mb-1">{r.comment}</div>
+
+                  <small className="text-muted">
+                    <i className="bi bi-box-seam me-1"></i>
+                    {r.productName}
+                  </small>
+
+                  {r.updatedAt && r.updatedAt !== r.createdAt && (
+                    <div className="text-muted mt-1" style={{ fontSize: '0.9em' }}>
+                      Recensione modificata il {new Date(r.updatedAt).toLocaleDateString()}
+                    </div>
+                  )}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowReviewsModal(false)}>
             Chiudi
           </Button>
         </Modal.Footer>

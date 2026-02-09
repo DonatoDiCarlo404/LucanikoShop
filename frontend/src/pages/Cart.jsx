@@ -6,6 +6,7 @@ import { useAuth } from '../context/authContext';
 import { checkoutAPI, API_URL } from '../services/api';
 import { toast } from 'react-toastify';
 import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
+import SEOHelmet from '../components/SEOHelmet';
 
 const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -283,8 +284,15 @@ const Cart = () => {
   }
 
   return (
-    <Container className="py-5">
-      <Row>
+    <>
+      <SEOHelmet
+        title="Carrello - Lucaniko Shop"
+        description="Completa il tuo ordine su Lucaniko Shop. Prodotti tipici lucani selezionati per te."
+        keywords="carrello, checkout, ordine, lucaniko shop"
+        url="https://lucanikoshop.it/cart"
+      />
+      <Container className="py-5">
+        <Row>
         <Col md={8}>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 style={{ color: '#004b75', fontWeight: 700 }}>Il tuo Carrello</h2>
@@ -869,6 +877,7 @@ const Cart = () => {
         </Modal.Footer>
       </Modal>
     </Container>
+    </>
   );
 };
 

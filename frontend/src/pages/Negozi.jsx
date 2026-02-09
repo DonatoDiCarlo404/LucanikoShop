@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../services/api';
+import SEOHelmet from '../components/SEOHelmet';
 
 // Macrocategorie predefinite
 const MACROCATEGORIES = [
@@ -90,8 +91,15 @@ const Negozi = () => {
   }
 
   return (
-    <main>
-      <Container className="py-5">
+    <>
+      <SEOHelmet
+        title="I Nostri Negozi - Lucaniko Shop"
+        description="Scopri tutti i negozi partner di Lucaniko Shop. Prodotti artigianali lucani, tradizione e qualità della Basilicata."
+        keywords="negozi lucani, artigiani lucani, venditori basilicata, negozi tipici, lucaniko shop"
+        url="https://lucanikoshop.it/negozi"
+      />
+      <main>
+        <Container className="py-5">
         <div className="mb-5 d-flex flex-wrap align-items-center justify-content-between" style={{ textAlign: 'left', gap: 16 }}>
         <div>
           <h1 style={{ color: '#004b75', fontWeight: 700, textAlign: 'left' }}>I Nostri Negozi</h1>
@@ -320,6 +328,7 @@ const Negozi = () => {
       )}
       </Container>
     </main>
+    </>
   );
 };
 
