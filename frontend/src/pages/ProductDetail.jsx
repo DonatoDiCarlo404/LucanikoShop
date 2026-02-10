@@ -547,7 +547,11 @@ const ProductDetail = () => {
                                 <small className="text-muted">/{product.unit}</small>
                               </span>
                               <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
-                                -{product.discountPercentage}%
+                                {product.discountType === 'fixed' && product.discountAmount
+                                  ? `-€${Math.round(product.discountAmount)}`
+                                  : product.discountPercentage
+                                  ? `-${product.discountPercentage}%`
+                                  : ''}
                               </Badge>
                             </div>
                             <div>
@@ -594,7 +598,11 @@ const ProductDetail = () => {
                             <small className="text-muted">/{product.unit}</small>
                           </span>
                           <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
-                            -{product.discountPercentage}%
+                            {product.discountType === 'fixed' && product.discountAmount
+                              ? `-€${Math.round(product.discountAmount)}`
+                              : product.discountPercentage
+                              ? `-${product.discountPercentage}%`
+                              : ''}
                           </Badge>
                         </div>
                         <div>

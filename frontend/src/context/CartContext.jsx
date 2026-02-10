@@ -28,8 +28,6 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const cartKey = getCartKey();
     const savedCart = localStorage.getItem(cartKey);
-    const savedCoupon = localStorage.getItem('appliedCoupon');
-    const savedDiscount = localStorage.getItem('discountAmount');
     
     if (savedCart) {
       setCartItems(JSON.parse(savedCart));
@@ -37,13 +35,7 @@ export const CartProvider = ({ children }) => {
       setCartItems([]); // Carrello vuoto per nuovo utente
     }
     
-    if (savedCoupon) {
-      setAppliedCoupon(JSON.parse(savedCoupon));
-    }
-    
-    if (savedDiscount) {
-      setDiscountAmount(parseFloat(savedDiscount));
-    }
+    // Il coupon NON viene salvato - deve essere inserito manualmente ogni volta
     
     setIsLoaded(true);
   }, [user?._id]); // Ricarica quando cambia utente
@@ -116,8 +108,7 @@ export const CartProvider = ({ children }) => {
   const applyCoupon = useCallback((coupon, discount) => {
     setAppliedCoupon(coupon);
     setDiscountAmount(discount);
-    localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
-    localStorage.setItem('discountAmount', discount.toString());
+    // Il coupon NON viene salvato nel localStorage - rimane solo per la sessione corrente
   }, []);
 
   // Rimuovi coupon

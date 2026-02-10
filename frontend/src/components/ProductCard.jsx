@@ -153,9 +153,13 @@ const ProductCard = ({ product }) => {
       )}
 
       {/* Badge sconto in alto a destra */}
-      {product.hasActiveDiscount && product.discountPercentage && (
+      {product.hasActiveDiscount && (product.discountPercentage || product.discountAmount) && (
         <Badge className="badge-discount">
-          -{product.discountPercentage}%
+          {product.discountType === 'fixed' && product.discountAmount
+            ? `-€${Math.round(product.discountAmount)}`
+            : product.discountPercentage
+            ? `-${product.discountPercentage}%`
+            : ''}
         </Badge>
       )}
       

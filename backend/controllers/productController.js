@@ -278,7 +278,20 @@ export const updateProduct = async (req, res) => {
     // Aggiorna solo i campi forniti
     if (name) product.name = name;
     if (description) product.description = description;
-    if (price) product.price = price;
+    if (price) {
+      product.price = price;
+      // Se il prodotto ha uno sconto attivo, riapplicalo con il nuovo prezzo
+      if (product.hasActiveDiscount && product.activeDiscount) {
+        const Discount = (await import('../models/index.js')).Discount;
+        const discount = await Discount.findById(product.activeDiscount);
+        if (discount && discount.isValidNow()) {
+          product.applyDiscount(discount);
+        } else {
+          // Lo sconto non è più valido, rimuovilo
+          product.removeDiscount();
+        }
+      }
+    }
     if (ivaPercent !== undefined) product.ivaPercent = ivaPercent;
     if (category) product.category = category;
     if (subcategory !== undefined) product.subcategory = subcategory || null;
@@ -441,7 +454,7 @@ export const getSuggestedProducts = async (req, res) => {
     const products = await Product.find(query)
       .populate('seller', 'businessName name slug')
       .populate('category', 'name')
-      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit isActive variants originalPrice ivaPercent seller hasVariants')
+      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage discountAmount discountType unit isActive variants originalPrice ivaPercent seller hasVariants')
       .limit(Number(limit))
       .sort({ createdAt: -1 });
 

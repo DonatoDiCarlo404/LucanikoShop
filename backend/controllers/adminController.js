@@ -219,6 +219,11 @@ export const updateSellerProfile = async (req, res) => {
     seller.vatNumber = req.body.vatNumber || seller.vatNumber;
     seller.codiceSDI = req.body.codiceSDI || seller.codiceSDI;
 
+    // Aggiorna categorie aziendali
+    if (req.body.businessCategories !== undefined) {
+      seller.businessCategories = req.body.businessCategories;
+    }
+
     if (req.body.logo) {
       seller.logo = {
         url: req.body.logo.url || seller.logo?.url,

@@ -63,10 +63,18 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    discountPercentage: { // Per visualizzazione rapida
+    discountType: { // Tipo di sconto: 'percentage' o 'fixed'
+      type: String,
+      enum: ['percentage', 'fixed']
+    },
+    discountPercentage: { // Per visualizzazione rapida (solo per sconti percentuali)
       type: Number,
       min: [0, 'La percentuale di sconto non può essere negativa'],
       max: [100, 'La percentuale di sconto non può superare 100']
+    },
+    discountAmount: { // Valore fisso dello sconto (solo per sconti fissi)
+      type: Number,
+      min: [0, 'L\'importo dello sconto non può essere negativo']
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
@@ -206,10 +214,15 @@ productSchema.methods.applyDiscount = function(discount) {
   this.discountedPrice = discount.calculateDiscountedPrice(this.price);
   this.activeDiscount = discount._id;
   this.hasActiveDiscount = true;
+  this.discountType = discount.discountType;
   
-  // Calcola la percentuale di sconto effettiva
-  if (this.price > 0) {
-    this.discountPercentage = Math.round(((this.price - this.discountedPrice) / this.price) * 100);
+  // Calcola la percentuale o il valore fisso in base al tipo di sconto
+  if (discount.discountType === 'percentage') {
+    this.discountPercentage = discount.discountValue;
+    this.discountAmount = undefined;
+  } else if (discount.discountType === 'fixed') {
+    this.discountAmount = Math.min(discount.discountValue, this.price); // Non può essere maggiore del prezzo
+    this.discountPercentage = undefined;
   }
 };
 
@@ -219,7 +232,9 @@ productSchema.methods.removeDiscount = function() {
   this.discountedPrice = undefined;
   this.activeDiscount = undefined;
   this.hasActiveDiscount = false;
+  this.discountType = undefined;
   this.discountPercentage = undefined;
+  this.discountAmount = undefined;
 };
 
 // Assicura che i virtual siano inclusi nella serializzazione JSON

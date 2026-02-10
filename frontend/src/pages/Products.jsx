@@ -224,7 +224,7 @@ const Products = () => {
                   boxShadow: 'none',
                   border: 'none',
                   background: '#fff',
-                  marginRight: '60px',
+                  marginRight: '30px',
                 }}>
                   <i className="bi bi-megaphone-fill me-2" style={{ color: '#004b75' }}></i>
                   <strong style={{ color: '#004b75' }}>News:</strong>&nbsp;

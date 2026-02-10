@@ -254,7 +254,10 @@ export const deleteDiscount = async (req, res) => {
       await removeDiscountFromProducts(discount);
     } else if (discount.applicationType === 'category' && discount.categories.length > 0) {
       const products = await Product.find({
-        category: { $in: discount.categories },
+        $or: [
+          { category: { $in: discount.categories } },
+          { subcategory: { $in: discount.categories } }
+        ],
         seller: discount.seller,
         activeDiscount: discount._id
       });
@@ -383,8 +386,12 @@ async function applyDiscountToProducts(discount) {
 }
 
 async function applyDiscountToCategories(discount) {
+  // Cerca prodotti che hanno category O subcategory negli _id specificati in discount.categories
   const products = await Product.find({
-    category: { $in: discount.categories },
+    $or: [
+      { category: { $in: discount.categories } },
+      { subcategory: { $in: discount.categories } }
+    ],
     seller: discount.seller
   });
 

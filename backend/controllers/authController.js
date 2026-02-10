@@ -436,6 +436,11 @@ export const updateVendorProfile = async (req, res) => {
     user.vatNumber = req.body.vatNumber || user.vatNumber;
     user.codiceSDI = req.body.codiceSDI || user.codiceSDI;
 
+    // Aggiorna categorie aziendali
+    if (req.body.businessCategories !== undefined) {
+      user.businessCategories = req.body.businessCategories;
+    }
+
     // Aggiorna news aziendale
     if (req.body.news !== undefined) {
       user.news = req.body.news;
@@ -538,6 +543,7 @@ export const updateVendorProfile = async (req, res) => {
       businessName: updatedUser.businessName,
       ragioneSociale: updatedUser.ragioneSociale,
       businessDescription: updatedUser.businessDescription,
+      businessCategories: updatedUser.businessCategories,
       vatNumber: updatedUser.vatNumber,
       codiceSDI: updatedUser.codiceSDI,
       logo: updatedUser.logo,

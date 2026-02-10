@@ -163,8 +163,8 @@ const Cart = () => {
   const handleCheckout = async () => {
     if (cartCount === 0) return;
 
-    if (vendorTerms.termsText && !acceptedTerms) {
-      alert('Devi accettare i Termini e Condizioni del Venditore per procedere.');
+    if (!acceptedTerms) {
+      alert('Devi accettare i Termini e Condizioni per procedere.');
       return;
     }
 
@@ -332,7 +332,11 @@ const Cart = () => {
                         <div className="d-flex align-items-center gap-1">
                           <strong style={{ color: '#004b75' }}>€{item.discountedPrice.toFixed(2)}</strong>
                           <Badge className="badge-discount-small">
-                            -{item.discountPercentage}%
+                            {item.discountType === 'fixed' && item.discountAmount
+                              ? `-€${Math.round(item.discountAmount)}`
+                              : item.discountPercentage
+                              ? `-${item.discountPercentage}%`
+                              : ''}
                           </Badge>
                         </div>
                         <small className="text-muted d-block" style={{ textDecoration: 'line-through' }}>
@@ -576,54 +580,52 @@ const Cart = () => {
                 </Alert>
               )}
 
-              {/* Checkbox Termini e Condizioni Venditore */}
-              {vendorTerms.termsText && (
-                <Form.Group className="mt-3">
-                  <Form.Check
-                    type="checkbox"
-                    id="accept-vendor-terms"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    label={
-                      <span>
-                        Confermando l'ordine dichiaro di aver letto e accettato i{' '}
-                        <Button
-                          variant="link"
-                          className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
-                          style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setShowTermsModal(true);
-                          }}
-                        >
-                          Termini
-                        </Button>
-                        {' '}e la{' '}
-                        <Button
-                          variant="link"
-                          className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
-                          style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setShowPrivacyModal(true);
-                          }}
-                        >
-                          Privacy Policy
-                        </Button>
-                        {' '}di Lucaniko Shop e le Condizioni Generali di Vendita dei Venditori presenti nel mio carrello, con i quali concludo separati contratti di vendita (consultabili nelle rispettive pagine Venditore).
-                      </span>
-                    }
-                    required
-                  />
-                </Form.Group>
-              )}
+              {/* Checkbox Termini e Condizioni - Sempre visibile */}
+              <Form.Group className="mt-3">
+                <Form.Check
+                  type="checkbox"
+                  id="accept-vendor-terms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  label={
+                    <span>
+                      Confermando l'ordine dichiaro di aver letto e accettato i{' '}
+                      <Button
+                        variant="link"
+                        className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
+                        style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowTermsModal(true);
+                        }}
+                      >
+                        Termini
+                      </Button>
+                      {' '}e la{' '}
+                      <Button
+                        variant="link"
+                        className="p-0 text-decoration-underline border-0 shadow-none no-hover-effect"
+                        style={{ fontSize: '0.9rem', verticalAlign: 'baseline', border: 'none', boxShadow: 'none', cursor: 'pointer', background: 'none' }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShowPrivacyModal(true);
+                        }}
+                      >
+                        Privacy Policy
+                      </Button>
+                      {' '}di Lucaniko Shop e le Condizioni Generali di Vendita dei Venditori presenti nel mio carrello, con i quali concludo separati contratti di vendita (consultabili nelle rispettive pagine Venditore).
+                    </span>
+                  }
+                  required
+                />
+              </Form.Group>
 
               <div className="d-grid gap-2 mt-3">
                 <Button
                   variant="primary"
                   size="lg"
                   onClick={() => navigate('/billing-info')}
-                  disabled={isCheckingOut || (vendorTerms.termsText && !acceptedTerms)}
+                  disabled={isCheckingOut || !acceptedTerms}
                 >
                   {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}
                 </Button>
@@ -791,7 +793,7 @@ const Cart = () => {
 
           <div style={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
             <div style={{ marginBottom: 28 }}>
-              <strong>7.1 Marketplace: ruoli privacy</strong>
+              <strong>1.1 Marketplace: ruoli privacy</strong>
               <div style={{ marginTop: 6 }}>
                 <strong>Lucaniko Shop:</strong> Titolare per dati necessari a piattaforma (account, sicurezza, log, gestione tecnica ordini, supporto, comunicazioni).<br /><br />
                 <strong>Venditori:</strong> Titolari autonomi per dati necessari a evasione ordine, spedizione, resi, garanzie, fatturazione.<br /><br />
@@ -800,7 +802,7 @@ const Cart = () => {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.2 Dati trattati</strong>
+              <strong>1.2 Dati trattati</strong>
               <ul style={{ marginTop: 6 }}>
                 <li>dati account acquirente (nome, contatti, indirizzi)</li>
                 <li>dati ordine (prodotti acquistati, importi, stato)</li>
@@ -812,7 +814,7 @@ const Cart = () => {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.3 Finalità e basi giuridiche</strong>
+              <strong>1.3 Finalità e basi giuridiche</strong>
               <ul style={{ marginTop: 6 }}>
                 <li>erogazione servizio e gestione account/ordini (art. 6(1)(b))</li>
                 <li>sicurezza e prevenzione frodi (art. 6(1)(f))</li>
@@ -824,21 +826,21 @@ const Cart = () => {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.4 Destinatari</strong>
+              <strong>1.4 Destinatari</strong>
               <div style={{ marginTop: 6 }}>
                 Fornitori tecnici (hosting, email, helpdesk) come responsabili; Stripe; Venditori per gestione ordini; autorità ove necessario.
               </div>
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.5 Trasferimenti extra SEE</strong>
+              <strong>1.5 Trasferimenti extra SEE</strong>
               <div style={{ marginTop: 6 }}>
                 Possibili per alcuni fornitori: con garanzie adeguate (SCC/adeguatezza).
               </div>
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.6 Conservazione</strong>
+              <strong>1.6 Conservazione</strong>
               <ul style={{ marginTop: 6 }}>
                 <li>account: fino a cancellazione o inattività prolungata (salvo obblighi)</li>
                 <li>ordini e dati amministrativi: secondo legge</li>
@@ -847,14 +849,14 @@ const Cart = () => {
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.7 Diritti</strong>
+              <strong>1.7 Diritti</strong>
               <div style={{ marginTop: 6 }}>
                 Accesso, rettifica, cancellazione, limitazione, portabilità, opposizione, revoca consenso; reclamo al Garante.
               </div>
             </div>
 
             <div style={{ marginBottom: 28 }}>
-              <strong>7.8 Minori</strong>
+              <strong>1.8 Minori</strong>
               <div style={{ marginTop: 6 }}>
                 Piattaforma non destinata a minori di 18 anni.
               </div>

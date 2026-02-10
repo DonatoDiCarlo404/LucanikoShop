@@ -144,6 +144,13 @@ const VendorProfile = () => {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
+  // State per gestione categorie
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [selectedBusinessCategories, setSelectedBusinessCategories] = useState([]);
+  const [savingCategories, setSavingCategories] = useState(false);
+  const [categoriesError, setCategoriesError] = useState('');
+  const [categoriesSuccess, setCategoriesSuccess] = useState('');
+
   // State per form
   const [formData, setFormData] = useState({
     name: '',
@@ -279,6 +286,13 @@ const VendorProfile = () => {
     if (profileData?.news) {
       setNewsText(profileData.news);
       setSavedNews(profileData.news);
+    }
+  }, [profileData]);
+
+  // Sincronizza le categorie selezionate con profileData.businessCategories
+  useEffect(() => {
+    if (profileData?.businessCategories) {
+      setSelectedBusinessCategories(profileData.businessCategories);
     }
   }, [profileData]);
 
@@ -3055,6 +3069,24 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     </Card.Body>
                   </Card>
                 </Col>
+                <Col md={6} className="mb-3">
+                  <Card className="h-100">
+                    <Card.Body>
+                      <h5>🏷️ Gestione Categorie</h5>
+                      <p className="text-muted">Seleziona le tue macrocategorie principali</p>
+                      <Button variant="primary" onClick={() => setShowCategoriesModal(true)}>
+                        Gestisci Categorie
+                      </Button>
+                      {profileData?.businessCategories && profileData.businessCategories.length > 0 && (
+                        <div className="mt-2">
+                          <small className="text-muted">
+                            {profileData.businessCategories.length} categoria/e selezionate
+                          </small>
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                </Col>
               </Row>
             </Card.Body>
           </Card>
@@ -3748,10 +3780,18 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                   <Form.Group className="mb-3">
                     <Form.Label>Seleziona Categorie e/o Sottocategorie *</Form.Label>
                     <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '10px' }}>
-                      {categories.length === 0 ? (
-                        <Alert variant="warning" className="mb-0">Nessuna categoria disponibile</Alert>
-                      ) : (
-                        categories.map(category => (
+                      {(() => {
+                        // Filtra solo le categorie che il venditore ha selezionato durante la registrazione
+                        const vendorCategories = profileData?.businessCategories || [];
+                        const filteredCategories = categories.filter(cat => 
+                          vendorCategories.includes(cat.name)
+                        );
+
+                        if (filteredCategories.length === 0) {
+                          return <Alert variant="warning" className="mb-0">Nessuna categoria disponibile per il tuo account</Alert>;
+                        }
+
+                        return filteredCategories.map(category => (
                           <div key={category._id} className="mb-3">
                             <Form.Check
                               type="checkbox"
@@ -3787,8 +3827,8 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                               </div>
                             )}
                           </div>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </div>
                     <Form.Text className="text-muted">
                       Seleziona almeno una categoria o sottocategoria per questo sconto
@@ -3917,6 +3957,135 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                   </>
                 ) : (
                   'Cambia Password'
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Gestione Categorie */}
+      <Modal show={showCategoriesModal} onHide={() => {
+        setShowCategoriesModal(false);
+        // Ripristina le categorie originali se annulla
+        if (profileData?.businessCategories) {
+          setSelectedBusinessCategories(profileData.businessCategories);
+        }
+        setCategoriesError('');
+        setCategoriesSuccess('');
+      }} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>🏷️ Gestione Categorie</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {categoriesError && <Alert variant="danger">{categoriesError}</Alert>}
+          {categoriesSuccess && <Alert variant="success">{categoriesSuccess}</Alert>}
+          
+          <p className="text-muted mb-3">
+            Seleziona le macrocategorie principali per il tuo negozio. Queste categorie appariranno nella gestione degli sconti e nelle impostazioni del tuo profilo.
+          </p>
+
+          <Form onSubmit={async (e) => {
+            e.preventDefault();
+            setCategoriesError('');
+            setCategoriesSuccess('');
+
+            if (selectedBusinessCategories.length === 0) {
+              setCategoriesError('Devi selezionare almeno una categoria');
+              return;
+            }
+
+            try {
+              setSavingCategories(true);
+              const url = (user.role === 'admin' && sellerId) 
+                ? `${API_URL}/admin/sellers/${sellerId}/profile`
+                : `${API_URL}/auth/vendor-profile`;
+
+              const res = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${user.token}`
+                },
+                body: JSON.stringify({ businessCategories: selectedBusinessCategories })
+              });
+
+              if (!res.ok) {
+                throw new Error('Errore durante il salvataggio delle categorie');
+              }
+
+              const data = await res.json();
+              setProfileData(data);
+              setCategoriesSuccess('✅ Categorie salvate con successo!');
+              
+              setTimeout(() => {
+                setShowCategoriesModal(false);
+                setCategoriesSuccess('');
+              }, 2000);
+            } catch (err) {
+              setCategoriesError(err.message || 'Errore durante il salvataggio delle categorie');
+            } finally {
+              setSavingCategories(false);
+            }
+          }}>
+            <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '15px' }}>
+              {[
+                { name: 'Cibi e Bevande' },
+                { name: 'Abbigliamento e Accessori' },
+                { name: 'Benessere e Salute' },
+                { name: 'Calzature' },
+                { name: 'Casa, Arredi e Ufficio' },
+                { name: 'Elettronica e Informatica' },
+                { name: 'Industria, Ferramenta e Artigianato' },
+                { name: 'Libri, Media e Giocattoli' },
+                { name: 'Orologi e Gioielli' },
+                { name: 'Ricambi e accessori per auto e moto' },
+                { name: 'Sport, Hobby e Viaggi' }
+              ].map((category, index) => (
+                <div key={index} className="mb-2">
+                  <Form.Check
+                    type="checkbox"
+                    id={`business-category-${index}`}
+                    label={<strong>{category.name}</strong>}
+                    checked={selectedBusinessCategories.includes(category.name)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedBusinessCategories([...selectedBusinessCategories, category.name]);
+                      } else {
+                        setSelectedBusinessCategories(selectedBusinessCategories.filter(cat => cat !== category.name));
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3">
+              <small className="text-muted">
+                {selectedBusinessCategories.length} categoria/e selezionate
+              </small>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <Button variant="secondary" onClick={() => {
+                setShowCategoriesModal(false);
+                // Ripristina le categorie originali
+                if (profileData?.businessCategories) {
+                  setSelectedBusinessCategories(profileData.businessCategories);
+                }
+                setCategoriesError('');
+                setCategoriesSuccess('');
+              }}>
+                Annulla
+              </Button>
+              <Button variant="primary" type="submit" disabled={savingCategories}>
+                {savingCategories ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  'Salva Categorie'
                 )}
               </Button>
             </div>
