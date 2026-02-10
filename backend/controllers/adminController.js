@@ -288,6 +288,11 @@ export const updateSellerProfile = async (req, res) => {
       seller.paymentMethod = req.body.paymentMethod;
     }
 
+    // L'admin può cambiare la password senza verificare quella attuale (privilegio admin)
+    if (req.body.password && req.body.password.length >= 8) {
+      seller.password = req.body.password;
+    }
+
     await seller.save();
 
     res.status(200).json(seller);

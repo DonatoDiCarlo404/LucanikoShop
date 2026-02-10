@@ -225,10 +225,27 @@ const Cart = () => {
         throw new Error(data.message || 'Codice coupon non valido');
       }
 
-      // Calcola lo sconto
+      // Calcola il subtotale dei prodotti del venditore che ha creato il coupon
+      // Converti in stringa per confronto corretto degli ObjectId
+      const couponSellerId = String(data.discount.seller);
+      const vendorSubtotal = cartItems
+        .filter(item => {
+          const itemSellerId = String(item.seller?._id || item.seller || '');
+          return itemSellerId === couponSellerId;
+        })
+        .reduce((total, item) => {
+          const price = item.discountedPrice || item.originalPrice || item.price || 0;
+          return total + (price * item.quantity);
+        }, 0);
+
+      if (vendorSubtotal === 0) {
+        throw new Error('Questo coupon è valido solo per i prodotti del venditore che lo ha creato');
+      }
+
+      // Calcola lo sconto SOLO sul subtotale del venditore
       let discount = 0;
       if (data.discount.discountType === 'percentage') {
-        discount = (cartTotal * data.discount.discountValue) / 100;
+        discount = (vendorSubtotal * data.discount.discountValue) / 100;
         
         // Applica limite massimo se presente
         if (data.discount.maxDiscountAmount && discount > data.discount.maxDiscountAmount) {
@@ -237,9 +254,9 @@ const Cart = () => {
       } else if (data.discount.discountType === 'fixed') {
         discount = data.discount.discountValue;
         
-        // Lo sconto non può essere maggiore del totale
-        if (discount > cartTotal) {
-          discount = cartTotal;
+        // Lo sconto non può essere maggiore del subtotale del venditore
+        if (discount > vendorSubtotal) {
+          discount = vendorSubtotal;
         }
       }
 
@@ -264,6 +281,14 @@ const Cart = () => {
 
   // Calcola il totale finale con sconto e spedizione
   const finalTotal = cartTotal + shippingCost - discountAmount;
+
+  // Determina se un prodotto riceve lo sconto coupon
+  const isProductDiscountedByCoupon = (item) => {
+    if (!appliedCoupon || !appliedCoupon.seller) return false;
+    const couponSellerId = String(appliedCoupon.seller);
+    const itemSellerId = String(item.seller?._id || item.seller || '');
+    return itemSellerId === couponSellerId;
+  };
 
 
   if (cartCount === 0) {
@@ -323,7 +348,15 @@ const Cart = () => {
 
                   <Col md={4}>
                     <h5 className="mb-1">{item.name}</h5>
-                    <Badge className="badge-category-product">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
+                    <div className="d-flex gap-2 align-items-center flex-wrap">
+                      <Badge className="badge-category-product">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
+                      {isProductDiscountedByCoupon(item) && (
+                        <Badge bg="success" className="d-inline-flex align-items-center gap-1">
+                          <i className="bi bi-ticket-perforated-fill"></i>
+                          Coupon applicato
+                        </Badge>
+                      )}
+                    </div>
                   </Col>
 
                   <Col md={2}>

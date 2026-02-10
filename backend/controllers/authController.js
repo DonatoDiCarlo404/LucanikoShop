@@ -413,9 +413,38 @@ export const updateVendorProfile = async (req, res) => {
     user.phone = req.body.phone || user.phone;
     user.avatar = req.body.avatar || user.avatar;
 
-    // Aggiorna password se fornita
+    // Aggiorna password se fornita (richiede verifica password attuale)
     if (req.body.password && req.body.password.length >= 8) {
-      user.password = req.body.password;
+      console.log('[PASSWORD CHANGE] Tentativo di cambio password');
+      console.log('[PASSWORD CHANGE] currentPassword fornita:', !!req.body.currentPassword);
+      console.log('[PASSWORD CHANGE] newPassword length:', req.body.password.length);
+      console.log('[PASSWORD CHANGE] User ha password esistente:', !!user.password);
+      
+      // Se l'utente non ha una password esistente, può impostarla senza verifiche
+      if (!user.password) {
+        console.log('[PASSWORD CHANGE] Prima password - nessuna verifica richiesta');
+        user.password = req.body.password;
+      } else {
+        // Verifica che sia stata fornita la password attuale
+        if (!req.body.currentPassword) {
+          console.log('[PASSWORD CHANGE] Errore: password attuale non fornita');
+          return res.status(400).json({ message: 'Devi fornire la password attuale per cambiarla' });
+        }
+
+        console.log('[PASSWORD CHANGE] Verifico password attuale...');
+        // Verifica che la password attuale sia corretta
+        const isPasswordValid = await user.matchPassword(req.body.currentPassword);
+        console.log('[PASSWORD CHANGE] Password valida:', isPasswordValid);
+        
+        if (!isPasswordValid) {
+          console.log('[PASSWORD CHANGE] Errore: password attuale non corretta');
+          return res.status(401).json({ message: 'Password attuale non corretta' });
+        }
+
+        console.log('[PASSWORD CHANGE] Password verificata, aggiorno...');
+        // Aggiorna la password
+        user.password = req.body.password;
+      }
     }
 
     // Aggiorna indirizzo personale
@@ -559,6 +588,7 @@ export const updateVendorProfile = async (req, res) => {
       isApproved: updatedUser.isApproved
     });
   } catch (error) {
+    console.error('[UPDATE VENDOR PROFILE] Errore:', error);
     res.status(500).json({ message: error.message });
   }
 };

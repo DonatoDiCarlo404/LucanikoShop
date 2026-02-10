@@ -198,6 +198,12 @@ productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ hasActiveDiscount: 1 });
 
+// ⚡ PERFORMANCE: Compound index per filtri comuni (categoria + sconto + prezzo)
+productSchema.index({ category: 1, hasActiveDiscount: 1, price: 1 });
+
+// Indice per query vendor-specific con ordinamento
+productSchema.index({ seller: 1, createdAt: -1 });
+
 // Metodo virtuale per ottenere il prezzo corrente (scontato o originale)
 productSchema.virtual('currentPrice').get(function() {
   return this.hasActiveDiscount && this.discountedPrice ? this.discountedPrice : this.price;

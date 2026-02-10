@@ -70,7 +70,8 @@ const categoriesData = [
       'Dolci, biscotti e prodotti da forno',
       'Vini, spumanti e birre',
       'Liquori e distillati',
-      'Bevande analcoliche'
+      'Bevande analcoliche',
+      'Box'
     ]
   },
   {

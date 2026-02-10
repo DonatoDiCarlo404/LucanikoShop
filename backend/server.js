@@ -79,20 +79,34 @@ const allowedOrigins = [
   'http://localhost:3000'  // Dev locale alternativo
 ].filter(Boolean);
 
+// Domini Vercel specifici autorizzati (NON usare wildcard per sicurezza)
+const allowedVercelDomains = [
+  'lucanikoshop.vercel.app',
+  'lucanikoshop-frontend.vercel.app',
+  // Aggiungi qui altri domini Vercel specifici del tuo progetto
+];
+
 app.use(cors({
   origin: function(origin, callback) {
-    // Permetti richieste senza origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    // Permetti tutti i domini Vercel (*.vercel.app)
-    if (origin && origin.endsWith('.vercel.app')) {
-      return callback(null, true);
+    // 🔒 SECURITY: Blocca richieste senza origin in produzione
+    if (!origin) {
+      // Permetti solo in sviluppo (Postman, test locali)
+      if (process.env.NODE_ENV === 'development') {
+        return callback(null, true);
+      }
+      logger.warn('⚠️ Request without origin blocked in production');
+      return callback(new Error('Origin header required'));
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Verifica domini Vercel specifici (NON wildcard)
+    const isVercelAllowed = allowedVercelDomains.some(domain => 
+      origin === `https://${domain}` || origin === `http://${domain}`
+    );
+    
+    if (isVercelAllowed || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.warn(`⚠️ CORS blocked request from: ${origin}`);
+      logger.warn(`⚠️ CORS blocked request from: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -102,8 +116,9 @@ app.use(cors({
 }));
 
 import { renewExpiredSubscriptions } from './utils/subscriptionUtils.js';
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// 🔒 SECURITY: Ridotto payload limit da 50MB a 10MB per prevenire attacchi DoS
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(helmet());
 app.use(passport.initialize());
 

@@ -138,9 +138,13 @@ const VendorProfile = () => {
   // State per cambio password
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
@@ -3860,7 +3864,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
       {/* Modal Cambio Password */}
       <Modal show={showPasswordModal} onHide={() => {
         setShowPasswordModal(false);
-        setPasswordForm({ newPassword: '', confirmPassword: '' });
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setPasswordError('');
         setPasswordSuccess('');
       }}>
@@ -3876,8 +3880,16 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
             setPasswordError('');
             setPasswordSuccess('');
 
+            // Se non c'è password attuale inserita, verifichiamo se è la prima impostazione
+            const isFirstPassword = !passwordForm.currentPassword;
+
+            if (!isFirstPassword && !passwordForm.currentPassword) {
+              setPasswordError('Inserisci la password attuale');
+              return;
+            }
+
             if (passwordForm.newPassword.length < 8) {
-              setPasswordError('La password deve essere di almeno 8 caratteri');
+              setPasswordError('La nuova password deve essere di almeno 8 caratteri');
               return;
             }
 
@@ -3888,13 +3900,19 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
 
             try {
               setSaving(true);
+              
+              const body = { password: passwordForm.newPassword };
+              if (passwordForm.currentPassword) {
+                body.currentPassword = passwordForm.currentPassword;
+              }
+              
               const res = await fetch(`${API_URL}/auth/vendor-profile`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${user.token}`
                 },
-                body: JSON.stringify({ password: passwordForm.newPassword })
+                body: JSON.stringify(body)
               });
 
               if (!res.ok) {
@@ -3904,7 +3922,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
               setPasswordSuccess('✅ Password cambiata con successo!');
               setTimeout(() => {
                 setShowPasswordModal(false);
-                setPasswordForm({ newPassword: '', confirmPassword: '' });
+                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                 setPasswordSuccess('');
               }, 2000);
             } catch (err) {
@@ -3914,15 +3932,48 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
             }
           }}>
             <Form.Group className="mb-3">
+              <Form.Label>Password Attuale</Form.Label>
+              <div className="input-group">
+                <Form.Control
+                  type={showCurrentPwd ? "text" : "password"}
+                  placeholder="Inserisci la password attuale (se ne hai una)"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                />
+                <Button
+                  variant="outline-secondary"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowCurrentPwd(v => !v)}
+                >
+                  <i className={showCurrentPwd ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </Button>
+              </div>
+              <Form.Text className="text-muted">
+                Lascia vuoto se non hai mai impostato una password
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
               <Form.Label>Nuova Password <span className="text-danger">*</span></Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Inserisci nuova password"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                required
-                minLength={8}
-              />
+              <div className="input-group">
+                <Form.Control
+                  type={showNewPwd ? "text" : "password"}
+                  placeholder="Inserisci nuova password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  required
+                  minLength={8}
+                />
+                <Button
+                  variant="outline-secondary"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowNewPwd(v => !v)}
+                >
+                  <i className={showNewPwd ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </Button>
+              </div>
               <Form.Text className="text-muted">
                 La password deve essere di almeno 8 caratteri
               </Form.Text>
@@ -3930,14 +3981,24 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
 
             <Form.Group className="mb-3">
               <Form.Label>Conferma Password <span className="text-danger">*</span></Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Conferma nuova password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                required
-                minLength={8}
-              />
+              <div className="input-group">
+                <Form.Control
+                  type={showConfirmPwd ? "text" : "password"}
+                  placeholder="Conferma nuova password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  required
+                  minLength={8}
+                />
+                <Button
+                  variant="outline-secondary"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowConfirmPwd(v => !v)}
+                >
+                  <i className={showConfirmPwd ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                </Button>
+              </div>
             </Form.Group>
 
             <div className="d-flex justify-content-end gap-2">

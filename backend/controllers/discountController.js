@@ -502,7 +502,8 @@ export const validateCoupon = async (req, res) => {
         discountType: discount.discountType,
         discountValue: discount.discountValue,
         maxDiscountAmount: discount.maxDiscountAmount,
-        minPurchaseAmount: discount.minPurchaseAmount
+        minPurchaseAmount: discount.minPurchaseAmount,
+        seller: discount.seller // Aggiungi seller per applicare sconto solo ai suoi prodotti
       }
     });
   } catch (error) {

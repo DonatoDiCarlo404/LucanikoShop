@@ -477,6 +477,12 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
+// ⚡ PERFORMANCE: Indice per ricerche rapide su email (unique già definito sopra)
+userSchema.index({ email: 1 }, { unique: true });
+
+// Indice per query su ruolo e stato approvazione
+userSchema.index({ role: 1, isApproved: 1 });
+
 // Hash della password prima di salvare
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
@@ -488,6 +494,10 @@ userSchema.pre('save', async function (next) {
 
 // Metodo per confrontare la password
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    // Se non c'è password salvata, non può matchare
+    if (!this.password) {
+        return false;
+    }
     return await bcrypt.compare(enteredPassword, this.password);
 };
 

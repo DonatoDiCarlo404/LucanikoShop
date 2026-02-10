@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const cookieConsentSchema = new mongoose.Schema(
   {
@@ -91,7 +92,6 @@ cookieConsentSchema.index({ consentDate: -1 });
 
 // Metodo per hashare l'IP (privacy)
 cookieConsentSchema.statics.hashIP = function(ip) {
-  const crypto = require('crypto');
   return crypto.createHash('sha256').update(ip).digest('hex');
 };
 
