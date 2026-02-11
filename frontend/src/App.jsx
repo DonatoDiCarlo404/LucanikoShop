@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AuthSuccess from './pages/AuthSuccess';
+import AuthError from './pages/AuthError';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import ProductForm from './pages/ProductForm';
@@ -85,6 +86,7 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/success" element={<AuthSuccess />} />
+        <Route path="/auth/error" element={<AuthError />} />
         <Route path="/pending-approval" element={<PendingApproval />} />
 
         {/* Prodotti pubblici */}

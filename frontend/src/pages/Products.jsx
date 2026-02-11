@@ -141,7 +141,7 @@ const Products = () => {
 
   const handleResetFilters = () => {
     setSearch('');
-    setCategory('');
+    setCategory('Cibi e Bevande');
     setSubcategory('');
     setMinPrice('');
     setMaxPrice('');

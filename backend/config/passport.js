@@ -4,12 +4,28 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
 
+// Costruisci callback URL dinamicamente in base all'ambiente
+const getGoogleCallbackURL = () => {
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+  
+  if (isDevelopment) {
+    // Locale: usa localhost
+    return 'http://localhost:5000/api/auth/google/callback';
+  } else {
+    // Produzione: usa dominio da env o Railway URL
+    return process.env.GOOGLE_CALLBACK_URL || 'https://api.lucanikoshop.it/api/auth/google/callback';
+  }
+};
+
+const callbackURL = getGoogleCallbackURL();
+console.log(`🔐 [PASSPORT] Google OAuth Callback URL: ${callbackURL}`);
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      callbackURL: callbackURL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
