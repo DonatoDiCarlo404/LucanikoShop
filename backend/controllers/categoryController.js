@@ -1,4 +1,5 @@
 import Category from "../models/Category.js";
+import { invalidateCache } from '../middlewares/cache.js';
 
 export const getCategories = async (req, res) => {
     try {
@@ -34,6 +35,10 @@ export const createCategory = async (req, res) => {
     try {
         const { name } = req.body;
         const category = await Category.create({ name });
+        
+        // Invalida cache categorie dopo creazione
+        await invalidateCache('cache:/api/categories*');
+        
         res.status(201).json(category);
     } catch (err) {
         res.status(400).json({ message: err.message });

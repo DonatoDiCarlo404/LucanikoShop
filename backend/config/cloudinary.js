@@ -16,8 +16,16 @@ const productStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'lucanikoshop/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1000, height: 1000, crop: 'limit' }],
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif'],
+    transformation: [
+      { 
+        width: 1200, 
+        height: 1200, 
+        crop: 'limit',
+        quality: 'auto:good',
+        fetch_format: 'auto' // WebP automatico quando supportato
+      }
+    ],
   },
 });
 
@@ -26,8 +34,17 @@ const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'lucanikoshop/avatars',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 500, height: 500, crop: 'limit' }],
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'avif'],
+    transformation: [
+      { 
+        width: 500, 
+        height: 500, 
+        crop: 'fill',
+        quality: 'auto:good',
+        fetch_format: 'auto',
+        gravity: 'face' // Focus sul viso per avatar
+      }
+    ],
   },
 });
 

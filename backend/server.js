@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
+import { connectRedis } from './config/redis.js';
 import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
 import uploadRoutes from './routes/uploadRoutes.js';
@@ -153,8 +154,11 @@ app.use('/api/cookie-consent', cookieConsentRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ Connesso a MongoDB');
+    
+    // Connetti Redis per il caching (opzionale)
+    await connectRedis();
     
     // Esegui il controllo degli sconti all'avvio
     updateExpiredDiscounts()

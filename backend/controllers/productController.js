@@ -1,6 +1,7 @@
 import { Product, Category } from '../models/index.js';
 import CategoryAttribute from '../models/CategoryAttribute.js';
 import cloudinary from '../config/cloudinary.js';
+import { invalidateCache } from '../middlewares/cache.js';
 
 // Utility: genera SKU automatico per varianti
 const generateSKU = (productName, attributes) => {
@@ -222,6 +223,9 @@ export const createProduct = async (req, res) => {
     console.log('✅ [BACKEND CREATE] Prodotto creato:', product);
     console.log('✅ [BACKEND CREATE] Weight del prodotto creato:', product.weight);
 
+    // Invalida cache prodotti dopo creazione
+    await invalidateCache('cache:/api/products*');
+
     res.status(201).json(product);
   } catch (error) {
     console.error('--- [DEBUG] Errore durante createProduct ---');
@@ -323,6 +327,9 @@ export const updateProduct = async (req, res) => {
     const updatedProduct = await product.save();
     console.log('✅ [BACKEND UPDATE] Dopo il salvataggio - weight:', updatedProduct.weight);
 
+    // Invalida cache prodotti dopo aggiornamento
+    await invalidateCache('cache:/api/products*');
+
     res.json(updatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -351,7 +358,10 @@ export const deleteProduct = async (req, res) => {
         await cloudinary.uploader.destroy(image.public_id);
       }
     }
+// Invalida cache prodotti dopo eliminazione
+    await invalidateCache('cache:/api/products*');
 
+    
     await Product.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Prodotto eliminato con successo' });
