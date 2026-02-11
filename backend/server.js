@@ -238,6 +238,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'Benvenuto in LucanikoShop API' });
 });
 
+// Health check endpoint (per monitoring Better Stack, Railway, etc.)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is running' });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
