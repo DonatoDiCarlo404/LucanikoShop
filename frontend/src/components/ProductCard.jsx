@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
 import { wishlistAPI } from '../services/api';
 import { useState, useEffect, useRef } from 'react';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const ProductCard = ({ product }) => {
     // Calcola prezzo minimo e stock totale se ci sono varianti
@@ -173,7 +174,12 @@ const ProductCard = ({ product }) => {
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
               <img
-                src={img.url}
+                src={CloudinaryPresets.productCard(img.url)}
+                srcSet={`
+                  ${CloudinaryPresets.thumbnail(img.url)} 200w,
+                  ${CloudinaryPresets.productCard(img.url)} 400w
+                `}
+                sizes="(max-width: 576px) 200px, 400px"
                 alt={product.name}
                 className="product-card-img"
                 loading="lazy"

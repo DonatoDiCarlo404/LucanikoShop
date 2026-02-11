@@ -1,0 +1,18 @@
+# Credenziali e Segreti - MAI COMMITTARE
+BITWARDEN_CREDENTIALS_BACKUP.md
+RAILWAY_VARIABLES_CHECKLIST.md
+**/mongodb_backup/
+**/.env
+**/.env.local
+
+# File di servizio
+**/checkDatabaseContent.js
+**/test-mongo-connection.js
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import optimizeCloudinaryUrl from '../utils/cloudinaryOptimizer';
 
 /**
- * Componente per lazy loading delle immagini
+ * Componente per lazy loading delle immagini con ottimizzazione Cloudinary automatica
  * Carica l'immagine solo quando entra nel viewport
  */
 const LazyImage = ({ 
@@ -12,8 +13,12 @@ const LazyImage = ({
   placeholder = '/placeholder.png',
   onLoad,
   onError,
+  cloudinaryOptions = {},
   ...props 
 }) => {
+  // Ottimizza URL Cloudinary automaticamente
+  const optimizedSrc = src ? optimizeCloudinaryUrl(src, cloudinaryOptions) : src;
+  
   const [imageSrc, setImageSrc] = useState(placeholder);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -23,7 +28,7 @@ const LazyImage = ({
     let observer;
     let didCancel = false;
 
-    if (imgRef.current && src) {
+    if (imgRef.current && optimizedSrc) {
       // Intersection Observer per lazy loading
       if ('IntersectionObserver' in window) {
         observer = new IntersectionObserver(
@@ -32,11 +37,11 @@ const LazyImage = ({
               // Quando l'immagine entra nel viewport (o è vicina)
               if (!didCancel && (entry.intersectionRatio > 0 || entry.isIntersecting)) {
                 const img = new Image();
-                img.src = src;
+                img.src = optimizedSrc;
                 
                 img.onload = () => {
                   if (!didCancel) {
-                    setImageSrc(src);
+                    setImageSrc(optimizedSrc);
                     setIsLoading(false);
                     onLoad && onLoad();
                   }
@@ -66,7 +71,7 @@ const LazyImage = ({
         observer.observe(imgRef.current);
       } else {
         // Fallback per browser che non supportano IntersectionObserver
-        setImageSrc(src);
+        setImageSrc(optimizedSrc);
         setIsLoading(false);
       }
     }
@@ -77,7 +82,7 @@ const LazyImage = ({
         observer.disconnect();
       }
     };
-  }, [src, onLoad, onError]);
+  }, [optimizedSrc, onLoad, onError]);
 
   return (
     <img

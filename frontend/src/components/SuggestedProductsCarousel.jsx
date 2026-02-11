@@ -5,6 +5,7 @@ import { API_URL } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
 import './SuggestedProductsCarousel.css';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleColor = '#333' }) => {
   const [products, setProducts] = useState([]);
@@ -134,8 +135,14 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
                 {product.images && product.images.length > 0 ? (
                   <Card.Img 
                     variant="top" 
-                    src={product.images[0].url} 
+                    src={CloudinaryPresets.productCard(product.images[0].url)}
+                    srcSet={`
+                      ${CloudinaryPresets.thumbnail(product.images[0].url)} 200w,
+                      ${CloudinaryPresets.productCard(product.images[0].url)} 400w
+                    `}
+                    sizes="(max-width: 576px) 200px, 300px"
                     alt={product.name}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="no-image">

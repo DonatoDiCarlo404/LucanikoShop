@@ -20,6 +20,7 @@ import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
 import SEOHelmet from '../components/SEOHelmet';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 
 const ProductDetail = () => {
@@ -430,9 +431,16 @@ const ProductDetail = () => {
                 <Carousel.Item key={index}>
                   <img
                     className="d-block w-100"
-                    src={image.url}
+                    src={CloudinaryPresets.productDetail(image.url)}
+                    srcSet={`
+                      ${CloudinaryPresets.productCard(image.url)} 400w,
+                      ${CloudinaryPresets.productDetail(image.url)} 800w,
+                      ${CloudinaryPresets.productGallery(image.url)} 1200w
+                    `}
+                    sizes="(max-width: 768px) 400px, (max-width: 1200px) 800px, 1200px"
                     alt={`${product.name} - ${index + 1}`}
                     style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                    loading="lazy"
                   />
                 </Carousel.Item>
               ))}
