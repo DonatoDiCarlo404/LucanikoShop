@@ -47,6 +47,7 @@ import cron from 'node-cron';
 import { processVendorPayouts } from './jobs/processVendorPayouts.js';
 import logger from './config/logger.js';
 import { sendCronFailureAlert } from './utils/alertService.js';
+import { httpLogger } from './middlewares/logger.js';
 
 const app = express();
 
@@ -122,6 +123,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(helmet());
 app.use(passport.initialize());
+
+// 📊 Logging HTTP requests
+app.use(httpLogger);
 
 // Routes
 
