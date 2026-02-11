@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Container, Card, Button, Form } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/authContext';
 import { checkoutAPI } from '../services/api';
@@ -8,12 +8,17 @@ import { toast } from 'react-toastify';
 
 const BillingInfo = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     cartItems, 
     appliedCoupon, 
     discountAmount 
   } = useCart();
   const { user } = useAuth();
+
+  // Recupera deliveryType e vendorInfo dallo state di navigate
+  const deliveryType = location.state?.deliveryType || 'shipping';
+  const vendorInfo = location.state?.vendorInfo || null;
   // Stato per i dati di fatturazione (da aggiungere campi in seguito)
   const [formData, setFormData] = useState({});
   // Stato per nazione e regione
@@ -82,7 +87,8 @@ const BillingInfo = () => {
         user ? user.token : null,
         customerEmail,
         appliedCoupon,
-        discountAmount
+        discountAmount,
+        deliveryType  // ✅ Passa il tipo di consegna
       );
 
       localStorage.setItem('cart', JSON.stringify(cartItems));

@@ -51,6 +51,12 @@ const orderSchema = new mongoose.Schema(
         }
       }
     ],
+    // Tipo di consegna: spedizione o ritiro in negozio
+    deliveryType: {
+      type: String,
+      enum: ['shipping', 'pickup'],
+      default: 'shipping'
+    },
     shippingAddress: {
       firstName: {
         type: String,
@@ -62,28 +68,40 @@ const orderSchema = new mongoose.Schema(
       },
       street: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       },
       city: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       },
       state: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       },
       zipCode: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       },
       country: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       },
       phone: {
         type: String,
-        required: true
+        required: function() { return this.deliveryType === 'shipping'; }
       }
+    },
+    // Indirizzo negozio per ritiro (snapshot al momento dell'ordine)
+    pickupAddress: {
+      businessName: String,
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+      phone: String,
+      email: String,
+      notes: String, // Istruzioni per il ritiro
     },
     paymentMethod: {
       type: String,

@@ -54,8 +54,27 @@ const Cart = () => {
   const [shippingCountry, setShippingCountry] = useState('Italia');
   const [shippingRegion, setShippingRegion] = useState('');
 
+  // State per gestione ritiro in negozio
+  const [deliveryType, setDeliveryType] = useState('shipping'); // 'shipping' | 'pickup'
+  const [vendorInfo, setVendorInfo] = useState(null);
+  const [loadingVendor, setLoadingVendor] = useState(false);
+
+  // Rileva numero di vendor unici nel carrello
+  const uniqueVendors = [...new Set(cartItems.map(item => item.seller?._id || item.seller))];
+  const isSingleVendor = uniqueVendors.length === 1;
+  const vendorId = isSingleVendor ? uniqueVendors[0] : null;
+
   // Calcola costo spedizione
   const calculateShipping = async () => {
+    // Salta calcolo se ritiro in negozio
+    if (deliveryType === 'pickup') {
+      setShippingCost(0);
+      setShippingDetails(null);
+      setShippingOptions([]);
+      setSelectedShippingOption(null);
+      return;
+    }
+
     if (cartCount === 0) return;
 
     setLoadingShipping(true);
@@ -122,10 +141,10 @@ const Cart = () => {
     }
   };
 
-  // Ricalcola spedizione quando il carrello, il paese o la regione cambiano
+  // Ricalcola spedizione quando il carrello, il paese, la regione o il tipo di consegna cambiano
   useEffect(() => {
     calculateShipping();
-  }, [cartItems, user, shippingCountry, shippingRegion]);
+  }, [cartItems, user, shippingCountry, shippingRegion, deliveryType]);
 
   // Recupera i termini e condizioni del venditore
   useEffect(() => {
@@ -160,6 +179,40 @@ const Cart = () => {
     fetchVendorTerms();
   }, [cartItems]);
 
+  // Recupera info negozio quando ritiro selezionato
+  useEffect(() => {
+    const fetchVendorInfo = async () => {
+      if (deliveryType !== 'pickup' || !isSingleVendor || !vendorId) {
+        setVendorInfo(null);
+        return;
+      }
+
+      setLoadingVendor(true);
+      try {
+        const res = await fetch(`${API_URL}/vendors/${vendorId}`);
+        const data = await res.json();
+        
+        const vendorData = data.vendor || data;
+
+        if (res.ok) {
+          setVendorInfo({
+            businessName: vendorData.businessName || 'Negozio',
+            storeAddress: vendorData.storeAddress || {},
+            businessPhone: vendorData.businessPhone || '',
+            businessEmail: vendorData.businessEmail || vendorData.email || ''
+          });
+        }
+      } catch (error) {
+        console.error('Errore recupero info negozio:', error);
+        setVendorInfo(null);
+      } finally {
+        setLoadingVendor(false);
+      }
+    };
+
+    fetchVendorInfo();
+  }, [deliveryType, vendorId, isSingleVendor]);
+
   const handleCheckout = async () => {
     if (cartCount === 0) return;
 
@@ -180,7 +233,8 @@ const Cart = () => {
         user ? user.token : null,
         guestEmail,
         appliedCoupon,
-        discountAmount
+        discountAmount,
+        deliveryType  // ✅ Passa il tipo di consegna
       );
 
       localStorage.setItem('cart', JSON.stringify(cartItems));
@@ -448,75 +502,158 @@ const Cart = () => {
                 </ListGroup.Item>
                 
 
-                
-
-                {/* Dropdown selezione paese di spedizione */}
-
-                <ListGroup.Item className="d-flex justify-content-between align-items-center">
-                  <Form.Group className="w-100 mb-0">
-                    <Form.Label className="small mb-1">Spedisci in</Form.Label>
-                    <Form.Select
-                      value={shippingCountry}
-                      onChange={e => setShippingCountry(e.target.value)}
-                      aria-label="Seleziona paese di spedizione"
-                    >
-                      <option value="Italia">Italia</option>
-                      <option value="Francia">Francia</option>
-                      <option value="Germania">Germania</option>
-                      <option value="Spagna">Spagna</option>
-                      <option value="Portogallo">Portogallo</option>
-                      <option value="Paesi Bassi">Paesi Bassi</option>
-                      <option value="Belgio">Belgio</option>
-                      <option value="Albania">Albania</option>
-                      <option value="Austria">Austria</option>
-                      <option value="Svizzera">Svizzera</option>
-                      <option value="Polonia">Polonia</option>
-                      <option value="Grecia">Grecia</option>
-                      <option value="Svezia">Svezia</option>
-                      <option value="Danimarca">Danimarca</option>
-                      <option value="Finlandia">Finlandia</option>
-                      <option value="Repubblica Ceca">Repubblica Ceca</option>
-                      <option value="Ungheria">Ungheria</option>
-                      <option value="Romania">Romania</option>
-                      <option value="Bulgaria">Bulgaria</option>
-                    </Form.Select>
+                {/* Selezione tipo di consegna */}
+                <ListGroup.Item>
+                  <Form.Group className="mb-0">
+                    <Form.Label className="small mb-2 fw-bold">Tipo di Consegna</Form.Label>
+                    <div className="d-flex flex-column gap-2">
+                      <Form.Check
+                        type="radio"
+                        id="delivery-shipping"
+                        name="deliveryType"
+                        label="📦 Spedizione a domicilio"
+                        value="shipping"
+                        checked={deliveryType === 'shipping'}
+                        onChange={(e) => setDeliveryType(e.target.value)}
+                      />
+                      <Form.Check
+                        type="radio"
+                        id="delivery-pickup"
+                        name="deliveryType"
+                        label="🏪 Ritiro in negozio"
+                        value="pickup"
+                        checked={deliveryType === 'pickup'}
+                        onChange={(e) => setDeliveryType(e.target.value)}
+                        disabled={!isSingleVendor}
+                      />
+                      {!isSingleVendor && (
+                        <small className="text-muted ms-4">
+                          ℹ️ Disponibile solo per ordini da un singolo negozio
+                        </small>
+                      )}
+                    </div>
                   </Form.Group>
+
+                  {/* Mostra indirizzo negozio se ritiro selezionato */}
+                  {deliveryType === 'pickup' && isSingleVendor && (
+                    <div className="mt-3 p-3 bg-light rounded">
+                      {loadingVendor ? (
+                        <div className="text-center">
+                          <Spinner animation="border" size="sm" />
+                          <p className="small mb-0 mt-2">Caricamento info negozio...</p>
+                        </div>
+                      ) : vendorInfo ? (
+                        <>
+                          <h6 className="mb-2 fw-bold" style={{ color: '#004b75' }}>
+                            📍 Punto Ritiro
+                          </h6>
+                          <p className="mb-1 fw-bold">{vendorInfo.businessName}</p>
+                          {vendorInfo.storeAddress && (
+                            <>
+                              <p className="mb-1 small">
+                                {vendorInfo.storeAddress.street}
+                              </p>
+                              <p className="mb-1 small">
+                                {vendorInfo.storeAddress.zipCode} {vendorInfo.storeAddress.city} ({vendorInfo.storeAddress.state})
+                              </p>
+                              {vendorInfo.storeAddress.country && (
+                                <p className="mb-1 small">{vendorInfo.storeAddress.country}</p>
+                              )}
+                            </>
+                          )}
+                          {vendorInfo.businessPhone && (
+                            <p className="mb-1 small">
+                              <strong>Tel:</strong> {vendorInfo.businessPhone}
+                            </p>
+                          )}
+                          {vendorInfo.businessEmail && (
+                            <p className="mb-0 small">
+                              <strong>Email:</strong> {vendorInfo.businessEmail}
+                            </p>
+                          )}
+                          <Alert variant="info" className="mt-2 mb-0 small">
+                            💡 <strong>Importante:</strong> Contattare il venditore prima del ritiro per concordare orari e modalità.
+                          </Alert>
+                        </>
+                      ) : (
+                        <Alert variant="warning" className="mb-0 small">
+                          ⚠️ Informazioni negozio non disponibili
+                        </Alert>
+                      )}
+                    </div>
+                  )}
                 </ListGroup.Item>
 
-                {/* Dropdown regione se Italia */}
-                {shippingCountry === 'Italia' && (
-                  <ListGroup.Item className="d-flex justify-content-between align-items-center">
-                    <Form.Group className="w-100 mb-0">
-                      <Form.Label className="small mb-1">Regione</Form.Label>
-                      <Form.Select
-                        value={shippingRegion}
-                        onChange={e => setShippingRegion(e.target.value)}
-                        aria-label="Seleziona regione"
-                      >
-                        <option value="">Seleziona regione</option>
-                        <option value="Abruzzo">Abruzzo</option>
-                        <option value="Basilicata">Basilicata</option>
-                        <option value="Calabria">Calabria</option>
-                        <option value="Campania">Campania</option>
-                        <option value="Emilia-Romagna">Emilia-Romagna</option>
-                        <option value="Friuli-Venezia Giulia">Friuli-Venezia Giulia</option>
-                        <option value="Lazio">Lazio</option>
-                        <option value="Liguria">Liguria</option>
-                        <option value="Lombardia">Lombardia</option>
-                        <option value="Marche">Marche</option>
-                        <option value="Molise">Molise</option>
-                        <option value="Piemonte">Piemonte</option>
-                        <option value="Puglia">Puglia</option>
-                        <option value="Sardegna">Sardegna</option>
-                        <option value="Sicilia">Sicilia</option>
-                        <option value="Toscana">Toscana</option>
-                        <option value="Trentino-Alto Adige">Trentino-Alto Adige</option>
-                        <option value="Umbria">Umbria</option>
-                        <option value="Valle d'Aosta">Valle d'Aosta</option>
-                        <option value="Veneto">Veneto</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </ListGroup.Item>
+                {/* Dropdown selezione paese e regione - solo se spedizione */}
+                {deliveryType === 'shipping' && (
+                  <>
+                    <ListGroup.Item className="d-flex justify-content-between align-items-center">
+                      <Form.Group className="w-100 mb-0">
+                        <Form.Label className="small mb-1">Spedisci in</Form.Label>
+                        <Form.Select
+                          value={shippingCountry}
+                          onChange={e => setShippingCountry(e.target.value)}
+                          aria-label="Seleziona paese di spedizione"
+                        >
+                          <option value="Italia">Italia</option>
+                          <option value="Francia">Francia</option>
+                          <option value="Germania">Germania</option>
+                          <option value="Spagna">Spagna</option>
+                          <option value="Portogallo">Portogallo</option>
+                          <option value="Paesi Bassi">Paesi Bassi</option>
+                          <option value="Belgio">Belgio</option>
+                          <option value="Albania">Albania</option>
+                          <option value="Austria">Austria</option>
+                          <option value="Svizzera">Svizzera</option>
+                          <option value="Polonia">Polonia</option>
+                          <option value="Grecia">Grecia</option>
+                          <option value="Svezia">Svezia</option>
+                          <option value="Danimarca">Danimarca</option>
+                          <option value="Finlandia">Finlandia</option>
+                          <option value="Repubblica Ceca">Repubblica Ceca</option>
+                          <option value="Ungheria">Ungheria</option>
+                          <option value="Romania">Romania</option>
+                          <option value="Bulgaria">Bulgaria</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </ListGroup.Item>
+
+                    {/* Dropdown regione se Italia */}
+                    {shippingCountry === 'Italia' && (
+                      <ListGroup.Item className="d-flex justify-content-between align-items-center">
+                        <Form.Group className="w-100 mb-0">
+                          <Form.Label className="small mb-1">Regione</Form.Label>
+                          <Form.Select
+                            value={shippingRegion}
+                            onChange={e => setShippingRegion(e.target.value)}
+                            aria-label="Seleziona regione"
+                          >
+                            <option value="">Seleziona regione</option>
+                            <option value="Abruzzo">Abruzzo</option>
+                            <option value="Basilicata">Basilicata</option>
+                            <option value="Calabria">Calabria</option>
+                            <option value="Campania">Campania</option>
+                            <option value="Emilia-Romagna">Emilia-Romagna</option>
+                            <option value="Friuli-Venezia Giulia">Friuli-Venezia Giulia</option>
+                            <option value="Lazio">Lazio</option>
+                            <option value="Liguria">Liguria</option>
+                            <option value="Lombardia">Lombardia</option>
+                            <option value="Marche">Marche</option>
+                            <option value="Molise">Molise</option>
+                            <option value="Piemonte">Piemonte</option>
+                            <option value="Puglia">Puglia</option>
+                            <option value="Sardegna">Sardegna</option>
+                            <option value="Sicilia">Sicilia</option>
+                            <option value="Toscana">Toscana</option>
+                            <option value="Trentino-Alto Adige">Trentino-Alto Adige</option>
+                            <option value="Umbria">Umbria</option>
+                            <option value="Valle d'Aosta">Valle d'Aosta</option>
+                            <option value="Veneto">Veneto</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </ListGroup.Item>
+                    )}
+                  </>
                 )}
 
                 {/* Sconto applicato */}
@@ -657,7 +794,12 @@ const Cart = () => {
                 <Button
                   variant="primary"
                   size="lg"
-                  onClick={() => navigate('/billing-info')}
+                  onClick={() => navigate('/billing-info', { 
+                    state: { 
+                      deliveryType,
+                      vendorInfo: deliveryType === 'pickup' ? vendorInfo : null
+                    } 
+                  })}
                   disabled={isCheckingOut || !acceptedTerms}
                 >
                   {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}

@@ -102,31 +102,69 @@ export const handleStripeWebhook = async (req, res) => {
       }));
 
       // Ottieni indirizzo di spedizione da Stripe (ora raccolto automaticamente)
+      const deliveryType = session.metadata.deliveryType || 'shipping';
       const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
       const shippingName = session.shipping_details?.name || session.customer_details?.name;
       const shippingPhone = session.shipping_details?.phone || session.customer_details?.phone;
 
+      console.log('📍 [WEBHOOK] deliveryType:', deliveryType);
       console.log('📍 [WEBHOOK] Stripe shipping_details:', session.shipping_details);
       console.log('📍 [WEBHOOK] Stripe customer_details:', session.customer_details);
       console.log('📍 [WEBHOOK] User address nel DB:', buyerUser?.address);
       
-      // Dividi il nome completo in firstName e lastName
-      const fullName = shippingName || buyerUser?.name || 'N/A';
-      const nameParts = fullName.split(' ');
-      const firstName = nameParts[0] || 'N/A';
-      const lastName = nameParts.slice(1).join(' ') || 'N/A';
+      // Prepara indirizzo spedizione (obbligatorio solo per shipping)
+      let finalShippingAddress = null;
+      let pickupAddress = null;
+
+      if (deliveryType === 'pickup') {
+        // Per il ritiro, recupera info negozio dai metadata
+        const pickupInfo = JSON.parse(session.metadata.pickupInfo || '{}');
+        pickupAddress = {
+          businessName: pickupInfo.businessName || 'Negozio',
+          street: pickupInfo.street || 'N/A',
+          city: pickupInfo.city || 'N/A',
+          state: pickupInfo.state || 'N/A',
+          zipCode: pickupInfo.zipCode || 'N/A',
+          country: pickupInfo.country || 'IT',
+          phone: pickupInfo.phone || 'N/A',
+          email: pickupInfo.email || 'N/A',
+          notes: 'Ritiro in negozio - contattare il venditore prima del ritiro'
+        };
+        console.log('🏪 [WEBHOOK] Ritiro in negozio:', pickupAddress.businessName);
+        
+        // Per pickup, creiamo uno shippingAddress minimale per compatibilità (usare nome cliente)
+        const fullName = buyerUser?.name || guestEmail || 'Cliente';
+        const nameParts = fullName.split(' ');
+        finalShippingAddress = {
+          firstName: nameParts[0] || 'N/A',
+          lastName: nameParts.slice(1).join(' ') || 'N/A',
+          street: 'Ritiro in negozio',
+          city: pickupAddress.city,
+          state: pickupAddress.state,
+          zipCode: pickupAddress.zipCode,
+          country: pickupAddress.country,
+          phone: session.customer_details?.phone || buyerUser?.phone || 'N/A'
+        };
+      } else {
+        // Dividi il nome completo in firstName e lastName
+        const fullName = shippingName || buyerUser?.name || 'N/A';
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || 'N/A';
+        const lastName = nameParts.slice(1).join(' ') || 'N/A';
+        
+        // Utilizza indirizzo salvato nel profilo se Stripe non fornisce dati completi
+        finalShippingAddress = {
+          firstName: firstName,
+          lastName: lastName,
+          street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
+          city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
+          state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
+          zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
+          country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
+          phone: shippingPhone || buyerUser?.phone || 'N/A',
+        };
+      }
       
-      // Utilizza indirizzo salvato nel profilo se Stripe non fornisce dati completi
-      let finalShippingAddress = {
-        firstName: firstName,
-        lastName: lastName,
-        street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
-        city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
-        state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
-        zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
-        country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
-        phone: shippingPhone || buyerUser?.phone || 'N/A',
-      };
       console.log('📍 [WEBHOOK] Indirizzo spedizione finale:', finalShippingAddress);
 
       // Ottieni costo spedizione dai metadata
@@ -154,7 +192,9 @@ export const handleStripeWebhook = async (req, res) => {
       
       const orderData = {
         items: orderItems,
+        deliveryType: deliveryType,
         shippingAddress: finalShippingAddress,
+        pickupAddress: pickupAddress || undefined,
         paymentMethod: 'stripe',
         paymentResult: {
           id: session.payment_intent,

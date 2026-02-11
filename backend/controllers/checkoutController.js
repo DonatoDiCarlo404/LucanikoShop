@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // @access  Public (supporta guest checkout)
 export const createCheckoutSession = async (req, res) => {
     try {
-        const { cartItems, guestEmail, appliedCoupon, discountAmount } = req.body;
+        const { cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType = 'shipping' } = req.body;
 
         if (!cartItems || cartItems.length === 0) {
             return res.status(400).json({ message: 'Il carrello è vuoto' });
@@ -19,6 +19,7 @@ export const createCheckoutSession = async (req, res) => {
         console.log('🛒 [CHECKOUT] Ricevuti', cartItems.length, 'prodotti');
         console.log('🎫 [CHECKOUT] appliedCoupon ricevuto:', JSON.stringify(appliedCoupon));
         console.log('🎫 [CHECKOUT] discountAmount ricevuto:', discountAmount, 'tipo:', typeof discountAmount);
+        console.log('📦 [CHECKOUT] deliveryType:', deliveryType);
 
         // Calcola totale carrello
         const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -30,7 +31,7 @@ export const createCheckoutSession = async (req, res) => {
         const itemsByVendor = {};
 
         for (const item of cartItems) {
-            const product = await Product.findById(item._id).populate('seller', 'shopSettings name paymentMethods');
+            const product = await Product.findById(item._id).populate('seller', 'shopSettings name businessName storeAddress businessPhone businessEmail paymentMethods');
             
             if (!product) {
                 return res.status(404).json({ message: `Prodotto non trovato: ${item._id}` });
@@ -42,8 +43,12 @@ export const createCheckoutSession = async (req, res) => {
                 itemsByVendor[vendorId] = {
                     vendorId,
                     vendorName: product.seller.name,
+                    businessName: product.seller.businessName,
                     items: [],
-                    vendorShippingSettings: product.seller.shopSettings?.shipping || null
+                    vendorShippingSettings: product.seller.shopSettings?.shipping || null,
+                    storeAddress: product.seller.storeAddress,
+                    businessPhone: product.seller.businessPhone,
+                    businessEmail: product.seller.businessEmail
                 };
             }
 
@@ -62,17 +67,51 @@ export const createCheckoutSession = async (req, res) => {
         // Log carrello multivendor
         const vendorCount = Object.keys(itemsByVendor).length;
         console.log(`🏪 [CHECKOUT] Carrello multivendor: ${vendorCount} venditore/i`);
+
+        // Verifica per ritiro in negozio: solo carrelli single-vendor
+        if (deliveryType === 'pickup' && vendorCount > 1) {
+            return res.status(400).json({ 
+                message: 'Il ritiro in negozio è disponibile solo per ordini da un singolo venditore. Rimuovi i prodotti di altri venditori o scegli la spedizione.' 
+            });
+        }
+
+        let shippingResult = { totalShipping: 0 };
+        let pickupInfo = null;
+
+        if (deliveryType === 'pickup') {
+            // Recupera info negozio del venditore per il ritiro
+            const vendor = Object.values(itemsByVendor)[0];
+            if (!vendor.storeAddress || !vendor.storeAddress.street) {
+                return res.status(400).json({ 
+                    message: 'Questo venditore non ha configurato un indirizzo per il ritiro in negozio. Scegli la spedizione a domicilio.' 
+                });
+            }
+            
+            pickupInfo = {
+                businessName: vendor.businessName || vendor.vendorName,
+                street: vendor.storeAddress.street,
+                city: vendor.storeAddress.city,
+                state: vendor.storeAddress.state,
+                zipCode: vendor.storeAddress.zipCode,
+                country: vendor.storeAddress.country,
+                phone: vendor.businessPhone || '',
+                email: vendor.businessEmail || '',
+            };
+            
+            console.log('🏪 [CHECKOUT] Ritiro in negozio - Indirizzo:', pickupInfo.businessName);
+        } else {
+            // Calcola spedizione usando il totale SCONTATO per i range
+            const vendorShippingArray = Object.values(itemsByVendor);
+            shippingResult = calculateMultiVendorShipping(
+                vendorShippingArray,
+                { country: 'Italia', state: '' },
+                discountedTotal // Passa il totale scontato
+            );
+
+            console.log('📦 [CHECKOUT] Costo spedizione calcolato: €' + shippingResult.totalShipping.toFixed(2));
+        }
+
         console.log('💳 [CHECKOUT] Tutti i pagamenti vanno a Lucaniko Shop');
-
-        // Calcola spedizione usando il totale SCONTATO per i range
-        const vendorShippingArray = Object.values(itemsByVendor);
-        const shippingResult = calculateMultiVendorShipping(
-            vendorShippingArray,
-            { country: 'Italia', state: '' },
-            discountedTotal // Passa il totale scontato
-        );
-
-        console.log('📦 [CHECKOUT] Costo spedizione calcolato: €' + shippingResult.totalShipping.toFixed(2));
 
         // Converti i prodotti del carrello in formato Stripe
         const lineItems = cartItems.map(item => {
@@ -101,8 +140,8 @@ export const createCheckoutSession = async (req, res) => {
             };
         });
 
-        // Aggiungi spedizione come line item
-        if (shippingResult.totalShipping > 0) {
+        // Aggiungi spedizione come line item SOLO se spedizione a domicilio
+        if (deliveryType === 'shipping' && shippingResult.totalShipping > 0) {
             lineItems.push({
                 price_data: {
                     currency: 'eur',
@@ -114,6 +153,8 @@ export const createCheckoutSession = async (req, res) => {
                 },
                 quantity: 1,
             });
+        } else if (deliveryType === 'pickup') {
+            console.log('🏪 [CHECKOUT] Ritiro in negozio - Nessun costo di spedizione');
         }
 
         // Determina l'email del cliente
@@ -138,12 +179,10 @@ export const createCheckoutSession = async (req, res) => {
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
             billing_address_collection: 'auto',
-            shipping_address_collection: {
-                allowed_countries: ['IT', 'FR', 'DE', 'ES', 'AT', 'BE', 'NL', 'PT', 'GR', 'IE', 'LU', 'MT', 'CY', 'SI', 'SK', 'EE', 'LV', 'LT', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR'],
-            },
             metadata: {
                 userId: req.user ? req.user._id.toString() : 'guest',
                 guestEmail: guestEmail || '',
+                deliveryType: deliveryType,
                 shippingCost: shippingResult.totalShipping.toString(),
                 appliedCouponCode: appliedCoupon?.couponCode || '',
                 appliedCouponId: appliedCoupon?._id?.toString() || '',
@@ -157,10 +196,21 @@ export const createCheckoutSession = async (req, res) => {
                 }))),
             },
         };
+
+        // Aggiungi shipping_address_collection SOLO per spedizione
+        if (deliveryType === 'shipping') {
+            sessionOptions.shipping_address_collection = {
+                allowed_countries: ['IT', 'FR', 'DE', 'ES', 'AT', 'BE', 'NL', 'PT', 'GR', 'IE', 'LU', 'MT', 'CY', 'SI', 'SK', 'EE', 'LV', 'LT', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR'],
+            };
+        } else if (deliveryType === 'pickup') {
+            // Per il ritiro, salva info negozio nei metadata
+            sessionOptions.metadata.pickupInfo = JSON.stringify(pickupInfo);
+        }
         
         console.log('📦 [CHECKOUT] Metadata preparati:', {
             userId: sessionOptions.metadata.userId,
             isGuest: sessionOptions.metadata.userId === 'guest',
+            deliveryType: deliveryType,
             itemsCount: cartItems.length
         });
 

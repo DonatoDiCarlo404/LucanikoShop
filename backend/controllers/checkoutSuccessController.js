@@ -101,21 +101,52 @@ export const handleCheckoutSuccess = async (req, res) => {
       buyerUser = await User.findById(userId);
     }
 
-    // Prepara indirizzo spedizione
+    // Prepara indirizzo spedizione o ritiro
+    const deliveryType = session.metadata.deliveryType || 'shipping';
     const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
-    const finalShippingAddress = {
-      street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
-      city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
-      state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
-      zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
-      country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
-      phone: session.customer_details?.phone || buyerUser?.phone || 'N/A',
-    };
+    
+    let finalShippingAddress = null;
+    let pickupAddress = null;
+
+    if (deliveryType === 'pickup') {
+      const pickupInfo = JSON.parse(session.metadata.pickupInfo || '{}');
+      pickupAddress = {
+        businessName: pickupInfo.businessName || 'Negozio',
+        street: pickupInfo.street || 'N/A',
+        city: pickupInfo.city || 'N/A',
+        state: pickupInfo.state || 'N/A',
+        zipCode: pickupInfo.zipCode || 'N/A',
+        country: pickupInfo.country || 'IT',
+        phone: pickupInfo.phone || 'N/A',
+        email: pickupInfo.email || 'N/A',
+        notes: 'Ritiro in negozio'
+      };
+      // Indirizzo minimale per compatibilità
+      finalShippingAddress = {
+        street: 'Ritiro in negozio',
+        city: pickupAddress.city,
+        state: pickupAddress.state,
+        zipCode: pickupAddress.zipCode,
+        country: pickupAddress.country,
+        phone: session.customer_details?.phone || buyerUser?.phone || 'N/A',
+      };
+    } else {
+      finalShippingAddress = {
+        street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
+        city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
+        state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
+        zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
+        country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
+        phone: session.customer_details?.phone || buyerUser?.phone || 'N/A',
+      };
+    }
 
     // Crea orderData
     const orderData = {
       items: orderItems,
+      deliveryType: deliveryType,
       shippingAddress: finalShippingAddress,
+      pickupAddress: pickupAddress || undefined,
       paymentMethod: 'stripe',
       paymentResult: {
         id: session.payment_intent,

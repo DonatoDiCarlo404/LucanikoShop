@@ -181,14 +181,33 @@ const OrderDetail = () => {
 
           <Card className="mb-4">
             <Card.Header>
-              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Indirizzo di Spedizione</h5>
+              <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>
+                {order.deliveryType === 'pickup' ? '📍 Indirizzo Ritiro' : 'Indirizzo di Spedizione'}
+              </h5>
             </Card.Header>
             <Card.Body>
-              <p className="mb-1">{order.shippingAddress.street}</p>
-              <p className="mb-1">{order.shippingAddress.city}, {order.shippingAddress.state}</p>
-              <p className="mb-1">{order.shippingAddress.zipCode}</p>
-              <p className="mb-1">{order.shippingAddress.country}</p>
-              <p className="mb-0"><strong>Tel:</strong> {order.shippingAddress.phone}</p>
+              {order.deliveryType === 'pickup' && order.pickupAddress ? (
+                <>
+                  <p className="mb-2 fw-bold">{order.pickupAddress.businessName}</p>
+                  <p className="mb-1">{order.pickupAddress.street}</p>
+                  <p className="mb-1">{order.pickupAddress.city}, {order.pickupAddress.state}</p>
+                  <p className="mb-1">{order.pickupAddress.zipCode}</p>
+                  <p className="mb-1">{order.pickupAddress.country}</p>
+                  <p className="mb-1"><strong>Tel:</strong> {order.pickupAddress.phone}</p>
+                  <p className="mb-2"><strong>Email:</strong> {order.pickupAddress.email}</p>
+                  <Alert variant="info" className="mb-0 small">
+                    <strong>📞 Importante:</strong> Si prega di contattare il venditore prima del ritiro per concordare orari e modalità.
+                  </Alert>
+                </>
+              ) : (
+                <>
+                  <p className="mb-1">{order.shippingAddress.street}</p>
+                  <p className="mb-1">{order.shippingAddress.city}, {order.shippingAddress.state}</p>
+                  <p className="mb-1">{order.shippingAddress.zipCode}</p>
+                  <p className="mb-1">{order.shippingAddress.country}</p>
+                  <p className="mb-0"><strong>Tel:</strong> {order.shippingAddress.phone}</p>
+                </>
+              )}
             </Card.Body>
           </Card>
 
