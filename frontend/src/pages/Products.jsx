@@ -116,9 +116,18 @@ const Products = () => {
     try {
       setLoading(true);
       const params = { page };
-      if (search) params.search = search;
-      if (category) params.category = category;
-      if (subcategory) params.subcategory = subcategory;
+      
+      // ✅ MODIFICA: Se c'è una ricerca testuale, cerca in TUTTE le categorie
+      // Ignora i filtri categoria/sottocategoria per mostrare risultati cross-category
+      if (search) {
+        params.search = search;
+        // NON inviare category/subcategory quando c'è una ricerca attiva
+      } else {
+        // Se NON c'è ricerca testuale, usa i filtri categoria/sottocategoria normalmente
+        if (category) params.category = category;
+        if (subcategory) params.subcategory = subcategory;
+      }
+      
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (sortBy) params.sortBy = sortBy;
