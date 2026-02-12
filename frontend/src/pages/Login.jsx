@@ -70,7 +70,9 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE}/api/auth/google`;
+    // Usa direttamente API_URL + /auth/google invece di API_BASE + /api/auth/google
+    // Più diretto e meno soggetto a errori di configurazione
+    window.location.href = `${API_URL}/auth/google`;
   };
 
   return (

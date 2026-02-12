@@ -2,7 +2,12 @@ import { createSession } from "react-router-dom";
 
 // Esporta API_URL per uso in altri file
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const API_BASE = API_URL.replace('/api', ''); // Per Google OAuth e altri endpoint non-api
+
+// Costruisci API_BASE in modo più robusto rimuovendo /api finale se presente
+// Esempi:
+// 'https://api.lucanikoshop.it/api' -> 'https://api.lucanikoshop.it'
+// 'http://localhost:5000/api' -> 'http://localhost:5000'
+export const API_BASE = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
 
 // Helper per ottenere gli header con token (se disponibile)
 const getHeaders = (includeContentType = true) => {
