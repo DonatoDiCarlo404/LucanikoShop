@@ -9,15 +9,15 @@ import {
   validateCoupon,
   getActiveDiscountedProducts
 } from '../controllers/discountController.js';
-import { protect, authorize } from '../middlewares/auth.js';
+import { protect, authorize, optionalAuth } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // Route pubbliche
 router.get('/active-products', getActiveDiscountedProducts);
 
-// Route protette (tutti gli utenti autenticati)
-router.post('/validate-coupon', protect, validateCoupon);
+// Route con autenticazione opzionale (anche per guest)
+router.post('/validate-coupon', optionalAuth, validateCoupon);
 
 // Route protette (solo seller e admin)
 router.use(protect); // Tutte le route successive richiedono autenticazione

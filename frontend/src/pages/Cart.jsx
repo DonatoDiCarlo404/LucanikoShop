@@ -261,12 +261,18 @@ const Cart = () => {
 
     try {
       // Verifica coupon tramite API
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Aggiungi token solo se l'utente è autenticato
+      if (user?.token) {
+        headers.Authorization = `Bearer ${user.token}`;
+      }
+
       const res = await fetch(`${API_URL}/discounts/validate-coupon`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.token}`
-        },
+        headers,
         body: JSON.stringify({
           couponCode: couponCode.toUpperCase(),
           cartTotal
