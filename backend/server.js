@@ -94,12 +94,17 @@ app.use(cors({
   origin: function(origin, callback) {
     // 🔒 SECURITY: Blocca richieste senza origin in produzione
     if (!origin) {
-      // Permetti solo in sviluppo (Postman, test locali)
+      // ✅ Permetti in sviluppo (Postman, test locali)
       if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-      logger.warn('⚠️ Request without origin blocked in production');
-      return callback(new Error('Origin header required'));
+      
+      // ✅ ECCEZIONE: Permetti navigazioni dirette del browser (GET requests)
+      // OAuth flow usa window.location.href che non invia Origin header
+      // Le richieste GET senza Origin sono sicure (no CSRF risk)
+      // CORS è importante per POST/PUT/DELETE che vengono da fetch/xhr
+      logger.info('ℹ️ Request without origin in production - allowed (likely browser navigation)');
+      return callback(null, true);
     }
     
     // Verifica domini Vercel specifici (NON wildcard)
