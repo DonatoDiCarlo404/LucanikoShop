@@ -20,12 +20,12 @@ Vai su **Railway** → Il tuo progetto → **Variables** e sostituisci:
 
 ```bash
 # Rimuovi TEST, aggiungi LIVE
-STRIPE_SECRET_KEY=sk_live_51SrKuwK9Lxisu9UD...XXXXX...your_live_secret_key
+STRIPE_SECRET_KEY=sk_live_...XXXXX...your_live_secret_key
 
-STRIPE_PUBLISHABLE_KEY=pk_live_51SrKuwK9Lxisu9UD...XXXXX...your_live_publishable_key
+STRIPE_PUBLISHABLE_KEY=pk_live_...XXXXX...your_live_publishable_key
 
 # Webhook standard LIVE
-STRIPE_WEBHOOK_SECRET=whsec_GnfgcdyfnEphUDypHBq...XXXXX...your_webhook_secret
+STRIPE_WEBHOOK_SECRET=whsec_...XXXXX...your_webhook_secret
 
 # Frontend production
 FRONTEND_URL=https://www.lucanikoshop.it
@@ -56,7 +56,7 @@ Il webhook standard per `checkout.session.completed` dovrebbe già esistere in L
 **Verifica**:
 1. **Developers** → **Webhooks** (assicurati di essere in LIVE mode)
 2. Cerca endpoint: `https://api.lucanikoshop.it/api/webhook`
-3. Se esiste: **copia il Signing Secret** e verifica che corrisponda a `whsec_GnfgcdyfnEphUDypHBqL8FlKcw3N3ah1`
+3. Se esiste: **copia il Signing Secret** e verifica che corrisponda a `whsec_**************`
 4. Se NON esiste, crealo:
    - Click **Add endpoint**
    - URL: `https://api.lucanikoshop.it/api/webhook`
