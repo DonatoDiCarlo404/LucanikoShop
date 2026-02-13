@@ -90,8 +90,8 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
 
         // 2. Verifica il range del totale carrello
         if (!rate.anyCartTotal) {
-            const cartTotalFrom = parseFloat(rate.cartTotalFrom) || 0;
-            const cartTotalTo = parseFloat(rate.cartTotalTo) || Infinity;
+            const cartTotalFrom = parseFloat((rate.cartTotalFrom || '0').toString().replace(',', '.')) || 0;
+            const cartTotalTo = parseFloat((rate.cartTotalTo || '').toString().replace(',', '.')) || Infinity;
             
             if (calculatedCartTotal < cartTotalFrom || calculatedCartTotal > cartTotalTo) {
                 continue;
@@ -101,25 +101,28 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
         // 3. Verifica il range del peso carrello
         const hasWeightRange = rate.cartWeightFrom || rate.cartWeightTo;
         if (!rate.anyCartWeight && hasWeightRange) {
-            const cartWeightFrom = parseFloat(rate.cartWeightFrom) || 0;
-            const cartWeightTo = parseFloat(rate.cartWeightTo) || Infinity;
+            const cartWeightFrom = parseFloat((rate.cartWeightFrom || '0').toString().replace(',', '.')) || 0;
+            const cartWeightTo = parseFloat((rate.cartWeightTo || '').toString().replace(',', '.')) || Infinity;
             
             if (totalWeight < cartWeightFrom || totalWeight > cartWeightTo) {
                 continue;
             }
         }
 
-        // 4. Se arriviamo qui, la tariffa è applicabile
         // Restituisci le opzioni di spedizione disponibili
         if (rate.shippingOptions && Array.isArray(rate.shippingOptions) && rate.shippingOptions.length > 0) {
             const validOptions = rate.shippingOptions
-                .filter(opt => opt.shippingName && opt.shippingPrice !== undefined && opt.shippingPrice !== null)
-                .map(opt => ({
-                    name: opt.shippingName,
-                    price: parseFloat(opt.shippingPrice) || 0,
-                    description: `${opt.shippingName} - €${parseFloat(opt.shippingPrice || 0).toFixed(2)}`
-                }));
-
+                .filter(opt => opt.shippingPrice !== undefined && opt.shippingPrice !== null)
+                .map(opt => {
+                    const price = parseFloat((opt.shippingPrice || '0').toString().replace(',', '.')) || 0;
+                    const name = opt.shippingName || rate.name || 'Spedizione';
+                    return {
+                        name: name,
+                        price: price,
+                        description: `${name} - €${price.toFixed(2)}`
+                    };
+                });
+            
             if (validOptions.length > 0) {
                 applicableRates.push({
                     rate: rate,

@@ -54,6 +54,17 @@ const Cart = () => {
   const [shippingCountry, setShippingCountry] = useState('Italia');
   const [shippingRegion, setShippingRegion] = useState('');
 
+  // State per nazioni disponibili in base ai venditori
+  const [availableCountries, setAvailableCountries] = useState(['Italia']);
+  const [vendorCountries, setVendorCountries] = useState({});
+  const [unshippableProducts, setUnshippableProducts] = useState([]);
+  const [availableItalianRegions, setAvailableItalianRegions] = useState([
+    'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 
+    'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 
+    'Molise', 'Piemonte', 'Puglia', 'Sardegna', 'Sicilia', 'Toscana', 
+    'Trentino-Alto Adige', 'Umbria', 'Valle d\'Aosta', 'Veneto'
+  ]);
+
   // State per gestione ritiro in negozio
   const [deliveryType, setDeliveryType] = useState('shipping'); // 'shipping' | 'pickup'
   const [vendorInfo, setVendorInfo] = useState(null);
@@ -108,7 +119,15 @@ const Cart = () => {
         setShippingCost(data.totalShipping || 0);
         setShippingDetails(data.vendorShippingCosts || null);
         
-        // Estrai le opzioni di spedizione disponibili
+        // Salva prodotti non spedibili nella nazione selezionata
+        if (data.unshippableVendors && data.unshippableVendors.length > 0) {
+          const unshippableProductIds = data.unshippableVendors.flatMap(v => v.productIds);
+          setUnshippableProducts(unshippableProductIds);
+        } else {
+          setUnshippableProducts([]);
+        }
+        
+        // Estrai le opzioni di spedizione disponibili (solo per singolo venditore)
         const allOptions = [];
         if (data.vendorShippingCosts) {
           Object.values(data.vendorShippingCosts).forEach(vendorShipping => {
@@ -119,11 +138,16 @@ const Cart = () => {
         }
         setShippingOptions(allOptions);
         
-        // Seleziona automaticamente l'opzione più economica se disponibile
-        if (allOptions.length > 0) {
+        // Seleziona automaticamente l'opzione più economica SOLO per singolo venditore
+        // Nel caso multi-venditore, manteniamo sempre totalShipping
+        const vendorCount = data.vendorShippingCosts ? Object.keys(data.vendorShippingCosts).length : 0;
+        if (allOptions.length > 0 && vendorCount === 1) {
           const cheapest = allOptions.reduce((min, opt) => opt.price < min.price ? opt : min, allOptions[0]);
           setSelectedShippingOption(cheapest);
           setShippingCost(cheapest.price);
+        } else {
+          // Multi-venditore: usa sempre totalShipping
+          setSelectedShippingOption(null);
         }
       } else {
         console.error('Errore calcolo spedizione:', data.message);
@@ -131,6 +155,7 @@ const Cart = () => {
         setShippingDetails(null);
         setShippingOptions([]);
         setSelectedShippingOption(null);
+        setUnshippableProducts([]);
       }
     } catch (error) {
       console.error('Errore nella richiesta calcolo spedizione:', error);
@@ -140,6 +165,58 @@ const Cart = () => {
       setLoadingShipping(false);
     }
   };
+
+  // Recupera le nazioni disponibili per spedizione
+  const fetchAvailableCountries = async () => {
+    if (cartCount === 0) return;
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (user) {
+        headers.Authorization = `Bearer ${user.token}`;
+      }
+
+      const res = await fetch(`${API_URL}/orders/available-countries`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            product: item._id,
+            quantity: item.quantity,
+            price: item.price
+          }))
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setAvailableCountries(data.allCountries || ['Italia']);
+        setVendorCountries(data.vendorCountries || {});
+        
+        // Aggiorna le regioni italiane disponibili
+        if (data.availableItalianRegions && data.availableItalianRegions.length > 0) {
+          setAvailableItalianRegions(data.availableItalianRegions);
+        } else {
+          // Default: tutte le regioni
+          setAvailableItalianRegions([
+            'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 
+            'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 
+            'Molise', 'Piemonte', 'Puglia', 'Sardegna', 'Sicilia', 'Toscana', 
+            'Trentino-Alto Adige', 'Umbria', 'Valle d\'Aosta', 'Veneto'
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel recupero nazioni disponibili:', error);
+      setAvailableCountries(['Italia']);
+    }
+  };
+
+  // Recupera nazioni disponibili quando il carrello cambia
+  useEffect(() => {
+    fetchAvailableCountries();
+  }, [cartItems]);
 
   // Ricalcola spedizione quando il carrello, il paese, la regione o il tipo di consegna cambiano
   useEffect(() => {
@@ -218,6 +295,12 @@ const Cart = () => {
 
     if (!acceptedTerms) {
       alert('Devi accettare i Termini e Condizioni per procedere.');
+      return;
+    }
+
+    // Blocca checkout se ci sono prodotti non spedibili nella nazione selezionata
+    if (unshippableProducts.length > 0 && deliveryType === 'shipping') {
+      toast.error(`Impossibile procedere: alcuni prodotti non sono spedibili in ${shippingCountry}. Seleziona una nazione diversa o rimuovi i prodotti dal carrello.`);
       return;
     }
 
@@ -416,6 +499,12 @@ const Cart = () => {
                           Coupon applicato
                         </Badge>
                       )}
+                      {unshippableProducts.includes(item._id) && deliveryType === 'shipping' && (
+                        <Badge bg="warning" text="dark" className="d-inline-flex align-items-center gap-1">
+                          <i className="bi bi-exclamation-triangle-fill"></i>
+                          Non spedibile in {shippingCountry}
+                        </Badge>
+                      )}
                     </div>
                   </Col>
 
@@ -491,6 +580,15 @@ const Cart = () => {
               <h5 className="mb-0" style={{ color: '#004b75', fontWeight: 700 }}>Riepilogo Ordine</h5>
             </Card.Header>
             <Card.Body>
+              {/* Avviso prodotti non spedibili */}
+              {unshippableProducts.length > 0 && deliveryType === 'shipping' && (
+                <Alert variant="warning" className="mb-3 small">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  <strong>Attenzione:</strong> {unshippableProducts.length} prodotto{unshippableProducts.length > 1 ? 'i' : ''} non {unshippableProducts.length > 1 ? 'sono spedibili' : 'è spedibile'} in <strong>{shippingCountry}</strong>. 
+                  {!isSingleVendor && ' Seleziona una nazione diversa o rimuovi i prodotti per procedere.'}
+                </Alert>
+              )}
+              
               <ListGroup variant="flush">
                 <ListGroup.Item className="d-flex justify-content-between">
                   <span>Prodotti ({cartCount})</span>
@@ -601,26 +699,15 @@ const Cart = () => {
                           onChange={e => setShippingCountry(e.target.value)}
                           aria-label="Seleziona paese di spedizione"
                         >
-                          <option value="Italia">Italia</option>
-                          <option value="Francia">Francia</option>
-                          <option value="Germania">Germania</option>
-                          <option value="Spagna">Spagna</option>
-                          <option value="Portogallo">Portogallo</option>
-                          <option value="Paesi Bassi">Paesi Bassi</option>
-                          <option value="Belgio">Belgio</option>
-                          <option value="Albania">Albania</option>
-                          <option value="Austria">Austria</option>
-                          <option value="Svizzera">Svizzera</option>
-                          <option value="Polonia">Polonia</option>
-                          <option value="Grecia">Grecia</option>
-                          <option value="Svezia">Svezia</option>
-                          <option value="Danimarca">Danimarca</option>
-                          <option value="Finlandia">Finlandia</option>
-                          <option value="Repubblica Ceca">Repubblica Ceca</option>
-                          <option value="Ungheria">Ungheria</option>
-                          <option value="Romania">Romania</option>
-                          <option value="Bulgaria">Bulgaria</option>
+                          {availableCountries.map(country => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
                         </Form.Select>
+                        {!isSingleVendor && (
+                          <Form.Text className="text-muted small">
+                            ℹ️ Alcuni venditori potrebbero non spedire in tutte le nazioni
+                          </Form.Text>
+                        )}
                       </Form.Group>
                     </ListGroup.Item>
 
@@ -635,26 +722,9 @@ const Cart = () => {
                             aria-label="Seleziona regione"
                           >
                             <option value="">Seleziona regione</option>
-                            <option value="Abruzzo">Abruzzo</option>
-                            <option value="Basilicata">Basilicata</option>
-                            <option value="Calabria">Calabria</option>
-                            <option value="Campania">Campania</option>
-                            <option value="Emilia-Romagna">Emilia-Romagna</option>
-                            <option value="Friuli-Venezia Giulia">Friuli-Venezia Giulia</option>
-                            <option value="Lazio">Lazio</option>
-                            <option value="Liguria">Liguria</option>
-                            <option value="Lombardia">Lombardia</option>
-                            <option value="Marche">Marche</option>
-                            <option value="Molise">Molise</option>
-                            <option value="Piemonte">Piemonte</option>
-                            <option value="Puglia">Puglia</option>
-                            <option value="Sardegna">Sardegna</option>
-                            <option value="Sicilia">Sicilia</option>
-                            <option value="Toscana">Toscana</option>
-                            <option value="Trentino-Alto Adige">Trentino-Alto Adige</option>
-                            <option value="Umbria">Umbria</option>
-                            <option value="Valle d'Aosta">Valle d'Aosta</option>
-                            <option value="Veneto">Veneto</option>
+                            {availableItalianRegions.map(region => (
+                              <option key={region} value={region}>{region}</option>
+                            ))}
                           </Form.Select>
                         </Form.Group>
                       </ListGroup.Item>
@@ -738,7 +808,16 @@ const Cart = () => {
                       variant="success"
                       size="sm"
                       onClick={handleCheckout}
-                      disabled={!guestEmail || !/\S+@\S+\.\S+/.test(guestEmail)}
+                      disabled={
+                        !guestEmail || 
+                        !/\S+@\S+\.\S+/.test(guestEmail) || 
+                        (unshippableProducts.length > 0 && deliveryType === 'shipping')
+                      }
+                      title={
+                        unshippableProducts.length > 0 && deliveryType === 'shipping'
+                          ? `Impossibile procedere: prodotti non spedibili in ${shippingCountry}`
+                          : ''
+                      }
                     >
                       Conferma e procedi
                     </Button>
@@ -806,7 +885,16 @@ const Cart = () => {
                       vendorInfo: deliveryType === 'pickup' ? vendorInfo : null
                     } 
                   })}
-                  disabled={isCheckingOut || !acceptedTerms}
+                  disabled={
+                    isCheckingOut || 
+                    !acceptedTerms || 
+                    (unshippableProducts.length > 0 && deliveryType === 'shipping')
+                  }
+                  title={
+                    unshippableProducts.length > 0 && deliveryType === 'shipping'
+                      ? `Impossibile procedere: ${unshippableProducts.length} prodotto/i non spedibile/i in ${shippingCountry}`
+                      : ''
+                  }
                 >
                   {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}
                 </Button>

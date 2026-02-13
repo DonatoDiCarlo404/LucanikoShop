@@ -10,7 +10,8 @@ import {
   updateOrderStatus,
   applyDiscountToOrder,
   calculateShippingCost,
-  refundOrder
+  refundOrder,
+  getAvailableCountries
 } from '../controllers/orderController.js';
 import { protect, optionalAuth } from '../middlewares/auth.js';
 import { apiLimiter } from '../middlewares/rateLimiter.js';
@@ -79,8 +80,11 @@ router.get('/vendor/received', protect, apiLimiter, validatePagination, getVendo
 router.get('/vendor/stats', protect, apiLimiter, getVendorStats);
 router.put('/:id/status', protect, apiLimiter, validateOrderId, updateOrderStatus);
 
-// Calcola costo spedizione per il carrello (accessibile anche a guest)
-router.post('/calculate-shipping', optionalAuth, apiLimiter, calculateShippingCost);
+// Calcola costo spedizione per il carrello (accessibile anche a guest) - SENZA rate limiter per UX fluida
+router.post('/calculate-shipping', optionalAuth, calculateShippingCost);
+
+// Ottieni nazioni disponibili per spedizione in base al carrello - SENZA rate limiter per UX fluida
+router.post('/available-countries', optionalAuth, getAvailableCountries);
 
 // Ottieni tutti gli ordini dell'utente loggato
 router.get('/my-orders', protect, apiLimiter, validatePagination, getMyOrders);

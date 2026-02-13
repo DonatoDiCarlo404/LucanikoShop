@@ -428,9 +428,58 @@ export const calculateShippingCost = async (req, res) => {
             totalCartValue
         );
 
+        // Aggiungi info sui prodotti non spedibili nella nazione/regione selezionata
+        const selectedCountry = shippingAddress?.country || 'Italia';
+        const selectedRegion = shippingAddress?.state || '';
+        const unshippableVendors = [];
+        
+        for (const vendorData of vendorShippingArray) {
+            const shippingSettings = vendorData.vendorShippingSettings;
+            let canShip = false;
+
+            if (shippingSettings?.shippingRates && shippingSettings.shippingRates.length > 0) {
+                // Verifica se esiste una tariffa per la nazione selezionata
+                canShip = shippingSettings.shippingRates.some(rate => {
+                    // Controllo paese
+                    const countryMatch = rate.country === selectedCountry || !rate.country;
+                    if (!countryMatch) return false;
+
+                    // Se Italia, controlla anche la regione
+                    if (selectedCountry === 'Italia' && selectedRegion) {
+                        const isSardegnaSicilia = selectedRegion === 'Sardegna' || selectedRegion === 'Sicilia';
+                        
+                        // Se la tariffa è per isole escluse e la regione è Sardegna/Sicilia, non può spedire
+                        if (rate.italiaIsoleEscluse && isSardegnaSicilia) {
+                            return false;
+                        }
+                        
+                        // Se la tariffa è solo per Sardegna/Sicilia e la regione non è una di queste, non può spedire
+                        if (rate.italiaSardegnaSicilia && !isSardegnaSicilia) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+            } else {
+                // Nessuna tariffa avanzata = spedisce solo in Italia con tutte le regioni
+                canShip = selectedCountry === 'Italia';
+            }
+
+            if (!canShip) {
+                unshippableVendors.push({
+                    vendorId: vendorData.vendorId,
+                    vendorName: vendorData.vendorName,
+                    productIds: vendorData.items.map(item => item.product._id.toString())
+                });
+            }
+        }
+
         res.status(200).json({
             success: true,
-            ...shippingResult
+            ...shippingResult,
+            unshippableVendors,
+            selectedCountry
         });
     } catch (error) {
         console.error('Errore nel calcolo spedizione:', error);
@@ -603,6 +652,120 @@ export const refundOrder = async (req, res) => {
         res.status(500).json({ 
             message: 'Errore durante il rimborso dell\'ordine',
             error: error.message 
+        });
+    }
+};
+
+// @desc    Ottieni nazioni disponibili per spedizione in base ai prodotti nel carrello
+// @route   POST /api/orders/available-countries
+// @access  Public
+export const getAvailableCountries = async (req, res) => {
+    try {
+        const { items } = req.body;
+
+        if (!items || items.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Il carrello è vuoto' 
+            });
+        }
+
+        // Mappa vendorId -> { vendorName, countries: Set, italianRegions: Set }
+        const vendorCountries = {};
+        const allCountries = new Set(['Italia']); // Italia sempre disponibile di default
+        const italianRegions = new Set(); // Regioni italiane disponibili
+
+        for (const item of items) {
+            const product = await Product.findById(item.product).populate('seller', 'shopSettings businessName');
+            
+            if (!product || !product.seller) continue;
+
+            const vendorId = product.seller._id.toString();
+            const vendorName = product.seller.businessName || 'Venditore';
+            const shippingSettings = product.seller.shopSettings?.shipping;
+
+            if (!vendorCountries[vendorId]) {
+                vendorCountries[vendorId] = {
+                    vendorName,
+                    countries: new Set(),
+                    italianRegions: new Set()
+                };
+            }
+
+            // Estrai nazioni e regioni italiane dalle tariffe configurate
+            if (shippingSettings?.shippingRates && shippingSettings.shippingRates.length > 0) {
+                shippingSettings.shippingRates.forEach(rate => {
+                    // Aggiungi paese
+                    if (rate.country) {
+                        vendorCountries[vendorId].countries.add(rate.country);
+                        allCountries.add(rate.country);
+                    }
+
+                    // Se è Italia, gestisci le regioni
+                    if (rate.country === 'Italia' || !rate.country) {
+                        if (rate.italiaIsoleEscluse) {
+                            // Tutte le regioni TRANNE Sardegna e Sicilia
+                            const allRegions = ['Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 
+                                'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise', 
+                                'Piemonte', 'Puglia', 'Toscana', 'Trentino-Alto Adige', 'Umbria', 'Valle d\'Aosta', 'Veneto'];
+                            allRegions.forEach(region => {
+                                vendorCountries[vendorId].italianRegions.add(region);
+                                italianRegions.add(region);
+                            });
+                        } else if (rate.italiaSardegnaSicilia) {
+                            // Solo Sardegna e Sicilia
+                            vendorCountries[vendorId].italianRegions.add('Sardegna');
+                            vendorCountries[vendorId].italianRegions.add('Sicilia');
+                            italianRegions.add('Sardegna');
+                            italianRegions.add('Sicilia');
+                        } else {
+                            // Tutte le regioni italiane
+                            const allRegions = ['Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 
+                                'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise', 
+                                'Piemonte', 'Puglia', 'Sardegna', 'Sicilia', 'Toscana', 'Trentino-Alto Adige', 
+                                'Umbria', 'Valle d\'Aosta', 'Veneto'];
+                            allRegions.forEach(region => {
+                                vendorCountries[vendorId].italianRegions.add(region);
+                                italianRegions.add(region);
+                            });
+                        }
+                    }
+                });
+            } else {
+                // Se non ha tariffe avanzate, assume Italia con tutte le regioni
+                vendorCountries[vendorId].countries.add('Italia');
+                const allRegions = ['Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 
+                    'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise', 
+                    'Piemonte', 'Puglia', 'Sardegna', 'Sicilia', 'Toscana', 'Trentino-Alto Adige', 
+                    'Umbria', 'Valle d\'Aosta', 'Veneto'];
+                allRegions.forEach(region => {
+                    vendorCountries[vendorId].italianRegions.add(region);
+                    italianRegions.add(region);
+                });
+            }
+        }
+
+        // Converti Set in Array per JSON
+        const vendorCountriesFormatted = {};
+        Object.keys(vendorCountries).forEach(vendorId => {
+            vendorCountriesFormatted[vendorId] = {
+                vendorName: vendorCountries[vendorId].vendorName,
+                countries: Array.from(vendorCountries[vendorId].countries).sort(),
+                italianRegions: Array.from(vendorCountries[vendorId].italianRegions).sort()
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            allCountries: Array.from(allCountries).sort(),
+            availableItalianRegions: Array.from(italianRegions).sort(),
+            vendorCountries: vendorCountriesFormatted
+        });
+    } catch (error) {
+        console.error('Errore nel recupero nazioni disponibili:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
         });
     }
 };
