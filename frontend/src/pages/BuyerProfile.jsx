@@ -59,7 +59,8 @@ const BuyerProfile = () => {
         const updatedUser = await authAPI.updateProfile({
           firstName: nameForm.firstName,
           lastName: nameForm.lastName,
-          name: fullName // retrocompatibilità
+          name: fullName, // retrocompatibilità
+          phone: nameForm.phone // Aggiunto campo telefono
         }, token);
         setUser(prev => ({ ...prev, ...updatedUser }));
         setSaveSuccess((prev) => ({ ...prev, name: true }));
@@ -107,6 +108,17 @@ const BuyerProfile = () => {
   const [saveError, setSaveError] = useState({ password: null, address: null, payment: null });
   const [saveSuccess, setSaveSuccess] = useState({ password: false, address: false, payment: false });
   const navigate = useNavigate();
+
+  // Sincronizza il form quando l'utente viene aggiornato
+  useEffect(() => {
+    if (user) {
+      setNameForm({
+        firstName: user.firstName || (user.name ? user.name.split(' ')[0] : ''),
+        lastName: user.lastName || (user.name ? user.name.split(' ').slice(1).join(' ') : ''),
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
