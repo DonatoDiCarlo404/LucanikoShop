@@ -164,6 +164,7 @@ const VendorProfile = () => {
     businessDescription: '',
     vatNumber: '',
     codiceSDI: '',
+    pec: '',
     logo: {
       url: '',
       public_id: ''
@@ -355,6 +356,7 @@ const VendorProfile = () => {
         businessDescription: data.businessDescription || '',
         vatNumber: data.vatNumber || '',
         codiceSDI: data.codiceSDI || '',
+        pec: data.pec || '',
         logo: data.logo || { url: '', public_id: '' },
         businessEmail: data.businessEmail || '',
         businessPhone: data.businessPhone || '',
@@ -1108,6 +1110,7 @@ const VendorProfile = () => {
               <div>
                 {profileData?.vatNumber && <div><strong style={{color:'#004b75'}}>P.IVA:</strong> {profileData.vatNumber}</div>}
                 {profileData?.codiceSDI && <div><strong style={{color:'#004b75'}}>Codice SDI:</strong> {profileData.codiceSDI}</div>}
+                {profileData?.pec && <div><strong style={{color:'#004b75'}}>PEC:</strong> {profileData.pec}</div>}
                 {profileData?.businessEmail && <div><strong style={{color:'#004b75'}}>Email:</strong> <a href={`mailto:${profileData.businessEmail}`}>{profileData.businessEmail}</a></div>}
                 {profileData?.businessAddress && (
                   <div><strong style={{color:'#004b75'}}>Indirizzo sede legale:</strong> {[
@@ -1331,6 +1334,21 @@ const VendorProfile = () => {
                       />
                       <Form.Text className="text-muted">
                         Codice per fatturazione elettronica (7 caratteri)
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>PEC</Form.Label>
+                      <Form.Control
+                        type="email"
+                        name="pec"
+                        value={formData.pec}
+                        onChange={handleChange}
+                        placeholder="Es: azienda@pec.it"
+                      />
+                      <Form.Text className="text-muted">
+                        PEC per fatturazione elettronica (alternativa al codice SDI)
                       </Form.Text>
                     </Form.Group>
                   </Col>

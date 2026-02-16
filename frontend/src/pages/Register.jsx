@@ -780,7 +780,11 @@ const Register = () => {
           <div style={{ marginBottom: 28 }}>
             <strong>13) Variazione Termini &amp; Condizioni</strong>
             <div style={{ marginTop: 6 }}>
-              Lucaniko Shop si riserva il diritto di modificare i Termini &amp; Condizioni in qualsiasi momento con efficace immediata dalla pubblicazione sul sito
+              Lucaniko Shop si riserva il diritto di modificare, aggiornare o integrare in qualsiasi momento i presenti Termini &amp; Condizioni, per esigenze organizzative, tecniche, commerciali o normative.
+              Le modifiche avranno efficacia dalla data di pubblicazione sulla piattaforma e si intenderanno accettate dal Venditore con la prosecuzione dell'utilizzo dei servizi offerti da Lucaniko Shop.
+              Il Venditore, con la sottoscrizione dell'abbonamento annuale, dichiara di aver letto, compreso e accettato integralmente i presenti Termini &amp; Condizioni.
+              Il Venditore potrà recedere dal contratto per giusta causa, mediante comunicazione scritta a Lucaniko Shop. In caso di recesso anticipato non motivato da inadempimento della piattaforma, il corrispettivo dell'abbonamento annuale versato non sarà rimborsabile, salvo diversa disposizione di legge.
+              Resta inteso che il recesso del Venditore non comporta alcun diritto a indennizzi, risarcimenti o rimborsi ulteriori rispetto a quanto espressamente previsto nel presente contratto.
             </div>
           </div>
 

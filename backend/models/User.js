@@ -157,6 +157,18 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: [7, 'Il codice SDI non può superare 7 caratteri']
     },
+    pec: { // PEC per fatturazione elettronica (alternativa al codice SDI)
+      type: String,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function(v) {
+          if (!v) return true; // Campo opzionale
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        },
+        message: 'Inserisci un indirizzo PEC valido'
+      }
+    },
     businessAddress: {
       street: String,
       city: String,

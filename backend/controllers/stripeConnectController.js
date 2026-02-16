@@ -7,19 +7,33 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
  * Crea un account Stripe Connect Express per il venditore
  * Solo per aziende (business_type: 'company')
  * @route POST /api/stripe-connect/create-account
- * @access Private (Seller)
+ * @access Private (Seller or Admin)
  */
 export const createConnectAccount = async (req, res) => {
   try {
-    const vendorId = req.user._id;
-    const vendor = await User.findById(vendorId);
+    // Admin può specificare vendorId nel body, altrimenti usa l'utente loggato
+    const targetVendorId = req.user.role === 'admin' && req.body.vendorId 
+      ? req.body.vendorId 
+      : req.user._id;
+    
+    const vendor = await User.findById(targetVendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Venditore non trovato' 
+      });
+    }
 
     console.log('\n🔵 [STRIPE CONNECT] ============ CREAZIONE ACCOUNT ============');
     console.log('🔵 [STRIPE CONNECT] Venditore:', vendor.businessName || vendor.name);
     console.log('🔵 [STRIPE CONNECT] Email:', vendor.email);
+    if (req.user.role === 'admin') {
+      console.log('👤 [STRIPE CONNECT] Creato da Admin:', req.user.email);
+    }
 
-    // Verifica che sia un venditore
-    if (vendor.role !== 'seller') {
+    // Verifica che sia un venditore (non necessario per admin)
+    if (vendor.role !== 'seller' && req.user.role !== 'admin') {
       console.log('❌ [STRIPE CONNECT] Utente non è un venditore');
       return res.status(403).json({ 
         success: false,
@@ -84,7 +98,7 @@ export const createConnectAccount = async (req, res) => {
         transfers: { requested: true }
       },
       metadata: {
-        vendorId: vendorId.toString(),
+        vendorId: targetVendorId.toString(),
         platform: 'LucanikoShop',
         businessName: vendor.businessName || vendor.name
       }
@@ -130,12 +144,23 @@ export const createConnectAccount = async (req, res) => {
 /**
  * Verifica lo stato dell'account Stripe Connect
  * @route GET /api/stripe-connect/account-status
- * @access Private (Seller)
+ * @access Private (Seller or Admin)
  */
 export const getAccountStatus = async (req, res) => {
   try {
-    const vendorId = req.user._id;
-    const vendor = await User.findById(vendorId);
+    // Admin può specificare vendorId nel query, altrimenti usa l'utente loggato
+    const targetVendorId = req.user.role === 'admin' && req.query.vendorId 
+      ? req.query.vendorId 
+      : req.user._id;
+    
+    const vendor = await User.findById(targetVendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Venditore non trovato' 
+      });
+    }
 
     if (!vendor.stripeConnectAccountId) {
       return res.json({
@@ -187,12 +212,23 @@ export const getAccountStatus = async (req, res) => {
 /**
  * Genera un nuovo link di onboarding se quello precedente è scaduto
  * @route POST /api/stripe-connect/refresh-onboarding
- * @access Private (Seller)
+ * @access Private (Seller or Admin)
  */
 export const refreshOnboardingLink = async (req, res) => {
   try {
-    const vendorId = req.user._id;
-    const vendor = await User.findById(vendorId);
+    // Admin può specificare vendorId nel body, altrimenti usa l'utente loggato
+    const targetVendorId = req.user.role === 'admin' && req.body.vendorId 
+      ? req.body.vendorId 
+      : req.user._id;
+    
+    const vendor = await User.findById(targetVendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Venditore non trovato' 
+      });
+    }
 
     if (!vendor.stripeConnectAccountId) {
       return res.status(400).json({
@@ -227,12 +263,23 @@ export const refreshOnboardingLink = async (req, res) => {
  * Genera un link per il dashboard Stripe Express del venditore
  * Permette al venditore di gestire i propri pagamenti, payout, ecc.
  * @route POST /api/stripe-connect/dashboard-link
- * @access Private (Seller)
+ * @access Private (Seller or Admin)
  */
 export const createDashboardLink = async (req, res) => {
   try {
-    const vendorId = req.user._id;
-    const vendor = await User.findById(vendorId);
+    // Admin può specificare vendorId nel body/query, altrimenti usa l'utente loggato
+    const targetVendorId = req.user.role === 'admin' && (req.body.vendorId || req.query.vendorId)
+      ? (req.body.vendorId || req.query.vendorId)
+      : req.user._id;
+    
+    const vendor = await User.findById(targetVendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Venditore non trovato' 
+      });
+    }
 
     if (!vendor.stripeConnectAccountId) {
       return res.status(400).json({

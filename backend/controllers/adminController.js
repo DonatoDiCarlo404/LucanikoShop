@@ -218,6 +218,7 @@ export const updateSellerProfile = async (req, res) => {
     seller.businessDescription = req.body.businessDescription || seller.businessDescription;
     seller.vatNumber = req.body.vatNumber || seller.vatNumber;
     seller.codiceSDI = req.body.codiceSDI || seller.codiceSDI;
+    seller.pec = req.body.pec || seller.pec;
 
     // Aggiorna categorie aziendali
     if (req.body.businessCategories !== undefined) {
@@ -371,7 +372,6 @@ export const registerVendor = async (req, res) => {
       businessName,
       vatNumber,
       phone: phoneNumber,
-      codiceSDI: uniqueCode,
       businessCategories: selectedCategories || [],
       isApproved: true, // Approvato automaticamente
       subscriptionPaid: true,
@@ -379,6 +379,15 @@ export const registerVendor = async (req, res) => {
       subscriptionPaymentId: `ADMIN_REG_${Date.now()}`,
       subscriptionType: subscription || '1anno'
     };
+
+    // Gestione Codice SDI o PEC
+    if (uniqueCode) {
+      if (uniqueCode.includes('@')) {
+        userData.pec = uniqueCode; // È una PEC
+      } else {
+        userData.codiceSDI = uniqueCode; // È un codice SDI
+      }
+    }
 
     // Indirizzo aziendale
     if (address || city || zipCode) {

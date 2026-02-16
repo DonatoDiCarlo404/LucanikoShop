@@ -5,6 +5,9 @@ node_modules
 dist
 *.log
 
+# Backup database (contengono dati sensibili)
+mongodb_backup/
+
 # Script di maintenance con credenziali hardcoded
 cleanDatabase.js
 cleanBothDatabases.js

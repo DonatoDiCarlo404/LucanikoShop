@@ -21,7 +21,7 @@ const ProductForm = () => {
     subcategory: '',
     stock: '',
     weight: '',
-    unit: 'pz',
+    unit: 'kg',
     expiryDate: '',
     tags: '',
     attributes: [],      // NUOVO
@@ -201,7 +201,7 @@ const ProductForm = () => {
         subcategory: product.subcategory?._id || product.subcategory || '',
         stock: product.stock,
         weight: product.weight || '',
-        unit: product.unit,
+        unit: 'kg',
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
         tags: product.tags.join(', '),
         attributes: product.attributes || [],
@@ -929,7 +929,7 @@ setFormData(loadedFormData);
                   </Col>
                   <Col md={6}>
                     <Form.Group className="mb-3">
-                      <Form.Label>Peso per una quantità</Form.Label>
+                      <Form.Label>Peso (Kg.) per una quantità</Form.Label>
                       <Form.Control
                         type="number"
                         name="weight"
@@ -942,28 +942,6 @@ setFormData(loadedFormData);
                       <Form.Text className="text-muted">
                         Inserisci il peso di una singola unità (es. 0.5 kg).
                       </Form.Text>
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Unità di misura</Form.Label>
-                      <Form.Select
-                        name="unit"
-                        value={formData.unit}
-                        onChange={handleChange}
-                      >
-                        <option value="pz">Pezzi</option>
-                        <option value="kg">Kg</option>
-                        <option value="g">Grammi</option>
-                        <option value="l">Litri</option>
-                        <option value="ml">Millilitri</option>
-                        <option value="m">Metri</option>
-                        <option value="cm">Centimetri</option>
-                        <option value="confezione">Confezione</option>
-                        <option value="set">Set</option>
-                        <option value="scatola">Scatola</option>
-                        <option value="altro">Altro</option>
-                      </Form.Select>
                     </Form.Group>
                   </Col>
                 </Row>

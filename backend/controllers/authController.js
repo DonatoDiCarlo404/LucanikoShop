@@ -136,7 +136,14 @@ export const register = async (req, res) => {
       if (businessName) userData.businessName = businessName;
       if (vatNumber) userData.vatNumber = vatNumber;
       if (phoneNumber) userData.phone = phoneNumber;
-      if (uniqueCode) userData.codiceSDI = uniqueCode;
+      // Gestione Codice SDI o PEC
+      if (uniqueCode) {
+        if (uniqueCode.includes('@')) {
+          userData.pec = uniqueCode; // È una PEC
+        } else {
+          userData.codiceSDI = uniqueCode; // È un codice SDI
+        }
+      }
       if (selectedCategories && Array.isArray(selectedCategories)) {
         userData.businessCategories = selectedCategories;
       }
@@ -464,6 +471,7 @@ export const updateVendorProfile = async (req, res) => {
     user.businessDescription = req.body.businessDescription || user.businessDescription;
     user.vatNumber = req.body.vatNumber || user.vatNumber;
     user.codiceSDI = req.body.codiceSDI || user.codiceSDI;
+    user.pec = req.body.pec || user.pec;
 
     // Aggiorna categorie aziendali
     if (req.body.businessCategories !== undefined) {
@@ -575,6 +583,7 @@ export const updateVendorProfile = async (req, res) => {
       businessCategories: updatedUser.businessCategories,
       vatNumber: updatedUser.vatNumber,
       codiceSDI: updatedUser.codiceSDI,
+      pec: updatedUser.pec,
       logo: updatedUser.logo,
       businessEmail: updatedUser.businessEmail,
       businessPhone: updatedUser.businessPhone,
