@@ -290,7 +290,17 @@ const Negozi = () => {
                           <Card.Title style={{ color: '#004b75', fontWeight: 600 }}>
                             {vendor.businessName || vendor.name}
                           </Card.Title>
-                          <Card.Text className="text-muted small mb-3" style={{ flexGrow: 1 }}>
+                          <Card.Text 
+                            className="text-muted small mb-3" 
+                            style={{ 
+                              flexGrow: 1,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}
+                          >
                             {vendor.businessDescription || ''}
                           </Card.Text>
                           
