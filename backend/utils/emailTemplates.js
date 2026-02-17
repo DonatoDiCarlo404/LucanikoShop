@@ -260,7 +260,7 @@ export const sendRefundNotificationEmail = async (vendorEmail, companyName, orde
   if (isPostPayment && debtInfo) {
     // Rimborso post-pagamento: venditore già pagato, viene creato un debito
     bodyText = `L'ordine #${orderNumber} è stato rimborsato al cliente.\n\n⚠️ ATTENZIONE: Hai già ricevuto il pagamento per questo ordine.\n\nAbbiamo registrato un debito di ${formattedAmount} che verrà automaticamente detratto dal tuo prossimo pagamento.\n\nMotivo rimborso: ${refundReason}\n\nIl debito verrà saldato al prossimo pagamento automatico (dopo 14 giorni dalla prossima vendita).\n\nAccedi al tuo pannello: ${dashboardLink}`;
-    
+
     bodyHtml = `L'ordine <strong>#${orderNumber}</strong> è stato rimborsato al cliente.<br><br>
 <div style="background: #fff3cd; border-left: 4px solid #ff6b6b; padding: 1.5em; margin: 1.5em 0; border-radius: 4px;">
   <h3 style="color: #ff6b6b; margin-top: 0;">⚠️ ATTENZIONE: Debito registrato</h3>
@@ -275,7 +275,7 @@ export const sendRefundNotificationEmail = async (vendorEmail, companyName, orde
   } else {
     // Rimborso pre-pagamento: earnings cancellati prima del pagamento
     bodyText = `L'ordine #${orderNumber} è stato rimborsato al cliente.\n\nL'importo di ${formattedAmount} che era in attesa di pagamento è stato cancellato e non verrà trasferito.\n\nMotivo rimborso: ${refundReason}\n\nAccedi al tuo pannello: ${dashboardLink}`;
-    
+
     bodyHtml = `L'ordine <strong>#${orderNumber}</strong> è stato rimborsato al cliente.<br><br>
 <div style="background: #f8f9fa; border-left: 4px solid #ffc107; padding: 1.5em; margin: 1.5em 0; border-radius: 4px;">
   <h3 style="color: #856404; margin-top: 0;">ℹ️ Earnings cancellati</h3>
@@ -336,6 +336,203 @@ Il team Lucaniko<br><br>
     await sgMail.send(msg);
   } catch (error) {
     console.error('[EMAIL DEBUG] ❌ ERRORE invio email approvazione:', error);
+    throw error;
+  }
+};
+
+// Email notifica registrazione venditore con pagamento completato (inviata all'admin)
+export const sendVendorRegistrationNotificationToAdmin = async (vendorData) => {
+  const {
+    name,
+    email,
+    businessName,
+    vatNumber,
+    address,
+    city,
+    zipCode,
+    uniqueCode,
+    phoneNumber,
+    selectedCategories,
+    subscription,
+    paymentIntentId,
+    subscriptionPaid
+  } = vendorData;
+
+  const categoriesList = Array.isArray(selectedCategories) 
+    ? selectedCategories.join(', ') 
+    : selectedCategories || 'Non specificato';
+
+  const subscriptionType = subscription === '1anno' ? '1 Anno' : subscription || 'Non specificato';
+  const paymentStatus = subscriptionPaid ? '✅ PAGATO' : '⚠️ NON PAGATO';
+
+  const registrationDate = new Date().toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const msg = {
+    to: 'info@lucanikoshop.it',
+    from: 'info@lucanikoshop.it',
+    subject: `🎉 Nuova registrazione venditore con abbonamento pagato - ${businessName}`,
+    text: `NUOVA REGISTRAZIONE VENDITORE\n\nUn nuovo venditore ha completato la registrazione e il pagamento dell'abbonamento su Lucaniko Shop.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📋 DATI AZIENDA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nRagione Sociale: ${businessName}\nPartita IVA: ${vatNumber}\nCodice SDI: ${uniqueCode || 'Non fornito'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n👤 REFERENTE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNome: ${name}\nEmail: ${email}\nTelefono: ${phoneNumber || 'Non fornito'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📍 SEDE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIndirizzo: ${address}\nCittà: ${city}\nCAP: ${zipCode}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📦 ATTIVITÀ\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nCategorie di vendita: ${categoriesList}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n💳 ABBONAMENTO E PAGAMENTO\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nTipo abbonamento: ${subscriptionType}\nStato pagamento: ${paymentStatus}\nPayment Intent ID: ${paymentIntentId || 'N/A'}\nData registrazione: ${registrationDate}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPROSSIMI PASSI:\n1. Verificare i dati inseriti\n2. Approvare l'account venditore dal pannello admin\n3. Contattare il venditore se necessario\n\nAccedi al pannello admin: https://www.lucanikoshop.it/admin\n\nSistema Lucaniko Shop\nwww.lucanikoshop.it`,
+    html: `
+<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+  
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #004b75 0%, #006699 100%); color: white; padding: 30px 20px; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px;">🎉 Nuova Registrazione Venditore</h1>
+    <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Abbonamento pagato e completato</p>
+  </div>
+
+  <!-- Corpo -->
+  <div style="padding: 30px 20px;">
+    
+    <!-- Data registrazione -->
+    <div style="text-align: center; margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+      <p style="margin: 0; color: #666; font-size: 14px;">Data e ora registrazione</p>
+      <p style="margin: 5px 0 0 0; color: #004b75; font-weight: bold; font-size: 16px;">${registrationDate}</p>
+    </div>
+
+    <!-- Dati Azienda -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #004b75; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #004b75;">
+        📋 Dati Azienda
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; width: 40%; border-bottom: 1px solid #e0e0e0;">Ragione Sociale</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${businessName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Partita IVA</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px;">${vatNumber}</code></td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Codice SDI</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${uniqueCode || '<em style="color: #999;">Non fornito</em>'}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Referente -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #004b75; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #004b75;">
+        👤 Referente
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; width: 40%; border-bottom: 1px solid #e0e0e0;">Nome Completo</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${name}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Email</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><a href="mailto:${email}" style="color: #004b75; text-decoration: none;">${email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Telefono</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${phoneNumber || '<em style="color: #999;">Non fornito</em>'}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Sede -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #004b75; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #004b75;">
+        📍 Sede
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; width: 40%; border-bottom: 1px solid #e0e0e0;">Indirizzo</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${address}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Città</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${city}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">CAP</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${zipCode}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Attività -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #004b75; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #004b75;">
+        📦 Attività
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; width: 40%; border-bottom: 1px solid #e0e0e0;">Categorie di vendita</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${categoriesList}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Abbonamento e Pagamento -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="color: #004b75; font-size: 18px; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #004b75;">
+        💳 Abbonamento e Pagamento
+      </h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; width: 40%; border-bottom: 1px solid #e0e0e0;">Tipo abbonamento</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;">${subscriptionType}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Stato pagamento</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><strong style="color: ${subscriptionPaid ? '#28a745' : '#dc3545'}; font-size: 16px;">${paymentStatus}</strong></td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; background: #f8f9fa; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Payment Intent ID</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e0e0e0;"><code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${paymentIntentId || 'N/A'}</code></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Prossimi Passi -->
+    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 25px 0; border-radius: 4px;">
+      <h3 style="color: #856404; margin: 0 0 15px 0; font-size: 16px;">📌 Prossimi Passi</h3>
+      <ol style="margin: 0; padding-left: 20px; color: #856404;">
+        <li style="margin-bottom: 8px;">Verificare i dati inseriti</li>
+        <li style="margin-bottom: 8px;">Approvare l'account venditore dal pannello admin</li>
+        <li style="margin-bottom: 8px;">Contattare il venditore se necessario</li>
+      </ol>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="https://www.lucanikoshop.it/admin" style="background: #004b75; color: #fff; padding: 14px 30px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 16px;">
+        🔧 Vai al Pannello Admin
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
+    <p style="margin: 0; color: #666; font-size: 12px;">Questa email è stata inviata automaticamente dal sistema Lucaniko Shop</p>
+    <p style="margin: 10px 0 0 0;">
+      <a href="https://www.lucanikoshop.it" style="color: #004b75; text-decoration: underline; font-size: 14px;">www.lucanikoshop.it</a>
+    </p>
+  </div>
+
+</div>
+    `
+  };
+
+  try {
+    await sgMail.send(msg);
+  } catch (error) {
+    console.error('[EMAIL DEBUG] ❌ ERRORE invio email notifica registrazione admin:', error);
+    console.error('[EMAIL DEBUG] Dettagli errore:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body
+    });
     throw error;
   }
 };
