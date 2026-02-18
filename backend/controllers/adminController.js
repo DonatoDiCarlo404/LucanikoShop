@@ -177,6 +177,17 @@ export const getSellerProfile = async (req, res) => {
       return res.status(400).json({ message: 'L\'utente non è un venditore' });
     }
 
+    console.log('[DEBUG ADMIN GET SELLER] Dati venditore caricati:', {
+      _id: seller._id,
+      name: seller.name,
+      businessName: seller.businessName,
+      subscriptionPaid: seller.subscriptionPaid,
+      subscriptionPaidAt: seller.subscriptionPaidAt,
+      subscriptionEndDate: seller.subscriptionEndDate,
+      subscriptionType: seller.subscriptionType,
+      subscriptionPaymentId: seller.subscriptionPaymentId
+    });
+
     res.status(200).json(seller);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -431,7 +431,16 @@ export const getVendorProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
-      console.log('[DEBUG NEWS BACKEND] News caricata dal database:', user.news);
+      console.log('[DEBUG VENDOR PROFILE] Dati venditore caricati:', {
+        _id: user._id,
+        name: user.name,
+        businessName: user.businessName,
+        subscriptionPaid: user.subscriptionPaid,
+        subscriptionPaidAt: user.subscriptionPaidAt,
+        subscriptionEndDate: user.subscriptionEndDate,
+        subscriptionType: user.subscriptionType,
+        subscriptionPaymentId: user.subscriptionPaymentId
+      });
       res.json(user);
     } else {
       res.status(404).json({ message: 'Utente non trovato' });

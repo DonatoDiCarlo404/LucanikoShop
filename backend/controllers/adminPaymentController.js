@@ -54,7 +54,7 @@ export const getPendingPayouts = async (req, res) => {
 
     // Query con popolazione e paginazione
     const payouts = await VendorPayout.find(filters)
-      .populate('vendorId', 'name companyName email stripeConnectAccountId onboardingComplete')
+      .populate('vendorId', 'name companyName businessName email stripeConnectAccountId stripeOnboardingCompleted stripeChargesEnabled stripePayoutsEnabled')
       .populate('orderId', 'orderNumber totalAmount')
       .sort('-saleDate')
       .skip(skip)
@@ -76,10 +76,11 @@ export const getPendingPayouts = async (req, res) => {
       return {
         _id: payout._id,
         vendorId: payout.vendorId?._id,
-        vendorName: payout.vendorId?.companyName || payout.vendorId?.name || 'N/A',
+        vendorName: payout.vendorId?.businessName || payout.vendorId?.companyName || payout.vendorId?.name || 'N/A',
         vendorEmail: payout.vendorId?.email,
         hasStripeAccount: !!payout.vendorId?.stripeConnectAccountId,
-        isOnboardingComplete: payout.vendorId?.onboardingComplete || false,
+        isOnboardingComplete: payout.vendorId?.stripeOnboardingCompleted || false,
+        isStripeActive: payout.vendorId?.stripeChargesEnabled && payout.vendorId?.stripePayoutsEnabled,
         orderId: payout.orderId?._id,
         orderNumber: payout.orderId?.orderNumber || 'N/A',
         amount: payout.amount,
@@ -88,7 +89,7 @@ export const getPendingPayouts = async (req, res) => {
         saleDate: payout.saleDate,
         daysSinceSale,
         status: payout.status,
-        canBePaid: !!(payout.vendorId?.stripeConnectAccountId && payout.vendorId?.onboardingComplete)
+        canBePaid: !!(payout.vendorId?.stripeConnectAccountId && payout.vendorId?.stripeOnboardingCompleted && payout.vendorId?.stripeChargesEnabled && payout.vendorId?.stripePayoutsEnabled)
       };
     });
 
@@ -210,20 +211,24 @@ export const getPaymentStatistics = async (req, res) => {
       }
     ]);
 
-    // 5. Totale venditori con Stripe Connect attivo
+    // 5. Totale venditori con Stripe Connect attivo (account funzionante e payments/payouts abilitati)
     const vendorsWithStripe = await User.countDocuments({
-      role: { $in: ['vendor', 'seller'] },
+      role: 'seller',
       stripeConnectAccountId: { $exists: true, $ne: null },
-      onboardingComplete: true
+      stripeOnboardingCompleted: true,
+      stripeChargesEnabled: true,
+      stripePayoutsEnabled: true
     });
 
     // 6. Totale venditori in attesa di onboarding
     const vendorsPendingOnboarding = await User.countDocuments({
-      role: { $in: ['vendor', 'seller'] },
+      role: 'seller',
       $or: [
         { stripeConnectAccountId: { $exists: false } },
         { stripeConnectAccountId: null },
-        { onboardingComplete: false }
+        { stripeOnboardingCompleted: false },
+        { stripeChargesEnabled: false },
+        { stripePayoutsEnabled: false }
       ]
     });
 
@@ -504,14 +509,15 @@ export const getVendorsList = async (req, res) => {
     
     const vendors = await User.find({
       _id: { $in: vendorsWithPayouts }
-    }).select('_id name companyName email stripeConnectAccountId onboardingComplete');
+    }).select('_id name companyName businessName email stripeConnectAccountId stripeOnboardingCompleted stripeChargesEnabled stripePayoutsEnabled');
 
     const vendorsList = vendors.map(vendor => ({
       _id: vendor._id,
-      name: vendor.companyName || vendor.name,
+      name: vendor.businessName || vendor.companyName || vendor.name,
       email: vendor.email,
       hasStripeAccount: !!vendor.stripeConnectAccountId,
-      isOnboardingComplete: vendor.onboardingComplete || false
+      isOnboardingComplete: vendor.stripeOnboardingCompleted || false,
+      isStripeActive: vendor.stripeChargesEnabled && vendor.stripePayoutsEnabled
     }));
 
     res.json({
@@ -543,7 +549,7 @@ export const payNow = async (req, res) => {
     const { payoutId } = req.params;
 
     // Trova il payout
-    const payout = await VendorPayout.findById(payoutId).populate('vendorId', 'stripeConnectAccountId onboardingComplete name companyName');
+    const payout = await VendorPayout.findById(payoutId).populate('vendorId', 'stripeConnectAccountId stripeOnboardingCompleted stripeChargesEnabled stripePayoutsEnabled name companyName businessName');
 
     if (!payout) {
       return res.status(404).json({ message: 'Payout non trovato' });
@@ -554,9 +560,9 @@ export const payNow = async (req, res) => {
     }
 
     // Verifica che il venditore abbia Stripe Connect configurato
-    if (!payout.vendorId.stripeConnectAccountId || !payout.vendorId.onboardingComplete) {
+    if (!payout.vendorId.stripeConnectAccountId || !payout.vendorId.stripeOnboardingCompleted || !payout.vendorId.stripeChargesEnabled || !payout.vendorId.stripePayoutsEnabled) {
       return res.status(400).json({ 
-        message: 'Il venditore non ha completato la configurazione Stripe Connect' 
+        message: `Il venditore ${payout.vendorId.businessName || payout.vendorId.companyName || payout.vendorId.name} non ha completato l'onboarding Stripe Connect o l'account non è attivo` 
       });
     }
 
@@ -629,7 +635,7 @@ export const retryTransfer = async (req, res) => {
     const { payoutId } = req.params;
 
     // Trova il payout
-    const payout = await VendorPayout.findById(payoutId).populate('vendorId', 'stripeConnectAccountId onboardingComplete name companyName');
+    const payout = await VendorPayout.findById(payoutId).populate('vendorId', 'stripeConnectAccountId stripeOnboardingCompleted stripeChargesEnabled stripePayoutsEnabled name companyName businessName');
 
     if (!payout) {
       return res.status(404).json({ message: 'Payout non trovato' });
@@ -640,9 +646,9 @@ export const retryTransfer = async (req, res) => {
     }
 
     // Verifica che il venditore abbia Stripe Connect configurato
-    if (!payout.vendorId.stripeConnectAccountId || !payout.vendorId.onboardingComplete) {
+    if (!payout.vendorId.stripeConnectAccountId || !payout.vendorId.stripeOnboardingCompleted || !payout.vendorId.stripeChargesEnabled || !payout.vendorId.stripePayoutsEnabled) {
       return res.status(400).json({ 
-        message: 'Il venditore non ha completato la configurazione Stripe Connect' 
+        message: `Il venditore ${payout.vendorId.businessName || payout.vendorId.companyName || payout.vendorId.name} non ha completato l'onboarding Stripe Connect o l'account non è attivo` 
       });
     }
 
@@ -843,7 +849,7 @@ export const getAnalytics = async (req, res) => {
         $match: {
           status: 'paid',
           $or: [
-            { isRefundDeat: { $exists: false } },
+            { isRefundDebt: { $exists: false } },
             { isRefundDebt: false }
           ]
         }
@@ -867,13 +873,13 @@ export const getAnalytics = async (req, res) => {
 
     // Popola info venditori
     const vendorIds = topVendors.map(v => v._id);
-    const vendors = await User.find({ _id: { $in: vendorIds } }).select('name companyName email');
+    const vendors = await User.find({ _id: { $in: vendorIds } }).select('name companyName businessName email');
     
     const topVendorsData = topVendors.map(item => {
       const vendor = vendors.find(v => v._id.toString() === item._id.toString());
       return {
         vendorId: item._id,
-        vendorName: vendor?.companyName || vendor?.name || 'N/A',
+        vendorName: vendor?.businessName || vendor?.companyName || vendor?.name || 'N/A',
         vendorEmail: vendor?.email || 'N/A',
         totalEarnings: parseFloat(item.totalEarnings.toFixed(2)),
         totalStripeFee: parseFloat(item.totalStripeFee.toFixed(2)),

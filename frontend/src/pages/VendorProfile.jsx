@@ -347,6 +347,17 @@ const VendorProfile = () => {
       }
 
       const data = await res.json();
+      console.log('[DEBUG VENDOR PROFILE FRONTEND] Dati ricevuti dal backend:', {
+        _id: data._id,
+        name: data.name,
+        businessName: data.businessName,
+        subscriptionPaid: data.subscriptionPaid,
+        subscriptionPaidAt: data.subscriptionPaidAt,
+        subscriptionEndDate: data.subscriptionEndDate,
+        subscriptionType: data.subscriptionType,
+        subscriptionPaymentId: data.subscriptionPaymentId,
+        url: url
+      });
       setProfileData(data);
       
       // Popola il form con i dati esistenti

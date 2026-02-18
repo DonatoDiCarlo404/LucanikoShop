@@ -601,7 +601,7 @@ setFormData(loadedFormData);
         setShowSuccess(false);
         // Reindirizza in base al contesto
         if (user.role === 'admin' && sellerId) {
-          navigate(`/vendor-profile?sellerId=${sellerId}&tab=products`);
+          navigate(`/vendor/profile?sellerId=${sellerId}&tab=products`);
         } else {
           navigate('/my-products');
         }
