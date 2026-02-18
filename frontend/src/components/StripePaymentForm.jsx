@@ -124,7 +124,16 @@ const StripePaymentForm = ({ amount, onPaymentSuccess, onPaymentError, disabled,
             if (!registerResponse.ok) {
               const errorData = await registerResponse.json();
               console.error('[StripePaymentForm] Errore registrazione:', errorData);
-              throw new Error(errorData.message || 'Errore nella registrazione');
+              
+              // Gestisci messaggio di rimborso se presente
+              let errorMessage = errorData.message || 'Errore nella registrazione';
+              if (errorData.refunded) {
+                errorMessage = `${errorMessage}\n\n✅ Il pagamento è stato rimborsato automaticamente.`;
+              } else if (errorData.notice) {
+                errorMessage = `${errorMessage}\n\n⚠️ ${errorData.notice}`;
+              }
+              
+              throw new Error(errorMessage);
             }
 
             const userData = await registerResponse.json();

@@ -83,9 +83,12 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+import Stripe from 'stripe';
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import { sendWelcomeEmail, sendApprovalEmail, sendVendorRegistrationEmail } from '../utils/emailTemplates.js';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // @desc    Registra un nuovo utente
 // @route   POST /api/auth/register
@@ -260,6 +263,46 @@ export const register = async (req, res) => {
     }
   } catch (error) {
     console.error('[Backend] Errore registrazione:', error);
+    
+    // SECURITY: Se c'è un paymentIntentId, il pagamento è stato già effettuato
+    // ma la registrazione è fallita (es. validazione password). Rimborsa automaticamente.
+    if (paymentIntentId && role === 'seller') {
+      console.error('❌ [REGISTER] Registrazione fallita DOPO il pagamento - Rimborso automatico');
+      try {
+        // Recupera il PaymentIntent per ottenere il chargeId
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        
+        if (paymentIntent.latest_charge) {
+          // Crea il rimborso
+          const refund = await stripe.refunds.create({
+            charge: paymentIntent.latest_charge,
+            reason: 'requested_by_customer',
+            metadata: {
+              reason: 'Registrazione fallita - validazione dati',
+              error: error.message
+            }
+          });
+          
+          console.log('✅ [REGISTER] Rimborso automatico creato:', refund.id);
+          
+          return res.status(400).json({ 
+            message: error.message,
+            refunded: true,
+            refundId: refund.id,
+            notice: 'Il pagamento è stato rimborsato automaticamente a causa di un errore nella registrazione.'
+          });
+        }
+      } catch (refundError) {
+        console.error('❌ [REGISTER] Errore durante il rimborso automatico:', refundError);
+        return res.status(500).json({ 
+          message: error.message,
+          refunded: false,
+          notice: 'ATTENZIONE: Il pagamento è stato effettuato ma la registrazione è fallita. Contatta l\'assistenza per un rimborso manuale.',
+          paymentIntentId: paymentIntentId
+        });
+      }
+    }
+    
     res.status(500).json({ message: error.message });
   }
 };

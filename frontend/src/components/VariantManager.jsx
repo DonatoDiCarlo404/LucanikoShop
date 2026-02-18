@@ -28,7 +28,8 @@ const VariantManager = ({ attributes, variants, onChange }) => {
       sku: '',  // sarà generato dal backend
       stock: 0,
       price: null, // null = usa prezzo base
-      image: null, // immagine specifica della variante
+      image: null, // DEPRECATED - mantenuto per compatibilità
+      images: [], // array di immagini (max 3)
       active: true
     }));
     
@@ -86,7 +87,7 @@ const VariantManager = ({ attributes, variants, onChange }) => {
                 <th style={{ minWidth: '200px' }}>Variante</th>
                 <th style={{ width: '100px' }}>Stock</th>
                 <th style={{ width: '120px' }}>Prezzo<div className="text-muted" style={{ fontSize: '10px', fontWeight: 'normal' }}>(vuoto = base)</div></th>
-                <th style={{ width: '150px' }}>Immagine</th>
+                <th style={{ width: '250px' }}>Immagini <span className="text-muted">(max 3)</span></th>
                 <th style={{ width: '80px' }}>Stato</th>
                 <th style={{ width: '80px' }}>Azioni</th>
               </tr>
@@ -131,62 +132,97 @@ const VariantManager = ({ attributes, variants, onChange }) => {
                     />
                   </td>
                   <td>
-                    <div className="d-flex flex-column gap-1">
-                      {variant.image && (
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                          <img
-                            src={variant.image}
-                            alt="Variante"
-                            style={{ 
-                              width: '50px', 
-                              height: '50px', 
-                              objectFit: 'cover', 
-                              borderRadius: '4px',
-                              border: '1px solid #ddd'
-                            }}
-                          />
-                          <Button
+                    <div className="d-flex flex-column gap-2">
+                      {/* Preview immagini esistenti */}
+                      {(() => {
+                        // Migrazione automatica: se esiste image (singola), convertila in images[]
+                        const variantImages = variant.images && variant.images.length > 0 
+                          ? variant.images 
+                          : (variant.image ? [variant.image] : []);
+                        
+                        return (
+                          <div className="d-flex gap-1 flex-wrap">
+                            {variantImages.map((img, imgIdx) => (
+                              <div key={imgIdx} style={{ position: 'relative', display: 'inline-block' }}>
+                                <img
+                                  src={img}
+                                  alt={`Variante ${imgIdx + 1}`}
+                                  style={{ 
+                                    width: '50px', 
+                                    height: '50px', 
+                                    objectFit: 'cover', 
+                                    borderRadius: '4px',
+                                    border: '1px solid #ddd'
+                                  }}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="danger"
+                                  style={{
+                                    position: 'absolute',
+                                    top: '-5px',
+                                    right: '-5px',
+                                    padding: '0',
+                                    width: '18px',
+                                    height: '18px',
+                                    fontSize: '10px',
+                                    borderRadius: '50%'
+                                  }}
+                                  onClick={() => {
+                                    const updated = [...variants];
+                                    const currentImages = updated[idx].images || [];
+                                    updated[idx].images = currentImages.filter((_, i) => i !== imgIdx);
+                                    // Pulisci anche la vecchia proprietà image se esiste
+                                    if (updated[idx].image) updated[idx].image = null;
+                                    onChange(updated);
+                                  }}
+                                  disabled={!variant.active}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      
+                      {/* Input per caricare nuove immagini */}
+                      {(() => {
+                        const currentImages = variant.images || [];
+                        const canAddMore = currentImages.length < 3;
+                        
+                        return canAddMore ? (
+                          <Form.Control
+                            type="file"
                             size="sm"
-                            variant="danger"
-                            style={{
-                              position: 'absolute',
-                              top: '-5px',
-                              right: '-5px',
-                              padding: '0',
-                              width: '18px',
-                              height: '18px',
-                              fontSize: '10px',
-                              borderRadius: '50%'
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  const updated = [...variants];
+                                  const existingImages = updated[idx].images || [];
+                                  
+                                  if (existingImages.length < 3) {
+                                    updated[idx].images = [...existingImages, reader.result];
+                                    // Pulisci la vecchia proprietà image
+                                    if (updated[idx].image) updated[idx].image = null;
+                                    onChange(updated);
+                                  }
+                                  // Reset input
+                                  e.target.value = '';
+                                };
+                                reader.readAsDataURL(file);
+                              }
                             }}
-                            onClick={() => {
-                              const updated = [...variants];
-                              updated[idx].image = null;
-                              onChange(updated);
-                            }}
-                          >
-                            ×
-                          </Button>
-                        </div>
-                      )}
-                      <Form.Control
-                        type="file"
-                        size="sm"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              const updated = [...variants];
-                              updated[idx].image = reader.result;
-                              onChange(updated);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        disabled={!variant.active}
-                        style={{ fontSize: '11px' }}
-                      />
+                            disabled={!variant.active}
+                            style={{ fontSize: '11px' }}
+                          />
+                        ) : (
+                          <small className="text-muted">Limite massimo raggiunto (3 immagini)</small>
+                        );
+                      })()}
                     </div>
                   </td>
                   <td>

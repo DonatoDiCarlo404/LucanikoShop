@@ -416,50 +416,83 @@ const ProductDetail = () => {
       <Row>
         {/* COLONNA IMMAGINI */}
         <Col md={6}>
-          {selectedVariant?.image ? (
-            // Mostra l'immagine della variante se disponibile
-            <div>
-              <img
-                className="d-block w-100"
-                src={selectedVariant.image}
-                alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')}`}
-                style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
-              />
-            </div>
-          ) : product.images?.length > 0 ? (
-            <Carousel indicators={false}>
-              {product.images.map((image, index) => (
-                <Carousel.Item key={index}>
-                  <img
-                    className="d-block w-100"
-                    src={CloudinaryPresets.productDetail(image.url)}
-                    srcSet={`
-                      ${CloudinaryPresets.productCard(image.url)} 400w,
-                      ${CloudinaryPresets.productDetail(image.url)} 800w,
-                      ${CloudinaryPresets.productGallery(image.url)} 1200w
-                    `}
-                    sizes="(max-width: 768px) 400px, (max-width: 1200px) 800px, 1200px"
-                    alt={`${product.name} - ${index + 1}`}
-                    style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
-                    loading="lazy"
-                  />
-                </Carousel.Item>
-              ))}
-            </Carousel>
-          ) : (
-            <div
-              style={{
-                height: '520px',
-                backgroundColor: '#f0f0f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '8px',
-              }}
-            >
-              <span className="text-muted">Nessuna immagine disponibile</span>
-            </div>
-          )}
+          {(() => {
+            // Migrazione automatica: supporta sia images[] che image singola
+            const variantImages = selectedVariant?.images && selectedVariant.images.length > 0 
+              ? selectedVariant.images 
+              : (selectedVariant?.image ? [selectedVariant.image] : null);
+            
+            if (variantImages && variantImages.length > 0) {
+              // Mostra immagini della variante selezionata
+              if (variantImages.length === 1) {
+                // Singola immagine
+                return (
+                  <div>
+                    <img
+                      className="d-block w-100"
+                      src={variantImages[0]}
+                      alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')}`}
+                      style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                    />
+                  </div>
+                );
+              } else {
+                // Carousel per più immagini
+                return (
+                  <Carousel indicators={false}>
+                    {variantImages.map((image, index) => (
+                      <Carousel.Item key={index}>
+                        <img
+                          className="d-block w-100"
+                          src={image}
+                          alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')} - ${index + 1}`}
+                          style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                        />
+                      </Carousel.Item>
+                    ))}
+                  </Carousel>
+                );
+              }
+            } else if (product.images?.length > 0) {
+              // Mostra immagini del prodotto base
+              return (
+                <Carousel indicators={false}>
+                  {product.images.map((image, index) => (
+                    <Carousel.Item key={index}>
+                      <img
+                        className="d-block w-100"
+                        src={CloudinaryPresets.productDetail(image.url)}
+                        srcSet={`
+                          ${CloudinaryPresets.productCard(image.url)} 400w,
+                          ${CloudinaryPresets.productDetail(image.url)} 800w,
+                          ${CloudinaryPresets.productGallery(image.url)} 1200w
+                        `}
+                        sizes="(max-width: 768px) 400px, (max-width: 1200px) 800px, 1200px"
+                        alt={`${product.name} - ${index + 1}`}
+                        style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                        loading="lazy"
+                      />
+                    </Carousel.Item>
+                  ))}
+                </Carousel>
+              );
+            } else {
+              return (
+                <div
+                  style={{
+                    height: '520px',
+                    backgroundColor: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <span className="text-muted">Nessuna immagine disponibile</span>
+                </div>
+              );
+            }
+          })()}
         </Col>
 
         {/* COLONNA DETTAGLI */}

@@ -176,7 +176,10 @@ const productSchema = new mongoose.Schema(
         default: 0,
         min: 0
       },
-      image: String,  // URL o base64 dell'immagine specifica per variante
+      image: String,  // DEPRECATED: Mantenuto per compatibilità - usa images[]
+      images: [{
+        type: String  // Array di URL o base64 - max 3 immagini per variante
+      }],
       active: {
         type: Boolean,
         default: true

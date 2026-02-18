@@ -170,9 +170,16 @@ const ProductForm = () => {
       let reconstructedVariants = product.variants || [];
       if (reconstructedVariants.length > 0 && customAttrs.length > 0) {
         reconstructedVariants = reconstructedVariants.map(variant => {
+          // Migrazione automatica: converti image singola in images[]
+          let variantImages = variant.images || [];
+          if (variant.image && variantImages.length === 0) {
+            variantImages = [variant.image];
+          }
+          
           return {
             ...variant,
-            image: variant.image || null, // Mantieni l'immagine della variante
+            image: variant.image || null, // Mantieni per compatibilità
+            images: variantImages, // Array di immagini (max 3)
             attributes: variant.attributes.map(attr => {
               // Trova l'attributo personalizzato corrispondente
               const customAttr = customAttrs.find(ca => ca.key === attr.key);

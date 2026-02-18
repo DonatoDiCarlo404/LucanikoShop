@@ -70,6 +70,31 @@ const Register = () => {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(password);
   }
 
+  // Validazione dati PRIMA del pagamento
+  const validateRegistrationData = () => {
+    const errors = [];
+    
+    if (!firstName.trim()) errors.push('Il nome è obbligatorio');
+    if (!lastName.trim()) errors.push('Il cognome è obbligatorio');
+    if (!email.trim()) errors.push('L\'email è obbligatoria');
+    if (!password) errors.push('La password è obbligatoria');
+    if (!confirmPassword) errors.push('La conferma password è obbligatoria');
+    if (password !== confirmPassword) errors.push('Le password non coincidono');
+    if (!isPasswordStrong(password)) errors.push('La password deve essere di almeno 8 caratteri e contenere almeno una maiuscola, una minuscola, un numero e un simbolo');
+    
+    if (role === 'seller') {
+      if (!businessName.trim()) errors.push('Il nome dell\'azienda è obbligatorio');
+      if (!vatNumber.trim()) errors.push('La Partita IVA è obbligatoria');
+      if (!acceptTerms) errors.push('Devi accettare i Termini & Condizioni');
+    }
+    
+    if (role === 'buyer' && !acceptTermsBuyer) {
+      errors.push('Devi accettare i Termini & Condizioni');
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  };
+
   const handlePaymentSuccess = (paymentMethodIdReceived, userData) => {
     setPaymentCompleted(true);
     setPaymentMethodId(paymentMethodIdReceived);
@@ -503,6 +528,24 @@ const Register = () => {
             {role === 'seller' && acceptTerms && (
               <div className="mb-3 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '0.375rem', border: '1px solid #dee2e6' }}>
                 <h5 className="mb-3">Pagamento Piano di Adesione</h5>
+                
+                {/* Validazione pre-pagamento */}
+                {(() => {
+                  const validation = validateRegistrationData();
+                  if (!validation.isValid) {
+                    return (
+                      <Alert variant="warning">
+                        <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Completa tutti i campi prima di procedere al pagamento:</strong>
+                        <ul className="mb-0 mt-2">
+                          {validation.errors.map((err, idx) => <li key={idx}>{err}</li>)}
+                        </ul>
+                      </Alert>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {paymentCompleted ? (
                   <Alert variant="success">
                     <i className="bi bi-check-circle-fill me-2"></i>
@@ -516,7 +559,7 @@ const Register = () => {
                       subscriptionType={subscription}
                       onPaymentSuccess={handlePaymentSuccess}
                       onPaymentError={handlePaymentError}
-                      disabled={!acceptTerms}
+                      disabled={!acceptTerms || !validateRegistrationData().isValid}
                       registrationData={{
                         firstName,
                         lastName,
