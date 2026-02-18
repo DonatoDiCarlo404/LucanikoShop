@@ -297,6 +297,15 @@ export const createDashboardLink = async (req, res) => {
     });
 
   } catch (error) {
+    // Gestisci errore specifico per mismatch test/live mode
+    if (error.code === 'account_invalid' || error.message?.includes('testmode API key')) {
+      console.log('⚠️ [STRIPE CONNECT] Account live rilevato con chiave test - uso fallback dashboard URL');
+      return res.status(200).json({
+        success: true,
+        dashboardUrl: 'https://dashboard.stripe.com/'
+      });
+    }
+    
     console.error('❌ [STRIPE CONNECT] Errore creazione dashboard link:', error);
     res.status(500).json({ 
       success: false,

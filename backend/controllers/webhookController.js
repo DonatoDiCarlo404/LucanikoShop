@@ -4,7 +4,8 @@ import Review from '../models/Review.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import VendorPayout from '../models/VendorPayout.js';
-import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
+import Notification from '../models/Notification.js';
+import { sendOrderConfirmationEmail, sendNewOrderToVendorEmail } from '../utils/emailTemplates.js';
 import { calculateVendorEarnings } from '../utils/vendorEarningsCalculator.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -82,24 +83,25 @@ export const handleStripeWebhook = async (req, res) => {
       const cartItemsData = JSON.parse(session.metadata.cartItems)
       console.log('🛒 [WEBHOOK] Cart items:', cartItemsData.length, 'prodotti');
 
-      // Recupera info IVA per ogni prodotto
-      const productsMap = {};
+      // SECURITY FIX: Recupera prodotti completi dal database con seller
+      const orderItems = [];
       for (const item of cartItemsData) {
-        if (!productsMap[item.productId]) {
-          const prod = await Product.findById(item.productId);
-          productsMap[item.productId] = prod ? prod.ivaPercent : 22;
+        const product = await Product.findById(item.productId).populate('seller');
+        if (!product) {
+          console.error(`⚠️ [WEBHOOK] Prodotto ${item.productId} non trovato`);
+          continue;
         }
-      }
 
-      // Crea gli orderItems con info IVA
-      const orderItems = cartItemsData.map((item) => ({
-        product: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        seller: item.sellerId,
-        ivaPercent: productsMap[item.productId],
-      }));
+        // SECURITY FIX: Usa seller dal database, non dai metadata
+        orderItems.push({
+          product: item.productId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          seller: product.seller._id, // <-- Dal database!
+          ivaPercent: product.ivaPercent || 22,
+        });
+      }
 
       // Ottieni indirizzo di spedizione da Stripe (ora raccolto automaticamente)
       const deliveryType = session.metadata.deliveryType || 'shipping';
@@ -441,6 +443,105 @@ export const handleStripeWebhook = async (req, res) => {
         }
       } catch (emailError) {
         console.error('Errore invio email conferma acquisto:', emailError);
+      }
+
+      // Invia email ai venditori
+      console.log('📧 [WEBHOOK] Invio email ai venditori...');
+      try {
+        // Raggruppa items per venditore
+        const itemsByVendor = {};
+        for (const item of order.items) {
+          const vendorId = item.seller.toString();
+          if (!itemsByVendor[vendorId]) {
+            itemsByVendor[vendorId] = [];
+          }
+          itemsByVendor[vendorId].push(item);
+        }
+
+        // Invia email a ciascun venditore
+        const vendorEmailPromises = [];
+        for (const [vendorId, vendorItems] of Object.entries(itemsByVendor)) {
+          const vendor = await User.findById(vendorId).select('email name businessName companyName');
+          if (!vendor || !vendor.email) {
+            console.log(`⚠️ [WEBHOOK] Venditore ${vendorId} non trovato o senza email`);
+            continue;
+          }
+
+          const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
+          const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const companyName = vendor.businessName || vendor.companyName || vendor.name;
+          const customerName = isGuestOrder ? (order.guestName || 'Cliente Guest') : (buyerUser?.name || 'Cliente');
+          const billingShippingData = order.deliveryType === 'pickup' 
+            ? `Ritiro in negozio: ${order.pickupAddress?.city || 'N/A'}`
+            : `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.country}`;
+
+          const emailPromise = sendNewOrderToVendorEmail(
+            vendor.email,
+            companyName,
+            order._id.toString(),
+            vendorProductsList,
+            `€${vendorTotalAmount.toFixed(2)}`,
+            customerName,
+            billingShippingData
+          ).catch(err => {
+            console.error(`❌ [WEBHOOK] Errore invio email a venditore ${vendor.email}:`, err.message);
+          });
+
+          vendorEmailPromises.push(emailPromise);
+          console.log(`✅ [WEBHOOK] Email preparata per venditore: ${vendor.email}`);
+        }
+
+        // Attendi tutte le email ai venditori
+        await Promise.all(vendorEmailPromises);
+        console.log('✅ [WEBHOOK] Tutte le email ai venditori sono state inviate');
+      } catch (vendorEmailError) {
+        console.error('❌ [WEBHOOK] Errore invio email ai venditori:', vendorEmailError);
+        // Non bloccare il webhook se le email ai venditori falliscono
+      }
+
+      // Crea notifiche per i venditori
+      console.log('🔔 [WEBHOOK] Creazione notifiche per i venditori...');
+      try {
+        const notificationPromises = [];
+        const itemsByVendor = {};
+        for (const item of order.items) {
+          const vendorId = item.seller.toString();
+          if (!itemsByVendor[vendorId]) {
+            itemsByVendor[vendorId] = [];
+          }
+          itemsByVendor[vendorId].push(item);
+        }
+
+        for (const [vendorId, vendorItems] of Object.entries(itemsByVendor)) {
+          const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
+          const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          
+          const notificationPromise = Notification.create({
+            userId: vendorId,
+            type: 'new_order',
+            message: `🎉 Nuovo ordine ricevuto! ${vendorProductsList} - Totale: €${vendorTotalAmount.toFixed(2)}`,
+            data: {
+              orderId: order._id,
+              orderNumber: order._id.toString(),
+              totalAmount: vendorTotalAmount,
+              items: vendorItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price
+              }))
+            }
+          }).catch(err => {
+            console.error(`❌ [WEBHOOK] Errore creazione notifica per venditore ${vendorId}:`, err.message);
+          });
+
+          notificationPromises.push(notificationPromise);
+        }
+
+        await Promise.all(notificationPromises);
+        console.log('✅ [WEBHOOK] Tutte le notifiche ai venditori sono state create');
+      } catch (notificationError) {
+        console.error('❌ [WEBHOOK] Errore creazione notifiche ai venditori:', notificationError);
+        // Non bloccare il webhook se le notifiche falliscono
       }
 
     } catch (error) {

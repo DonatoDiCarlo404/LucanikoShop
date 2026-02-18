@@ -250,9 +250,6 @@ const ProductCard = ({ product }) => {
                 <>
                   <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                     €{product.discountedPrice?.toFixed(2) || '0.00'}
-                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                      /{product.unit}
-                    </small>
                   </h5>
                   <small className="text-muted" style={{ textDecoration: 'line-through' }}>
                     €{product.originalPrice?.toFixed(2) || '0.00'}
@@ -261,16 +258,10 @@ const ProductCard = ({ product }) => {
               ) : typeof product.price === 'number' ? (
                 <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                   €{product.price.toFixed(2)}
-                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                    /{product.unit}
-                  </small>
                 </h5>
               ) : minVariantPrice !== null ? (
                 <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                   da €{minVariantPrice.toFixed(2)}
-                  <small className="text-muted" style={{ fontSize: '0.7rem' }}>
-                    /{product.unit}
-                  </small>
                 </h5>
               ) : (
                 <h5 className="text-muted mb-0">

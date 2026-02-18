@@ -83,6 +83,17 @@ const VendorDashboard = () => {
     }
   }, [user]);
 
+  // Polling notifiche ogni 30 secondi
+  useEffect(() => {
+    if (!user || (user.role !== 'seller' && user.role !== 'admin')) return;
+
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // 30 secondi
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Carica categorie
   const loadCategories = async () => {
     try {

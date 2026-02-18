@@ -51,6 +51,7 @@ const ProductDetail = () => {
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   // Se il prodotto ha varianti, seleziona la prima combinazione valida all'apertura
   useEffect(() => {
@@ -552,7 +553,6 @@ const ProductDetail = () => {
                             <div className="d-flex align-items-center gap-2 mb-1">
                               <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                                 €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2)}
-                                <small className="text-muted">/{product.unit}</small>
                               </span>
                               <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
                                 {product.discountType === 'fixed' && product.discountAmount
@@ -571,7 +571,6 @@ const ProductDetail = () => {
                         ) : (
                           <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                             €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : (typeof product.price === 'number' ? product.price.toFixed(2) : '—')}
-                            <small className="text-muted">/{product.unit}</small>
                           </span>
                         )}
                       </div>
@@ -603,7 +602,6 @@ const ProductDetail = () => {
                         <div className="d-flex align-items-center gap-2 mb-1">
                           <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                             €{product.discountedPrice.toFixed(2)}
-                            <small className="text-muted">/{product.unit}</small>
                           </span>
                           <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
                             {product.discountType === 'fixed' && product.discountAmount
@@ -622,7 +620,6 @@ const ProductDetail = () => {
                     ) : (
                       <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
                         €{typeof product.price === 'number' ? product.price.toFixed(2) : '0.00'}
-                        <small className="text-muted">/{product.unit}</small>
                       </span>
                     )}
                   </div>
@@ -648,7 +645,28 @@ const ProductDetail = () => {
             <Card className="mb-3">
               <Card.Body>
                 <h5 style={{ color: '#00bf63', fontWeight: 700 }}>Descrizione</h5>
-                <p>{product.description}</p>
+                <p style={{ whiteSpace: 'pre-line' }}>
+                  {showFullDescription 
+                    ? product.description 
+                    : product.description.split('\n').slice(0, 5).join('\n')}
+                </p>
+                {product.description.split('\n').length > 5 && (
+                  <Button 
+                    variant="link" 
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    style={{ 
+                      padding: 0, 
+                      textDecoration: 'none',
+                      color: '#004b75',
+                      fontWeight: 600,
+                      border: 'none',
+                      outline: 'none',
+                      boxShadow: 'none'
+                    }}
+                  >
+                    {showFullDescription ? 'Riduci' : 'Leggi tutto...'}
+                  </Button>
+                )}
               </Card.Body>
             </Card>
           )}

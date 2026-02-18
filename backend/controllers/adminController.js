@@ -289,6 +289,11 @@ export const updateSellerProfile = async (req, res) => {
       seller.paymentMethod = req.body.paymentMethod;
     }
 
+    // Supporto per il campo news (aggiunto per consentire all'admin di modificare la news del venditore)
+    if (req.body.news !== undefined) {
+      seller.news = req.body.news;
+    }
+
     // L'admin può cambiare la password senza verificare quella attuale (privilegio admin)
     if (req.body.password && req.body.password.length >= 8) {
       seller.password = req.body.password;

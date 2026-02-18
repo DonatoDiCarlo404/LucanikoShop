@@ -29,6 +29,8 @@ export const createCheckoutSession = async (req, res) => {
 
         // Raggruppa items per venditore
         const itemsByVendor = {};
+        // SECURITY FIX: Mappa prodotti con sellerId dal database (non dal frontend)
+        const productsWithSeller = {};
 
         for (const item of cartItems) {
             const product = await Product.findById(item._id).populate('seller', 'shopSettings name businessName storeAddress businessPhone businessEmail paymentMethods');
@@ -38,6 +40,9 @@ export const createCheckoutSession = async (req, res) => {
             }
 
             const vendorId = product.seller._id.toString();
+
+            // SECURITY FIX: Salva sellerId corretto dal database
+            productsWithSeller[item._id] = vendorId;
 
             if (!itemsByVendor[vendorId]) {
                 itemsByVendor[vendorId] = {
@@ -187,9 +192,10 @@ export const createCheckoutSession = async (req, res) => {
                 appliedCouponCode: appliedCoupon?.couponCode || '',
                 appliedCouponId: appliedCoupon?._id?.toString() || '',
                 discountAmount: discountAmount ? discountAmount.toString() : '0',
+                // SECURITY FIX: Usa sellerId dal database, non dal frontend
                 cartItems: JSON.stringify(cartItems.map(item => ({
                     productId: item._id,
-                    sellerId: item.seller._id || item.seller,
+                    sellerId: productsWithSeller[item._id], // <-- Dal database!
                     name: item.name,
                     quantity: item.quantity,
                     price: item.price,

@@ -2,7 +2,8 @@ import Stripe from 'stripe';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
-import { sendOrderConfirmationEmail } from '../utils/emailTemplates.js';
+import Notification from '../models/Notification.js';
+import { sendOrderConfirmationEmail, sendNewOrderToVendorEmail } from '../utils/emailTemplates.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -69,7 +70,7 @@ export const handleCheckoutSuccess = async (req, res) => {
     const productsMap = {};
 
     for (const item of cartItemsData) {
-      const product = await Product.findById(item.productId);
+      const product = await Product.findById(item.productId).populate('seller');
       if (!product) {
         console.error(`⚠️ [SUCCESS] Prodotto ${item.productId} non trovato`);
         continue;
@@ -77,12 +78,13 @@ export const handleCheckoutSuccess = async (req, res) => {
       
       productsMap[item.productId] = product;
       
+      // SECURITY FIX: Usa seller dal database, non dai metadata
       orderItems.push({
         product: product._id,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
-        seller: item.sellerId,
+        seller: product.seller._id, // <-- Dal database!
         ivaPercent: product.ivaPercent || 22,
         selectedVariant: item.selectedVariant || null
       });
@@ -238,6 +240,105 @@ export const handleCheckoutSuccess = async (req, res) => {
     } catch (emailError) {
       console.error('❌ [SUCCESS] Errore invio email:', emailError);
       // Non bloccare la risposta se l'email fallisce
+    }
+
+    // Invia email ai venditori
+    console.log('📧 [SUCCESS] Invio email ai venditori...');
+    try {
+      // Raggruppa items per venditore
+      const itemsByVendor = {};
+      for (const item of order.items) {
+        const vendorId = item.seller.toString();
+        if (!itemsByVendor[vendorId]) {
+          itemsByVendor[vendorId] = [];
+        }
+        itemsByVendor[vendorId].push(item);
+      }
+
+      // Invia email a ciascun venditore
+      const vendorEmailPromises = [];
+      for (const [vendorId, vendorItems] of Object.entries(itemsByVendor)) {
+        const vendor = await User.findById(vendorId).select('email name businessName companyName');
+        if (!vendor || !vendor.email) {
+          console.log(`⚠️ [SUCCESS] Venditore ${vendorId} non trovato o senza email`);
+          continue;
+        }
+
+        const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
+        const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const companyName = vendor.businessName || vendor.companyName || vendor.name;
+        const customerName = isGuestOrder ? (session.customer_details?.name || 'Cliente Guest') : (buyerUser?.name || 'Cliente');
+        const billingShippingData = order.deliveryType === 'pickup' 
+          ? `Ritiro in negozio: ${order.pickupAddress?.city || 'N/A'}`
+          : `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.country}`;
+
+        const emailPromise = sendNewOrderToVendorEmail(
+          vendor.email,
+          companyName,
+          order._id.toString(),
+          vendorProductsList,
+          `€${vendorTotalAmount.toFixed(2)}`,
+          customerName,
+          billingShippingData
+        ).catch(err => {
+          console.error(`❌ [SUCCESS] Errore invio email a venditore ${vendor.email}:`, err.message);
+        });
+
+        vendorEmailPromises.push(emailPromise);
+        console.log(`✅ [SUCCESS] Email preparata per venditore: ${vendor.email}`);
+      }
+
+      // Attendi tutte le email ai venditori
+      await Promise.all(vendorEmailPromises);
+      console.log('✅ [SUCCESS] Tutte le email ai venditori sono state inviate');
+    } catch (vendorEmailError) {
+      console.error('❌ [SUCCESS] Errore invio email ai venditori:', vendorEmailError);
+      // Non bloccare la risposta se le email ai venditori falliscono
+    }
+
+    // Crea notifiche per i venditori
+    console.log('🔔 [SUCCESS] Creazione notifiche per i venditori...');
+    try {
+      const notificationPromises = [];
+      const itemsByVendor = {};
+      for (const item of order.items) {
+        const vendorId = item.seller.toString();
+        if (!itemsByVendor[vendorId]) {
+          itemsByVendor[vendorId] = [];
+        }
+        itemsByVendor[vendorId].push(item);
+      }
+
+      for (const [vendorId, vendorItems] of Object.entries(itemsByVendor)) {
+        const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
+        const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        const notificationPromise = Notification.create({
+          userId: vendorId,
+          type: 'new_order',
+          message: `🎉 Nuovo ordine ricevuto! ${vendorProductsList} - Totale: €${vendorTotalAmount.toFixed(2)}`,
+          data: {
+            orderId: order._id,
+            orderNumber: order._id.toString(),
+            totalAmount: vendorTotalAmount,
+            items: vendorItems.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            }))
+          }
+        }).catch(err => {
+          console.error(`❌ [SUCCESS] Errore creazione notifica per venditore ${vendorId}:`, err.message);
+        });
+
+        notificationPromises.push(notificationPromise);
+      }
+
+      await Promise.all(notificationPromises);
+      console.log('✅ [SUCCESS] Tutte le notifiche ai venditori sono state create');
+    } catch (notificationError) {
+      console.error('❌ [SUCCESS] Errore creazione notifiche ai venditori:', notificationError);
+      // Non bloccare la risposta se le notifiche falliscono
     }
 
     res.json({

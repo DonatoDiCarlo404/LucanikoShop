@@ -95,20 +95,22 @@ const VendorProfile = () => {
 
   // Verifica stato Stripe Connect all'avvio e quando torna dall'onboarding
   useEffect(() => {
-    if (user?.role === 'seller') {
+    if (user?.role === 'seller' || (user?.role === 'admin' && sellerId)) {
       checkStripeConnectStatus();
       
-      // Verifica se è tornato dall'onboarding Stripe
-      const stripeOnboarding = searchParams.get('stripe_onboarding');
-      if (stripeOnboarding === 'success') {
-        setSuccess('✅ Configurazione Stripe completata con successo!');
-        checkStripeConnectStatus();
-        // Rimuovi il parametro dall'URL
-        searchParams.delete('stripe_onboarding');
-        setSearchParams(searchParams);
+      // Verifica se è tornato dall'onboarding Stripe (solo per seller)
+      if (user?.role === 'seller') {
+        const stripeOnboarding = searchParams.get('stripe_onboarding');
+        if (stripeOnboarding === 'success') {
+          setSuccess('✅ Configurazione Stripe completata con successo!');
+          checkStripeConnectStatus();
+          // Rimuovi il parametro dall'URL
+          searchParams.delete('stripe_onboarding');
+          setSearchParams(searchParams);
+        }
       }
     }
-  }, [user, searchParams]);
+  }, [user, searchParams, sellerId]);
 
   // State per gestione sconti
   const [showDiscountModal, setShowDiscountModal] = useState(false);
@@ -670,7 +672,12 @@ const VendorProfile = () => {
   const checkStripeConnectStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/stripe-connect/account-status`, {
+      // Se admin sta visualizzando un altro venditore, passa il vendorId
+      const queryParams = (user?.role === 'admin' && sellerId) 
+        ? `?vendorId=${sellerId}` 
+        : '';
+      
+      const response = await fetch(`${API_URL}/stripe-connect/account-status${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -678,9 +685,10 @@ const VendorProfile = () => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('[VendorProfile] Stripe status ricevuto:', data);
         setStripeConnectStatus({
-          connected: data.connected,
-          onboardingComplete: data.onboardingComplete,
+          connected: data.hasAccount || false,
+          onboardingComplete: data.onboardingCompleted || false,
           loading: false
         });
       }
@@ -753,22 +761,36 @@ const VendorProfile = () => {
   const handleOpenStripeDashboard = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/stripe-connect/dashboard-link`, {
+      // Se admin sta visualizzando un altro venditore, passa il vendorId
+      const queryParams = (user?.role === 'admin' && sellerId) 
+        ? `?vendorId=${sellerId}` 
+        : '';
+      
+      const response = await fetch(`${API_URL}/stripe-connect/dashboard-link${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      if (!response.ok) {
-        throw new Error('Errore apertura dashboard Stripe');
-      }
-      
       const data = await response.json();
-      window.open(data.url, '_blank');
       
+      if (response.ok && data.dashboardUrl) {
+        window.open(data.dashboardUrl, '_blank');
+      } else {
+        // Se c'è un URL di fallback (es. link diretto a Stripe), usalo
+        if (data.dashboardUrl) {
+          setError('Account Stripe in modalità live. Apertura dashboard diretta...');
+          setTimeout(() => {
+            window.open(data.dashboardUrl, '_blank');
+            setError('');
+          }, 1500);
+        } else {
+          throw new Error(data.message || 'Errore apertura dashboard Stripe');
+        }
+      }
     } catch (error) {
       console.error('Errore dashboard Stripe:', error);
-      setError('Errore durante l\'apertura della dashboard Stripe');
+      setError(error.message || 'Errore durante l\'apertura della dashboard Stripe');
     }
   };
 
@@ -1083,7 +1105,7 @@ const VendorProfile = () => {
               </div>
               {/* Descrizione attività */}
               {profileData?.businessDescription && (
-                <div className="text-muted mb-2" style={{ fontSize: 15 }}>{profileData.businessDescription}</div>
+                <div className="text-muted mb-2" style={{ fontSize: 15, whiteSpace: 'pre-line' }}>{profileData.businessDescription}</div>
               )}
               {/* Contatti */}
               {profileData?.businessPhone && <div><strong style={{color:'#004b75'}}>Telefono:</strong> <a href={`tel:${profileData.businessPhone}`}>{profileData.businessPhone}</a></div>}
@@ -1660,7 +1682,23 @@ const VendorProfile = () => {
                 setError('');
                 setSuccess('');
                 try {
-                  await authAPI.updateVendorProfile({ news: newsText }, user.token);
+                  // Se admin sta modificando un altro venditore, usa endpoint admin
+                  if (user.role === 'admin' && sellerId) {
+                    const response = await fetch(`${API_URL}/admin/sellers/${sellerId}/profile`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${user.token}`
+                      },
+                      body: JSON.stringify({ news: newsText })
+                    });
+                    if (!response.ok) {
+                      throw new Error('Errore durante il salvataggio della news');
+                    }
+                  } else {
+                    // Altrimenti usa il normale endpoint venditore
+                    await authAPI.updateVendorProfile({ news: newsText }, user.token);
+                  }
                   setSavedNews(newsText);
                   setEditingNews(false); // Disabilita editing dopo il salvataggio
                   // Ricarica il profilo per aggiornare profileData con la nuova news

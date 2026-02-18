@@ -252,7 +252,7 @@ const ShopPage = () => {
                 </Badge>
               )}
               {vendor.businessDescription && (
-                <div className="text-muted mb-2 mt-2" style={{ fontSize: 15 }}>{vendor.businessDescription}</div>
+                <div className="text-muted mb-2 mt-2" style={{ fontSize: 15, whiteSpace: 'pre-line' }}>{vendor.businessDescription}</div>
               )}
               <div className="mb-2">
                 <small className="text-muted">
@@ -406,8 +406,8 @@ const ShopPage = () => {
                 background: '#fff',
                 marginRight: '60px',
               }}>
-                <i className="bi bi-megaphone-fill me-2" style={{ color: '#00bf63' }}></i>
-                <strong style={{ color: '#00bf63' }}>News:</strong>&nbsp;<span style={{ color: '#00bf63' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#004b75' }}></i>
+                <strong style={{ color: '#004b75' }}>News:</strong>&nbsp;<span style={{ color: '#004b75' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
               </Alert>
             </div>
             <div className="news-banner-content" style={{
@@ -426,8 +426,8 @@ const ShopPage = () => {
                   background: '#fff',
                   marginRight: '60px',
                 }}>
-                <i className="bi bi-megaphone-fill me-2" style={{ color: '#00bf63' }}></i>
-                <strong style={{ color: '#00bf63' }}>News:</strong>&nbsp;<span style={{ color: '#00bf63' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                <i className="bi bi-megaphone-fill me-2" style={{ color: '#004b75' }}></i>
+                <strong style={{ color: '#004b75' }}>News:</strong>&nbsp;<span style={{ color: '#004b75' }}>{vendor.news}</span>&nbsp;&nbsp;&nbsp;&nbsp;
               </Alert>
             </div>
           </div>
@@ -442,7 +442,7 @@ const ShopPage = () => {
               }
               .news-banner-track {
                 height: 44px !important;
-                animation-duration: 14s !important;
+                animation-duration: 18s !important;
               }
               .alert-info {
                 font-size: 18px !important;
