@@ -681,9 +681,15 @@ const ProductDetail = () => {
                 <p style={{ whiteSpace: 'pre-line' }}>
                   {showFullDescription 
                     ? product.description 
-                    : product.description.split('\n').slice(0, 5).join('\n')}
+                    : (() => {
+                        const lines = product.description.split('\n');
+                        const first10Lines = lines.slice(0, 10).join('\n');
+                        // Se il preview è ancora più lungo di 800 caratteri, tronca
+                        return first10Lines.length > 800 ? first10Lines.substring(0, 800) + '...' : first10Lines;
+                      })()
+                  }
                 </p>
-                {product.description.split('\n').length > 5 && (
+                {(product.description.split('\n').length > 10 || product.description.length > 800) && (
                   <Button 
                     variant="link" 
                     onClick={() => setShowFullDescription(!showFullDescription)}

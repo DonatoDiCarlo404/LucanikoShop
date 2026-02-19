@@ -323,33 +323,47 @@ export const handleConnectWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
 
+  // Verifica che il webhook secret sia configurato
+  if (!webhookSecret) {
+    console.error('❌ [STRIPE CONNECT WEBHOOK] STRIPE_CONNECT_WEBHOOK_SECRET non configurato!');
+    return res.status(500).json({ error: 'Webhook secret not configured' });
+  }
+
   let event;
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    console.error('⚠️ [STRIPE CONNECT WEBHOOK] Errore verifica:', err.message);
+    console.error('⚠️ [STRIPE CONNECT WEBHOOK] Errore verifica firma:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  console.log('\n🔔 [STRIPE CONNECT WEBHOOK] Evento:', event.type);
+  console.log('\n🔔 [STRIPE CONNECT WEBHOOK] Evento ricevuto:', event.type);
 
-  // Gestisci eventi Connect
-  switch (event.type) {
-    case 'account.updated':
-      await handleAccountUpdated(event.data.object);
-      break;
-    
-    case 'account.external_account.created':
-    case 'account.external_account.updated':
-      console.log('💳 [STRIPE CONNECT WEBHOOK] External account aggiornato');
-      break;
+  // 🔒 IMPORTANTE: Rispondi SUBITO a Stripe con 200 prima di elaborare
+  // Questo previene timeout e garantisce che Stripe consideri il webhook consegnato
+  res.status(200).json({ received: true });
 
-    default:
-      console.log(`⚠️ [STRIPE CONNECT WEBHOOK] Evento non gestito: ${event.type}`);
+  // Elabora l'evento in modo asincrono (non blocca la risposta)
+  try {
+    switch (event.type) {
+      case 'account.updated':
+        await handleAccountUpdated(event.data.object);
+        break;
+      
+      case 'account.external_account.created':
+      case 'account.external_account.updated':
+        console.log('💳 [STRIPE CONNECT WEBHOOK] External account aggiornato');
+        break;
+
+      default:
+        console.log(`ℹ️ [STRIPE CONNECT WEBHOOK] Evento non gestito: ${event.type}`);
+    }
+  } catch (error) {
+    // Log dell'errore ma NON rispondere a Stripe (già fatto sopra)
+    console.error('❌ [STRIPE CONNECT WEBHOOK] Errore elaborazione evento:', error);
+    // In produzione potresti voler inviare un alert
   }
-
-  res.json({ received: true });
 };
 
 /**
