@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
+import compression from 'compression';
 import { connectRedis } from './config/redis.js';
 import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
@@ -53,6 +54,23 @@ const app = express();
 
 // Trust proxy per ottenere IP reali in produzione (Railway, Vercel, etc.)
 app.set('trust proxy', 1);
+
+// 🚀 Compressione gzip/deflate per migliorare le performance (risposte HTTP ridotte ~70%)
+app.use(compression({
+  // Comprimi solo risposte >= 1KB
+  threshold: 1024,
+  // Livello di compressione (1-9, default 6 è ottimale)
+  level: 6,
+  // Filtra quali risposte comprimere
+  filter: (req, res) => {
+    // Non comprimere se il client non supporta compression
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Usa il default filter di compression
+    return compression.filter(req, res);
+  }
+}));
 
 // Serve i PDF vendor caricati
 app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs')));

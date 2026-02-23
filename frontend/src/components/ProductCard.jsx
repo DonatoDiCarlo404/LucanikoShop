@@ -176,10 +176,10 @@ const ProductCard = ({ product }) => {
               <img
                 src={CloudinaryPresets.productCard(img.url)}
                 srcSet={`
-                  ${CloudinaryPresets.thumbnail(img.url)} 200w,
-                  ${CloudinaryPresets.productCard(img.url)} 400w
+                  ${CloudinaryPresets.productCardMobile(img.url)} 300w,
+                  ${CloudinaryPresets.productCard(img.url)} 500w
                 `}
-                sizes="(max-width: 576px) 200px, 400px"
+                sizes="(max-width: 576px) 180px, 280px"
                 alt={product.name}
                 className="product-card-img"
                 loading="lazy"
