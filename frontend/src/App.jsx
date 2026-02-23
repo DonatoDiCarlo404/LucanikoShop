@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/authContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleAnalytics from './components/GoogleAnalytics';
+import { initSentry } from './config/sentry';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -51,6 +52,7 @@ import Partners from './pages/Partners';
 import AdminPaymentControl from './pages/AdminPaymentControl';
 import CookieList from './pages/CookieList';
 import AdminCookieConsent from './pages/AdminCookieConsent';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function AppContent() {
   const location = useLocation();
@@ -148,6 +150,11 @@ function AppContent() {
 function App() {
   const [showSplash, setShowSplash] = useState(true);
 
+  // Inizializza Sentry per error tracking
+  useEffect(() => {
+    initSentry();
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 1000); 
     return () => clearTimeout(timer);
@@ -169,13 +176,15 @@ function App() {
 
   // Mostra l'app normale
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <CartProvider>
-          <AppContent />
-        </CartProvider>
-      </AuthProvider>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <AuthProvider>
+          <CartProvider>
+            <AppContent />
+          </CartProvider>
+        </AuthProvider>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

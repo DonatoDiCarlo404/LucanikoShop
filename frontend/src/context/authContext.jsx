@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { authAPI } from '../services/api';
+import { setUser as setSentryUser, clearUser as clearSentryUser } from '../config/sentry';
 
 const AuthContext = createContext();
 
@@ -25,6 +26,8 @@ export const AuthProvider = ({ children }) => {
         try {
           const userData = await authAPI.getProfile(token);
           setUser({ ...userData, token });
+          // Imposta utente in Sentry per tracking errori
+          setSentryUser(userData);
           // Se l'utente è admin, imposta il bypass per la manutenzione
           if (userData.role === 'admin') {
             sessionStorage.setItem('maintenance_bypass', 'true');
@@ -50,6 +53,8 @@ export const AuthProvider = ({ children }) => {
       // Recupera profilo completo
       const userData = await authAPI.getProfile(data.token);
       setUser({ ...userData, token: data.token });
+      // Imposta utente in Sentry
+      setSentryUser(userData);
       // Se l'utente è admin, imposta il bypass per la manutenzione
       if (userData.role === 'admin') {
         sessionStorage.setItem('maintenance_bypass', 'true');
@@ -76,6 +81,8 @@ export const AuthProvider = ({ children }) => {
       // Recupera profilo completo
       const profileData = await authAPI.getProfile(data.token);
       setUser({ ...profileData, token: data.token });
+      // Imposta utente in Sentry
+      setSentryUser(profileData);
       return { success: true };
     } catch (err) {
       setError(err.message);
@@ -88,6 +95,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    // Rimuovi utente da Sentry
+    clearSentryUser();
   }, []);
 
   const value = useMemo(() => ({

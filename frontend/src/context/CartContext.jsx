@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from './authContext';
+import { toast } from 'react-toastify';
 
 const CartContext = createContext();
 
@@ -18,56 +19,155 @@ export const CartProvider = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [storageWarningShown, setStorageWarningShown] = useState(false);
 
   // Genera la chiave del carrello basata sull'utente
   const getCartKey = () => {
     return user ? `cart_${user._id}` : 'cart_guest';
   };
 
+  // Utility: Pulisce vecchi carrelli dal localStorage se pieno
+  const cleanupOldCarts = () => {
+    try {
+      const currentCartKey = getCartKey();
+      const keysToRemove = [];
+      
+      // Trova tutti i carrelli di altri utenti
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('cart_') && key !== currentCartKey) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      // Rimuovi vecchi carrelli
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`🧹 [CartContext] Rimosso carrello vecchio: ${key}`);
+      });
+      
+      return keysToRemove.length;
+    } catch (error) {
+      console.error('🔴 [CartContext] Errore durante cleanup:', error);
+      return 0;
+    }
+  };
+
   // Carica carrello da localStorage all'avvio o quando l'utente cambia
   useEffect(() => {
-    const cartKey = getCartKey();
-    const savedCart = localStorage.getItem(cartKey);
-    
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    } else {
-      setCartItems([]); // Carrello vuoto per nuovo utente
+    try {
+      const cartKey = getCartKey();
+      const savedCart = localStorage.getItem(cartKey);
+      
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        // Validazione base: assicurati che sia un array
+        if (Array.isArray(parsedCart)) {
+          setCartItems(parsedCart);
+        } else {
+          console.warn('⚠️ [CartContext] Dati carrello non validi, reset carrello');
+          setCartItems([]);
+        }
+      } else {
+        setCartItems([]); // Carrello vuoto per nuovo utente
+      }
+    } catch (error) {
+      console.error('🔴 [CartContext] Errore caricamento carrello:', error);
+      setCartItems([]); // Fallback sicuro
+    } finally {
+      // Il coupon NON viene salvato - deve essere inserito manualmente ogni volta
+      setIsLoaded(true);
     }
-    
-    // Il coupon NON viene salvato - deve essere inserito manualmente ogni volta
-    
-    setIsLoaded(true);
   }, [user?._id]); // Ricarica quando cambia utente
 
   // Salva carrello in localStorage quando cambia (solo dopo il primo caricamento)
   useEffect(() => {
     if (isLoaded) {
-      const cartKey = getCartKey();
-      localStorage.setItem(cartKey, JSON.stringify(cartItems));
+      try {
+        const cartKey = getCartKey();
+        localStorage.setItem(cartKey, JSON.stringify(cartItems));
+      } catch (error) {
+        // Se localStorage è pieno, prova a pulire vecchi carrelli
+        if (error.name === 'QuotaExceededError') {
+          console.warn('⚠️ [CartContext] localStorage pieno, pulizia in corso...');
+          const cleaned = cleanupOldCarts();
+          
+          if (cleaned > 0) {
+            // Riprova dopo la pulizia
+            try {
+              const cartKey = getCartKey();
+              localStorage.setItem(cartKey, JSON.stringify(cartItems));
+              console.log('✅ [CartContext] Carrello salvato dopo pulizia');
+              if (!storageWarningShown) {
+                toast.info('Pulizia automatica completata. Il carrello è stato salvato.', {
+                  autoClose: 5000
+                });
+                setStorageWarningShown(true);
+              }
+            } catch (retryError) {
+              console.error('🔴 [CartContext] Impossibile salvare carrello anche dopo pulizia:', retryError);
+              if (!storageWarningShown) {
+                toast.warning('Spazio browser quasi esaurito. Il carrello funziona ma non verrà salvato. Svuota la cache del browser.', {
+                  autoClose: 8000
+                });
+                setStorageWarningShown(true);
+              }
+            }
+          } else {
+            console.error('🔴 [CartContext] localStorage pieno, nessun vecchio carrello da rimuovere');
+            if (!storageWarningShown) {
+              toast.warning('Spazio browser esaurito. Svuota la cache per salvare il carrello.', {
+                autoClose: 8000
+              });
+              setStorageWarningShown(true);
+            }
+          }
+        } else {
+          console.error('🔴 [CartContext] Errore salvataggio carrello:', error);
+        }
+        // Non blocca l'app - il carrello funziona lo stesso in memoria
+      }
     }
-  }, [cartItems, isLoaded, user?._id]);
+  }, [cartItems, isLoaded, user?._id, storageWarningShown]);
 
     // Aggiungi prodotto al carrello
   const addToCart = useCallback((product, quantity = 1) => {
-    setCartItems((prevItems) => {
-      const getKey = (item) => item._id + (item.selectedVariantSku ? `__${item.selectedVariantSku}` : '');
-      const newProductKey = getKey(product);
-      const existingItem = prevItems.find(item => getKey(item) === newProductKey);
-
-      let newItems;
-      if (existingItem) {
-        newItems = prevItems.map(item =>
-          getKey(item) === newProductKey
-            ? { ...product, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        newItems = [...prevItems, { ...product, quantity }];
+    try {
+      // Validazione prodotto
+      if (!product || !product._id) {
+        console.error('🔴 [CartContext] Prodotto non valido:', product);
+        throw new Error('Impossibile aggiungere il prodotto al carrello: dati non validi');
       }
 
-      return newItems;
-    });
+      setCartItems((prevItems) => {
+        try {
+          const getKey = (item) => item._id + (item.selectedVariantSku ? `__${item.selectedVariantSku}` : '');
+          const newProductKey = getKey(product);
+          const existingItem = prevItems.find(item => getKey(item) === newProductKey);
+
+          let newItems;
+          if (existingItem) {
+            newItems = prevItems.map(item =>
+              getKey(item) === newProductKey
+                ? { ...product, quantity: item.quantity + quantity }
+                : item
+            );
+          } else {
+            newItems = [...prevItems, { ...product, quantity }];
+          }
+
+          return newItems;
+        } catch (innerError) {
+          console.error('🔴 [CartContext] Errore durante aggiornamento carrello:', innerError);
+          // Ritorna stato precedente senza modifiche
+          return prevItems;
+        }
+      });
+    } catch (error) {
+      console.error('🔴 [CartContext] Errore addToCart:', error);
+      // Mostra errore user-friendly
+      alert('Si è verificato un errore aggiungendo il prodotto al carrello. Riprova.');
+    }
   }, []);
 
   // Rimuovi prodotto dal carrello

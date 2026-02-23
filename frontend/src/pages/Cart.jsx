@@ -524,12 +524,10 @@ const Cart = () => {
                         <small className="text-muted d-block" style={{ textDecoration: 'line-through' }}>
                           €{item.originalPrice.toFixed(2)}
                         </small>
-                        <small className="text-muted d-block">/{item.unit}</small>
                       </>
                     ) : (
                       <>
                         <strong>€{typeof item.price === 'number' && !isNaN(item.price) ? item.price.toFixed(2) : '0.00'}</strong>
-                        <small className="text-muted d-block">/{item.unit}</small>
                       </>
                     )}
                   </Col>
