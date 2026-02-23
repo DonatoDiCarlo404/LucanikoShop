@@ -97,12 +97,12 @@ export const CloudinaryPresets = {
     quality: 'auto:good'
   }),
 
-  // Card prodotto (400x400)
+  // Card prodotto (600x600) - Risoluzione maggiore per schermi Retina
   productCard: (url) => optimizeCloudinaryUrl(url, {
-    width: 400,
-    height: 400,
+    width: 600,
+    height: 600,
     crop: 'limit',
-    quality: 'auto'
+    quality: 'auto:good'
   }),
 
   // Dettaglio prodotto (800x800)
