@@ -937,15 +937,15 @@ const Cart = () => {
           <SuggestedProductsCarousel 
             cartItems={cartItems}
             sameVendor={true}
-            title="🏪 Altri prodotti dello stesso venditore"
+            title="Altri prodotti dello stesso venditore"
             titleColor="#004b75"
           />
           
           <SuggestedProductsCarousel 
             cartItems={cartItems}
             sameVendor={false}
-            title="✨ Prodotti simili da altre aziende lucane"
-            titleColor="#004b75"
+            title="Prodotti simili da altre aziende lucane"
+            titleColor="#00bf63"
           />
         </>
       )}

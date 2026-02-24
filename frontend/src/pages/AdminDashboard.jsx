@@ -19,6 +19,7 @@ const AdminDashboard = () => {
   // Stato per i documenti allegati
   const [vendorDocs, setVendorDocs] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [sellersPage, setSellersPage] = useState(1);
   
   // Stato per le News
   const [adminNews, setAdminNews] = useState([]);
@@ -405,6 +406,18 @@ const AdminDashboard = () => {
     );
   });
 
+  // Paginazione venditori - 10 per pagina
+  const sellersPerPage = 10;
+  const totalSellersPages = Math.ceil(filteredSellers.length / sellersPerPage);
+  const startIndex = (sellersPage - 1) * sellersPerPage;
+  const endIndex = startIndex + sellersPerPage;
+  const paginatedSellers = filteredSellers.slice(startIndex, endIndex);
+
+  // Reset pagina quando cambia la ricerca
+  useEffect(() => {
+    setSellersPage(1);
+  }, [searchTerm]);
+
   if (loading) {
     return (
       <Container className="text-center py-5">
@@ -581,7 +594,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSellers.map((seller) => (
+                    {paginatedSellers.map((seller) => (
                       <tr key={seller._id}>
                         <td>{seller.name}</td>
                         <td>{seller.email}</td>
@@ -713,6 +726,33 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </Table>
+              )}
+              
+              {/* Paginazione venditori */}
+              {totalSellersPages > 1 && (
+                <Row className="mt-4">
+                  <Col className="d-flex justify-content-center align-items-center gap-3">
+                    <Button
+                      variant="outline-primary"
+                      disabled={sellersPage === 1}
+                      onClick={() => { window.scrollTo(0, 0); setSellersPage(sellersPage - 1); }}
+                      className="pagination-btn"
+                    >
+                      ← Precedente
+                    </Button>
+                    <span className="text-muted">
+                      Pagina <strong>{sellersPage}</strong> di <strong>{totalSellersPages}</strong> ({filteredSellers.length} venditori totali)
+                    </span>
+                    <Button
+                      variant="outline-primary"
+                      disabled={sellersPage >= totalSellersPages}
+                      onClick={() => { window.scrollTo(0, 0); setSellersPage(sellersPage + 1); }}
+                      className="pagination-btn"
+                    >
+                      Successiva →
+                    </Button>
+                  </Col>
+                </Row>
               )}
             </Card.Body>
           </Card>

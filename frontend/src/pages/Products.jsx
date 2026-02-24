@@ -578,7 +578,7 @@ const Products = () => {
             <Button
                 variant="outline-primary"
                 disabled={page === 1}
-                onClick={() => setPage(page - 1)}
+                onClick={() => { window.scrollTo(0, 0); setPage(page - 1); }}
                 className="pagination-btn"
             >
               ← Precedente
@@ -589,7 +589,7 @@ const Products = () => {
             <Button
                 variant="outline-primary"
                 disabled={page >= pages}
-                onClick={() => setPage(page + 1)}
+                onClick={() => { window.scrollTo(0, 0); setPage(page + 1); }}
                 className="pagination-btn"
             >
               Successiva →

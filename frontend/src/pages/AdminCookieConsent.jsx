@@ -361,7 +361,7 @@ const AdminCookieConsent = () => {
                         variant="outline-primary"
                         size="sm"
                         disabled={pagination.page === 1}
-                        onClick={() => setFilters(prev => ({ ...prev, page: prev.page - 1 }))}
+                        onClick={() => { window.scrollTo(0, 0); setFilters(prev => ({ ...prev, page: prev.page - 1 })); }}
                       >
                         <i className="bi bi-chevron-left"></i> Precedente
                       </Button>
@@ -369,7 +369,7 @@ const AdminCookieConsent = () => {
                         variant="outline-primary"
                         size="sm"
                         disabled={pagination.page === pagination.pages}
-                        onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                        onClick={() => { window.scrollTo(0, 0); setFilters(prev => ({ ...prev, page: prev.page + 1 })); }}
                       >
                         Successivo <i className="bi bi-chevron-right"></i>
                       </Button>

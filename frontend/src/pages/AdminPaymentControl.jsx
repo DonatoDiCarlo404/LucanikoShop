@@ -274,6 +274,7 @@ const AdminPaymentControl = () => {
   };
 
   const handleTransferPageChange = (newPage) => {
+    window.scrollTo(0, 0);
     setTransferFilters(prev => ({ ...prev, page: newPage }));
   };
 
@@ -409,6 +410,7 @@ const AdminPaymentControl = () => {
   };
 
   const handlePageChange = (newPage) => {
+    window.scrollTo(0, 0);
     setFilters(prev => ({ ...prev, page: newPage }));
   };
 
