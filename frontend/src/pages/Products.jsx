@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, API_URL } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import SEOHelmet from '../components/SEOHelmet';
+import OtherCategoriesCarousel from '../components/OtherCategoriesCarousel';
 
 const Products = () => {
   const [searchParams] = useSearchParams();
@@ -595,6 +596,15 @@ const Products = () => {
             </Button>
           </Col>
         </Row>
+      )}
+
+      {/* Carosello altre categorie - mostrato SOLO in "Cibi e Bevande" DOPO la paginazione */}
+      {category === 'Cibi e Bevande' && !search && (
+        <OtherCategoriesCarousel 
+          excludeCategory="Cibi e Bevande"
+          title="Scopri altri prodotti"
+          titleColor="#004b75"
+        />
       )}
     </Container>
     </main>

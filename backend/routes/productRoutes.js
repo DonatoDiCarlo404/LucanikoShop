@@ -9,6 +9,7 @@ import {
   getMyProducts,
   getPendingProductsCount,
   getSuggestedProducts,
+  getOtherCategoriesProducts,
 } from '../controllers/productController.js';
 import { protect, seller, admin } from '../middlewares/auth.js';
 import { cache } from '../middlewares/cache.js';
@@ -17,6 +18,7 @@ const router = express.Router();
 
 // Rotte pubbliche (CACHE: 5 minuti per liste, 10 minuti per singolo prodotto)
 router.get('/', cache(300), getProducts);
+router.get('/other-categories', cache(300), getOtherCategoriesProducts); // Prodotti di altre categorie
 router.get('/:id', cache(600), getProductById);
 router.post('/suggested', cache(300), getSuggestedProducts); // Nuova route per prodotti suggeriti
 

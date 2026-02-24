@@ -62,8 +62,9 @@ export const getProducts = async (req, res) => {
     // Paginazione
     const skip = (page - 1) * limit;
 
-    // Determina l'ordinamento
-    let sortOptions = { createdAt: -1 }; // default: più recenti
+    // Determina l'ordinamento - default RANDOM per varietà
+    let sortOptions = null;
+    let useRandom = !sortBy || sortBy === 'random'; // Default o esplicito random
 
     if (sortBy === 'price-asc') {
       sortOptions = { price: 1 };
@@ -77,15 +78,66 @@ export const getProducts = async (req, res) => {
       sortOptions = { createdAt: -1 };
     }
 
-    const products = await Product.find(query)
-      .populate('seller', 'name businessName email slug')
-      .populate('category', 'name')
-      .populate('subcategory', 'name')
-      .limit(Number(limit))
-      .skip(skip)
-      .sort(sortOptions);
-
+    let products;
     const total = await Product.countDocuments(query);
+
+    // Se ordinamento random, usa aggregation con $sample
+    if (useRandom) {
+      // Calcola quanti documenti servono per questa pagina
+      const sampleSize = Math.min(Number(limit), total);
+      
+      const pipeline = [
+        { $match: query },
+        { $sample: { size: sampleSize + skip } }, // Prendi più elementi per simulare skip
+        { $skip: skip },
+        { $limit: Number(limit) },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'seller',
+            foreignField: '_id',
+            as: 'seller'
+          }
+        },
+        { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'subcategory',
+            foreignField: '_id',
+            as: 'subcategory'
+          }
+        },
+        { $unwind: { path: '$subcategory', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            'seller.password': 0,
+            'seller.paymentMethods': 0,
+            'seller.role': 0
+          }
+        }
+      ];
+
+      products = await Product.aggregate(pipeline);
+    } else {
+      // Ordinamento classico
+      products = await Product.find(query)
+        .populate('seller', 'name businessName email slug')
+        .populate('category', 'name')
+        .populate('subcategory', 'name')
+        .limit(Number(limit))
+        .skip(skip)
+        .sort(sortOptions);
+    }
 
     res.json({
       products,
@@ -460,17 +512,107 @@ export const getSuggestedProducts = async (req, res) => {
       query.category = { $in: categoryIds };
     }
 
-    // Recupera prodotti suggeriti
-    const products = await Product.find(query)
+    // Recupera prodotti suggeriti (prendi più risultati per poi randomizzarli)
+    const fetchLimit = Number(limit) * 3; // Prendi 3x per avere varietà
+    
+    const allProducts = await Product.find(query)
       .populate('seller', 'businessName name slug')
       .populate('category', 'name')
       .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage discountAmount discountType unit isActive variants originalPrice ivaPercent seller hasVariants')
-      .limit(Number(limit))
-      .sort({ createdAt: -1 });
+      .limit(fetchLimit);
+
+    // Randomizza i risultati usando Fisher-Yates shuffle
+    const shuffled = [...allProducts];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Prendi solo il numero richiesto
+    const products = shuffled.slice(0, Number(limit));
 
     res.json({ products });
   } catch (error) {
     console.error('Errore recupero prodotti suggeriti:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Ottieni prodotti randomizzati da altre categorie
+// @route   GET /api/products/other-categories
+// @access  Public
+export const getOtherCategoriesProducts = async (req, res) => {
+  try {
+    const { excludeCategory, limit = 12 } = req.query;
+
+    // Costruisci query - escludi categoria specificata
+    let query = {
+      isActive: true
+    };
+
+    // Se c'è una categoria da escludere, trova il suo ID
+    if (excludeCategory) {
+      const categoryDoc = await Category.findOne({ name: excludeCategory });
+      if (categoryDoc) {
+        query.category = { $ne: categoryDoc._id };
+      }
+    }
+
+    // Usa aggregation con $sample per una randomizzazione vera a livello database
+    // Questo garantisce varietà equa tra TUTTE le categorie
+    const pipeline = [
+      { $match: query },
+      { $sample: { size: Number(limit) } }, // Randomizzazione MongoDB nativa
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'seller',
+          foreignField: '_id',
+          as: 'seller'
+        }
+      },
+      { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          name: 1,
+          description: 1,
+          price: 1,
+          images: 1,
+          category: { _id: 1, name: 1 },
+          subcategory: 1,
+          stock: 1,
+          rating: 1,
+          numReviews: 1,
+          hasActiveDiscount: 1,
+          discountedPrice: 1,
+          discountPercentage: 1,
+          discountAmount: 1,
+          discountType: 1,
+          unit: 1,
+          isActive: 1,
+          variants: 1,
+          originalPrice: 1,
+          ivaPercent: 1,
+          hasVariants: 1,
+          seller: { _id: 1, businessName: 1, name: 1, slug: 1 }
+        }
+      }
+    ];
+
+    const products = await Product.aggregate(pipeline);
+
+    res.json({ products });
+  } catch (error) {
+    console.error('Errore recupero prodotti altre categorie:', error);
     res.status(500).json({ message: error.message });
   }
 };

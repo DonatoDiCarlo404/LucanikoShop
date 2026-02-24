@@ -1,26 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Card, Spinner, Button } from 'react-bootstrap';
+import { Card, Spinner, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, wishlistAPI } from '../services/api';
-import { useCart } from '../context/CartContext';
-import { toast } from 'react-toastify';
-import './SuggestedProductsCarousel.css';
 import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 import { useAuth } from '../context/authContext';
 
-const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleColor = '#333' }) => {
+const OtherCategoriesCarousel = ({ excludeCategory, title = '🌟 Scopri anche altre categorie', titleColor = '#004b75' }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [wishlistItems, setWishlistItems] = useState({});
   const [wishlistLoading, setWishlistLoading] = useState({});
   const navigate = useNavigate();
-  const { addToCart } = useCart();
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchSuggestedProducts();
-  }, [cartItems]);
+    fetchOtherCategoriesProducts();
+  }, [excludeCategory]);
 
   // Controlla wishlist quando cambiano i prodotti o l'utente
   useEffect(() => {
@@ -41,61 +36,31 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
     checkWishlist();
   }, [user, products]);
 
-  const fetchSuggestedProducts = async () => {
-    if (!cartItems || cartItems.length === 0) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchOtherCategoriesProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/products/suggested`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cartItems: cartItems.map(item => ({
-            _id: item._id,
-            category: item.category?._id || item.category,
-            seller: item.seller?._id || item.seller
-          })),
-          sameVendor,
-          limit: 8
-        }),
+      const params = new URLSearchParams({
+        limit: '12'
       });
+      
+      if (excludeCategory) {
+        params.append('excludeCategory', excludeCategory);
+      }
 
+      const response = await fetch(`${API_URL}/products/other-categories?${params}`);
       const data = await response.json();
       
       if (response.ok) {
         setProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Errore nel recupero prodotti suggeriti:', error);
+      console.error('Errore nel recupero prodotti altre categorie:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const scroll = (direction) => {
-    const container = document.getElementById(`carousel-${sameVendor ? 'same' : 'other'}`);
-    if (container) {
-      const scrollAmount = 300;
-      const newPosition = direction === 'left' 
-        ? scrollPosition - scrollAmount 
-        : scrollPosition + scrollAmount;
-      
-      container.scrollTo({ left: newPosition, behavior: 'smooth' });
-      setScrollPosition(newPosition);
-    }
-  };
-
-  const handleAddToCart = (product) => {
-    if (product.hasVariants && product.variants?.length > 0) {
-      navigate(`/products/${product._id}`);
-    } else {
-      addToCart(product);
-      toast.success('Prodotto aggiunto al carrello');
-    }
+  const handleViewDetails = (productId) => {
+    navigate(`/products/${productId}`);
   };
 
   const handleWishlistToggle = async (e, productId) => {
@@ -131,44 +96,54 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
   }
 
   return (
-    <div className="suggested-products-section mb-4">
-      <h4 className="mb-3" style={{ color: titleColor }}>{title}</h4>
+    <div className="other-categories-section mb-5 mt-5">
+      <h4 className="mb-4 text-center" style={{ color: titleColor, fontWeight: 700 }}>{title}</h4>
       
-      <div className="carousel-wrapper position-relative">
-        {scrollPosition > 0 && (
-          <button 
-            className="carousel-arrow carousel-arrow-left"
-            onClick={() => scroll('left')}
-            aria-label="Scorri a sinistra"
-          >
-            ‹
-          </button>
-        )}
-        
-        <div 
-          id={`carousel-${sameVendor ? 'same' : 'other'}`}
-          className="suggested-products-carousel"
-        >
-          {products.map((product) => {
-            // Calcola il prezzo da mostrare
-            let displayPrice = product.price;
-            let displayDiscountedPrice = product.discountedPrice;
-            
-            // Se il prodotto ha varianti, prendi il prezzo minimo
-            if (product.hasVariants && product.variants && product.variants.length > 0) {
-              const prices = product.variants.map(v => v.price).filter(p => p != null);
-              displayPrice = prices.length > 0 ? Math.min(...prices) : 0;
-              
-              if (product.hasActiveDiscount) {
-                const discountedPrices = product.variants.map(v => v.discountedPrice).filter(p => p != null);
-                displayDiscountedPrice = discountedPrices.length > 0 ? Math.min(...discountedPrices) : displayPrice;
-              }
+      <Row>
+        {products.map((product) => {
+          // Calcola il prezzo da mostrare con controlli robusti
+          let displayPrice = product.price || 0;
+          let displayDiscountedPrice = product.discountedPrice || displayPrice;
+          
+          // Se il prodotto ha varianti, prendi il prezzo minimo
+          if (product.hasVariants && product.variants && product.variants.length > 0) {
+            const prices = product.variants.map(v => v.price).filter(p => p != null && p > 0);
+            if (prices.length > 0) {
+              displayPrice = Math.min(...prices);
             }
             
-            return (
+            if (product.hasActiveDiscount) {
+              const discountedPrices = product.variants.map(v => v.discountedPrice).filter(p => p != null && p > 0);
+              if (discountedPrices.length > 0) {
+                displayDiscountedPrice = Math.min(...discountedPrices);
+              } else {
+                displayDiscountedPrice = displayPrice;
+              }
+            }
+          }
+
+          // Se il prezzo è ancora 0 o null, salta questo prodotto
+          if (!displayPrice || displayPrice <= 0) {
+            return null;
+          }
+          
+          return (
+          <Col key={product._id} md={2} sm={4} xs={6} className="mb-4">
             <Card 
-              key={product._id} 
-              className="suggested-product-card"
+              className="h-100 shadow-sm"
+              style={{ 
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                border: '1px solid #e0e0e0'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-5px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+              }}
             >
               {/* Cuore wishlist in alto a sinistra, solo per buyer loggato */}
               {user && user.role === 'buyer' && (
@@ -205,9 +180,9 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
               )}
 
               <div 
-                className="suggested-product-image"
+                className="position-relative"
                 onClick={() => navigate(`/products/${product._id}`)}
-                style={{ cursor: 'pointer' }}
+                style={{ overflow: 'hidden' }}
               >
                 {product.images && product.images.length > 0 ? (
                   <Card.Img 
@@ -217,81 +192,110 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
                       ${CloudinaryPresets.thumbnail(product.images[0].url)} 200w,
                       ${CloudinaryPresets.productCard(product.images[0].url)} 400w
                     `}
-                    sizes="(max-width: 576px) 200px, 300px"
+                    sizes="(max-width: 576px) 150px, 200px"
                     alt={product.name}
                     loading="lazy"
+                    style={{ height: '180px', objectFit: 'cover' }}
                   />
                 ) : (
-                  <div className="no-image">
-                    <i className="bi bi-image"></i>
+                  <div className="d-flex align-items-center justify-content-center bg-light" style={{ height: '180px' }}>
+                    <i className="bi bi-image" style={{ fontSize: '3rem', color: '#ccc' }}></i>
                   </div>
                 )}
                 
                 {product.hasActiveDiscount && product.discountPercentage > 0 && (
-                  <div className="discount-badge" style={{ backgroundColor: '#861515' }}>
+                  <div 
+                    className="position-absolute top-0 end-0 m-2 px-2 py-1 rounded"
+                    style={{ 
+                      backgroundColor: '#861515', 
+                      color: 'white', 
+                      fontSize: '0.75rem',
+                      fontWeight: 700
+                    }}
+                  >
                     -{product.discountPercentage}%
+                  </div>
+                )}
+                
+                {/* Badge categoria */}
+                {product.category?.name && (
+                  <div 
+                    className="position-absolute bottom-0 start-0 m-2 px-2 py-1 rounded"
+                    style={{ 
+                      backgroundColor: 'rgba(0, 75, 117, 0.9)', 
+                      color: 'white', 
+                      fontSize: '0.7rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    {product.category.name}
                   </div>
                 )}
               </div>
               
-              <Card.Body className="d-flex flex-column">
+              <Card.Body className="d-flex flex-column p-3">
                 <Card.Title 
-                  className="suggested-product-title"
+                  className="mb-2"
                   onClick={() => navigate(`/products/${product._id}`)}
-                  style={{ cursor: 'pointer', color: '#004b75' }}
+                  style={{ 
+                    cursor: 'pointer', 
+                    color: '#004b75',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    minHeight: '40px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical'
+                  }}
                 >
                   {product.name}
                 </Card.Title>
                 
                 {product.seller?.businessName && (
-                  <Card.Text className="text-muted small mb-2">
+                  <Card.Text className="text-muted small mb-2" style={{ fontSize: '0.8rem' }}>
                     {product.seller.businessName}
                   </Card.Text>
                 )}
                 
-                <div className="price-section mb-2">
+                <div className="mb-2">
                   {product.hasActiveDiscount ? (
                     <>
-                      <span className="discounted-price fw-bold" style={{ color: '#004b75' }}>
+                      <div className="fw-bold" style={{ color: '#004b75', fontSize: '1.1rem' }}>
                         {product.hasVariants && 'da '}€{displayDiscountedPrice?.toFixed(2)}
-                      </span>
-                      <span className="original-price text-muted text-decoration-line-through ms-2">
+                      </div>
+                      <div className="text-muted text-decoration-line-through" style={{ fontSize: '0.85rem' }}>
                         €{displayPrice?.toFixed(2)}
-                      </span>
+                      </div>
                     </>
                   ) : (
-                    <span className="current-price fw-bold" style={{ color: '#004b75' }}>
+                    <div className="fw-bold" style={{ color: '#004b75', fontSize: '1.1rem' }}>
                       {product.hasVariants && 'da '}€{displayPrice?.toFixed(2)}
-                    </span>
+                    </div>
                   )}
                 </div>
                 
                 <Button 
                   variant="outline-primary" 
                   size="sm" 
-                  onClick={() => handleAddToCart(product)}
-                  className="mt-auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetails(product._id);
+                  }}
+                  className="mt-auto w-100"
+                  style={{ fontSize: '0.85rem' }}
                 >
-                  {product.hasVariants ? 'Vedi dettagli' : 'Aggiungi'}
+                  Vedi dettagli
                 </Button>
               </Card.Body>
             </Card>
-            );
-          })}
-        </div>
-        
-        {products.length > 3 && (
-          <button 
-            className="carousel-arrow carousel-arrow-right"
-            onClick={() => scroll('right')}
-            aria-label="Scorri a destra"
-          >
-            ›
-          </button>
-        )}
-      </div>
+          </Col>
+          );
+        })}
+      </Row>
     </div>
   );
 };
 
-export default SuggestedProductsCarousel;
+export default OtherCategoriesCarousel;
