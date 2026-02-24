@@ -29,15 +29,15 @@ export const getPublicVendorProfile = async (req, res) => {
       return res.status(404).json({ message: 'Questo utente non è un venditore' });
     }
 
-    // Ottieni prodotti attivi del venditore
+    // Ottieni prodotti del venditore (inclusi quelli in modalità vacanza)
+    // ProductCard gestirà il badge "Non disponibile" per prodotti con isActive: false
     const products = await Product.find({ 
-      seller: vendor._id, 
-      isActive: true
+      seller: vendor._id
     })
       .populate('category', 'name')
       .populate('subcategory', 'name')
       .populate('seller', 'name businessName')
-      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit isActive variants originalPrice ivaPercent seller')
+      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage unit isActive variants originalPrice ivaPercent seller hasVariants')
       .sort('-createdAt')
       .limit(50);
 
