@@ -171,6 +171,8 @@ const productSchema = new mongoose.Schema(
         value: String
       }],
       price: Number,  // Se null, usa il prezzo base del prodotto
+      originalPrice: Number,  // Prezzo originale prima dello sconto
+      discountedPrice: Number,  // Prezzo scontato
       stock: {
         type: Number,
         default: 0,
@@ -219,6 +221,7 @@ productSchema.methods.applyDiscount = function(discount) {
     return;
   }
 
+  // Applica sconto al prezzo base del prodotto
   this.originalPrice = this.price;
   this.discountedPrice = discount.calculateDiscountedPrice(this.price);
   this.activeDiscount = discount._id;
@@ -233,6 +236,20 @@ productSchema.methods.applyDiscount = function(discount) {
     this.discountAmount = Math.min(discount.discountValue, this.price); // Non può essere maggiore del prezzo
     this.discountPercentage = undefined;
   }
+
+  // Applica sconto anche alle varianti se presenti
+  if (this.hasVariants && this.variants && this.variants.length > 0) {
+    this.variants.forEach(variant => {
+      if (variant.price != null && variant.price > 0) {
+        // Salva il prezzo originale se non già salvato
+        if (!variant.originalPrice) {
+          variant.originalPrice = variant.price;
+        }
+        // Calcola il prezzo scontato per la variante
+        variant.discountedPrice = discount.calculateDiscountedPrice(variant.price);
+      }
+    });
+  }
 };
 
 // Metodo per rimuovere lo sconto
@@ -244,6 +261,14 @@ productSchema.methods.removeDiscount = function() {
   this.discountType = undefined;
   this.discountPercentage = undefined;
   this.discountAmount = undefined;
+
+  // Rimuovi sconto anche dalle varianti se presenti
+  if (this.hasVariants && this.variants && this.variants.length > 0) {
+    this.variants.forEach(variant => {
+      variant.originalPrice = undefined;
+      variant.discountedPrice = undefined;
+    });
+  }
 };
 
 // Assicura che i virtual siano inclusi nella serializzazione JSON

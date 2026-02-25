@@ -224,7 +224,10 @@ async function applyDiscountToProducts(discount) {
 
 async function applyDiscountToCategories(discount) {
   const products = await Product.find({
-    category: { $in: discount.categories },
+    $or: [
+      { category: { $in: discount.categories } },
+      { subcategory: { $in: discount.categories } }
+    ],
     seller: discount.seller
   });
 
@@ -263,7 +266,10 @@ async function removeDiscountFromProducts(discount) {
 
 async function removeDiscountFromCategories(discount) {
   const products = await Product.find({
-    category: { $in: discount.categories },
+    $or: [
+      { category: { $in: discount.categories } },
+      { subcategory: { $in: discount.categories } }
+    ],
     seller: discount.seller,
     activeDiscount: discount._id
   });

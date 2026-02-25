@@ -824,6 +824,16 @@ const VendorProfile = () => {
         discountData.sellerId = sellerId;
       }
 
+      // Converti le date in formato ISO con ora locale (inizio giornata e fine giornata)
+      if (discountData.startDate) {
+        const startDate = new Date(discountData.startDate + 'T00:00:00');
+        discountData.startDate = startDate.toISOString();
+      }
+      if (discountData.endDate) {
+        const endDate = new Date(discountData.endDate + 'T23:59:59');
+        discountData.endDate = endDate.toISOString();
+      }
+
       // Determina se è creazione o modifica
       const isEdit = !!editingDiscount;
       const url = isEdit 
