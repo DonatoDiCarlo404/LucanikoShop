@@ -48,8 +48,19 @@ const avatarStorage = new CloudinaryStorage({
   },
 });
 
+// Storage per i documenti PDF dei venditori
+const vendorDocumentStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'lucanikoshop/vendor_documents',
+    allowed_formats: ['pdf'],
+    resource_type: 'raw', // Per documenti non-immagine
+  },
+});
+
 // Multer upload middleware
 export const uploadProduct = multer({ storage: productStorage });
 export const uploadAvatar = multer({ storage: avatarStorage });
+export const uploadVendorDocument = multer({ storage: vendorDocumentStorage });
 
 export default cloudinary;

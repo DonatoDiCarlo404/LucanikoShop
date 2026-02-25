@@ -242,11 +242,11 @@ const OtherCategoriesCarousel = ({ excludeCategory, title = '🌟 Scopri anche a
                     color: '#004b75',
                     fontSize: '0.95rem',
                     fontWeight: 600,
-                    minHeight: '40px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
+                    lineClamp: 2,
                     WebkitBoxOrient: 'vertical'
                   }}
                 >

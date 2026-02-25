@@ -437,6 +437,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    // Documenti allegati per i venditori (es: fatture, contratti)
+    vendorDocuments: [{
+      name: String, // Nome originale del file
+      url: String, // URL pubblico su Cloudinary
+      public_id: String, // ID Cloudinary per eliminazione
+      uploadedAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
     resetPasswordToken: String,
     resetPasswordExpire: Date
   },

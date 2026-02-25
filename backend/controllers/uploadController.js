@@ -1,34 +1,28 @@
-import fs from 'fs';
-import path from 'path';
+import cloudinary from '../config/cloudinary.js';
+import User from '../models/User.js';
+
 // @desc    Lista PDF caricati per venditore
 // @route   GET /api/upload/vendor/:vendorId/list
-// @access  Admin
+// @access  Admin/Vendor
 export const listVendorDocuments = async (req, res) => {
   try {
     const vendorId = req.params.vendorId;
-    const dirPath = path.join(process.cwd(), 'uploads', 'vendor_docs');
     
     console.log('🔍 Ricerca documenti per vendorId:', vendorId);
-    console.log('📁 Directory:', dirPath);
     
-    if (!fs.existsSync(dirPath)) {
-      console.log('⚠️ Directory non esiste');
-      return res.json({ files: [] });
+    // Recupera vendorDocuments dal database
+    const vendor = await User.findById(vendorId).select('vendorDocuments');
+    
+    if (!vendor) {
+      return res.status(404).json({ message: 'Venditore non trovato' });
     }
     
-    // Costruisci URL dinamicamente basato su req
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    
-    const allFiles = fs.readdirSync(dirPath);
-    console.log('📄 Tutti i file nella directory:', allFiles);
-    
-    const files = allFiles
-      .filter(f => f.endsWith('.pdf') && f.startsWith(vendorId))
-      .map(f => ({
-        name: f.replace(`${vendorId}-`, '').replace(/^\d+-/, ''),
-        url: `${baseUrl}/uploads/vendor_docs/${f}`,
-        filename: f  // Nome completo del file per eliminazione
-      }));
+    const files = (vendor.vendorDocuments || []).map(doc => ({
+      name: doc.name,
+      url: doc.url,
+      filename: doc.public_id, // Per compatibilità con il frontend (usato per eliminazione)
+      uploadedAt: doc.uploadedAt
+    }));
     
     console.log('✅ File trovati per questo vendor:', files.length);
     res.json({ files });
@@ -39,26 +33,26 @@ export const listVendorDocuments = async (req, res) => {
 };
 
 // @desc    Elimina documento PDF venditore
-// @route   DELETE /api/upload/vendor/:vendorId/document/:filename
+// @route   DELETE /api/upload/vendor/:vendorId/document/:public_id
 // @access  Admin
 export const deleteVendorDocument = async (req, res) => {
   try {
-    const { vendorId, filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', 'vendor_docs', filename);
+    const { vendorId, public_id } = req.params;
     
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'File non trovato' });
-    }
-
-    // Verifica che il file appartenga al venditore
-    if (!filename.startsWith(vendorId)) {
-      return res.status(403).json({ message: 'Non autorizzato' });
-    }
-
-    fs.unlinkSync(filePath);
+    console.log('🗑️ Eliminazione documento:', { vendorId, public_id });
     
+    // Elimina da Cloudinary
+    await cloudinary.uploader.destroy(public_id, { resource_type: 'raw' });
+    
+    // Rimuovi dal database
+    await User.findByIdAndUpdate(vendorId, {
+      $pull: { vendorDocuments: { public_id: public_id } }
+    });
+    
+    console.log('✅ Documento eliminato con successo');
     res.status(200).json({ message: 'Documento eliminato con successo' });
   } catch (error) {
+    console.error('❌ Errore eliminazione documento:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -66,23 +60,42 @@ export const deleteVendorDocument = async (req, res) => {
 // @desc    Upload PDF documento venditore
 // @route   POST /api/upload/vendor/:vendorId
 // @access  Admin
-export const uploadVendorDocument = async (req, res) => {
+export const uploadVendorDocumentController = async (req, res) => {
   try {
+    const vendorId = req.params.vendorId;
+    
     if (!req.file) {
       return res.status(400).json({ message: 'Nessun file PDF caricato' });
     }
-    // Qui puoi salvare il path nel profilo venditore se vuoi
-    // Esempio: Vendor.findByIdAndUpdate(req.params.vendorId, { $push: { documents: req.file.path } })
+    
+    console.log('📄 File caricato su Cloudinary:', req.file.path);
+    console.log('📄 Public ID:', req.file.filename);
+    
+    // Salva riferimento nel database
+    const documentData = {
+      name: req.file.originalname,
+      url: req.file.path,
+      public_id: req.file.filename,
+      uploadedAt: new Date()
+    };
+    
+    await User.findByIdAndUpdate(vendorId, {
+      $push: { vendorDocuments: documentData }
+    });
+    
+    console.log('✅ Documento salvato nel database');
+    
     res.status(200).json({
       message: 'Documento PDF caricato con successo',
       url: req.file.path,
       filename: req.file.filename
     });
   } catch (error) {
+    console.error('❌ Errore upload documento:', error);
     res.status(500).json({ message: error.message });
   }
 };
-import cloudinary from '../config/cloudinary.js';
+
 
 // @desc    Upload immagine prodotto
 // @route   POST /api/upload/product

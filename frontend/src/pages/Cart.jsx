@@ -481,7 +481,7 @@ const Cart = () => {
                       <img
                         src={item.images[item.images.length - 1].url}
                         alt={item.name}
-                        style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                        style={{ width: '100%', height: '80px', objectFit: 'contain', borderRadius: '8px' }}
                         loading="lazy"
                       />
                     ) : (
@@ -491,6 +491,11 @@ const Cart = () => {
 
                   <Col md={4}>
                     <h5 className="mb-1">{item.name}</h5>
+                    {item.seller?.businessName && (
+                      <p className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>
+                        <i className="bi bi-shop"></i> {item.seller.businessName}
+                      </p>
+                    )}
                     <div className="d-flex gap-2 align-items-center flex-wrap">
                       <Badge className="badge-category-product">{typeof item.category === 'string' ? item.category : item.category?.name || 'N/A'}</Badge>
                       {isProductDiscountedByCoupon(item) && (

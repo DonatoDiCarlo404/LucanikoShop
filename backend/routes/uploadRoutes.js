@@ -1,25 +1,15 @@
 import express from 'express';
-import { uploadProductImage, uploadAvatarImage, deleteImage, uploadVendorDocument, listVendorDocuments, deleteVendorDocument } from '../controllers/uploadController.js';
-import { uploadProduct, uploadAvatar } from '../config/cloudinary.js';
-import multer from 'multer';
+import { uploadProductImage, uploadAvatarImage, deleteImage, uploadVendorDocumentController, listVendorDocuments, deleteVendorDocument } from '../controllers/uploadController.js';
+import { uploadProduct, uploadAvatar, uploadVendorDocument } from '../config/cloudinary.js';
 import { protect, seller, admin } from '../middlewares/auth.js';
-import fs from 'fs';
-import path from 'path';
 
 const router = express.Router();
-
-// Crea directory vendor_docs se non esiste
-const vendorDocsDir = path.join(process.cwd(), 'uploads', 'vendor_docs');
-if (!fs.existsSync(vendorDocsDir)) {
-  fs.mkdirSync(vendorDocsDir, { recursive: true });
-  console.log('✅ Directory vendor_docs creata');
-}
 
 // Lista PDF venditore
 router.get('/vendor/:vendorId/list', listVendorDocuments);
 
 // Elimina documento PDF venditore (solo admin)
-router.delete('/vendor/:vendorId/document/:filename', protect, admin, deleteVendorDocument);
+router.delete('/vendor/:vendorId/document/:public_id', protect, admin, deleteVendorDocument);
 
 // Middleware per gestire errori di multer
 const handleMulterError = (err, req, res, next) => {
@@ -33,24 +23,8 @@ const handleMulterError = (err, req, res, next) => {
   next();
 };
 
-
-// Multer per PDF vendor
-const vendorPdfStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/vendor_docs');
-  },
-  filename: function (req, file, cb) {
-    const vendorId = req.params.vendorId;
-    cb(null, `${vendorId}-${Date.now()}-${file.originalname}`);
-  }
-});
-const uploadVendorPdf = multer({ storage: vendorPdfStorage, fileFilter: (req, file, cb) => {
-  if (file.mimetype === 'application/pdf') cb(null, true);
-  else cb(new Error('Solo file PDF sono ammessi'));
-}});
-
-// Upload PDF venditore
-router.post('/vendor/:vendorId', uploadVendorPdf.single('pdf'), handleMulterError, uploadVendorDocument);
+// Upload PDF venditore - usa Cloudinary
+router.post('/vendor/:vendorId', uploadVendorDocument.single('pdf'), handleMulterError, uploadVendorDocumentController);
 
 // Upload immagine prodotto (solo seller e admin)
 router.post('/product', protect, seller, uploadProduct.single('image'), handleMulterError, uploadProductImage);
