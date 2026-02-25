@@ -824,15 +824,37 @@ const VendorProfile = () => {
         discountData.sellerId = sellerId;
       }
 
-      // Converti le date in formato ISO con ora locale (inizio giornata e fine giornata)
+      // Converti le date in formato ISO completo tenendo conto del fuso orario
       if (discountData.startDate) {
-        const startDate = new Date(discountData.startDate + 'T00:00:00');
-        discountData.startDate = startDate.toISOString();
+        // Se il valore contiene già l'ora (formato datetime-local: YYYY-MM-DDTHH:MM)
+        if (discountData.startDate.includes('T')) {
+          // Il datetime-local è in ora locale, convertiamolo in UTC
+          const localDate = new Date(discountData.startDate);
+          discountData.startDate = localDate.toISOString();
+        } else {
+          // Se è solo la data (YYYY-MM-DD), impostiamo inizio giornata in ora locale
+          const localDate = new Date(discountData.startDate + 'T00:00:00');
+          discountData.startDate = localDate.toISOString();
+        }
       }
       if (discountData.endDate) {
-        const endDate = new Date(discountData.endDate + 'T23:59:59');
-        discountData.endDate = endDate.toISOString();
+        // Se il valore contiene già l'ora (formato datetime-local: YYYY-MM-DDTHH:MM)
+        if (discountData.endDate.includes('T')) {
+          // Il datetime-local è in ora locale, convertiamolo in UTC
+          const localDate = new Date(discountData.endDate);
+          discountData.endDate = localDate.toISOString();
+        } else {
+          // Se è solo la data (YYYY-MM-DD), impostiamo fine giornata in ora locale
+          const localDate = new Date(discountData.endDate + 'T23:59:59');
+          discountData.endDate = localDate.toISOString();
+        }
       }
+
+      console.log('📅 [CREATE DISCOUNT] Date convertite:', {
+        startDate: discountData.startDate,
+        endDate: discountData.endDate,
+        now: new Date().toISOString()
+      });
 
       // Determina se è creazione o modifica
       const isEdit = !!editingDiscount;

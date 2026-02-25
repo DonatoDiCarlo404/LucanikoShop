@@ -585,7 +585,7 @@ const ProductDetail = () => {
                           <>
                             <div className="d-flex align-items-center gap-2 mb-1">
                               <span style={{ color: '#004b75', fontWeight: 700, fontSize: '1.2rem' }}>
-                                €{typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2)}
+                                €{typeof selectedVariant.discountedPrice === 'number' ? selectedVariant.discountedPrice.toFixed(2) : (typeof selectedVariant.price === 'number' ? selectedVariant.price.toFixed(2) : product.discountedPrice.toFixed(2))}
                               </span>
                               <Badge style={{backgroundColor: '#004b75', color: '#fff'}} className="ms-2">
                                 {product.discountType === 'fixed' && product.discountAmount
@@ -597,7 +597,7 @@ const ProductDetail = () => {
                             </div>
                             <div>
                               <small className="text-muted" style={{ textDecoration: 'line-through' }}>
-                                €{product.originalPrice.toFixed(2)}
+                                €{typeof selectedVariant.originalPrice === 'number' ? selectedVariant.originalPrice.toFixed(2) : product.originalPrice.toFixed(2)}
                               </small>
                             </div>
                           </>

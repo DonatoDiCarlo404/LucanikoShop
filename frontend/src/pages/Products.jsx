@@ -27,6 +27,8 @@ const Products = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [adminNews, setAdminNews] = useState([]);
+  // Seed per ordinamento random consistente durante la navigazione
+  const [randomSeed] = useState(() => Math.floor(Math.random() * 1000000));
 
   // Carica le news attive all'avvio e ogni 30 secondi
   useEffect(() => {
@@ -132,6 +134,11 @@ const Products = () => {
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
       if (sortBy) params.sortBy = sortBy;
+      
+      // Se l'ordinamento è random o non è definito, passa il seed per consistenza nella paginazione
+      if (!sortBy || sortBy === 'random') {
+        params.seed = randomSeed;
+      }
 
       const data = await productsAPI.getAll(params);
       setProducts(data.products);

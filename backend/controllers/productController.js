@@ -62,6 +62,9 @@ export const getProducts = async (req, res) => {
     // Paginazione
     const skip = (page - 1) * limit;
 
+    // Seed per ordinamento random consistente
+    const seed = req.query.seed ? parseInt(req.query.seed) : null;
+
     // Determina l'ordinamento - default RANDOM per varietà
     let sortOptions = null;
     let useRandom = !sortBy || sortBy === 'random'; // Default o esplicito random
@@ -81,8 +84,37 @@ export const getProducts = async (req, res) => {
     let products;
     const total = await Product.countDocuments(query);
 
-    // Se ordinamento random, usa aggregation con $sample
-    if (useRandom) {
+    // Se ordinamento random CON seed, usa un ordinamento consistente
+    if (useRandom && seed) {
+      // Ordinamento pseudo-random ma consistente basato sul seed
+      products = await Product.find(query)
+        .populate('seller', 'name businessName email')
+        .populate('category', 'name')
+        .populate('subcategory', 'name')
+        .lean()
+        .exec();
+
+      // Ordina i prodotti usando il seed in modo consistente
+      products.sort((a, b) => {
+        // Funzione hash migliorata che mescola meglio i dati
+        const hash = (id) => {
+          const str = seed + id.toString();
+          let h = 0;
+          for (let i = 0; i < str.length; i++) {
+            h = ((h << 5) - h) + str.charCodeAt(i);
+            h = h & h; // Convert to 32bit integer
+          }
+          return Math.abs(h);
+        };
+        
+        return hash(a._id) - hash(b._id);
+      });
+
+      // Applica skip e limit manualmente
+      products = products.slice(skip, skip + Number(limit));
+    }
+    // Se ordinamento random SENZA seed, usa aggregation con $sample
+    else if (useRandom) {
       // Calcola quanti documenti servono per questa pagina
       const sampleSize = Math.min(Number(limit), total);
       

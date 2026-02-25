@@ -351,7 +351,12 @@ export const getActiveDiscountedProducts = async (req, res) => {
     const products = await Product.find({
       hasActiveDiscount: true,
       isActive: true,
-      stock: { $gt: 0 }
+      $or: [
+        // Prodotti senza varianti con stock > 0
+        { hasVariants: false, stock: { $gt: 0 } },
+        // Prodotti con varianti (che hanno stock nelle varianti)
+        { hasVariants: true, 'variants.0': { $exists: true } }
+      ]
     })
       .populate('seller', 'name businessName')
       .populate('activeDiscount', 'name discountType discountValue endDate')
@@ -374,14 +379,36 @@ export const getActiveDiscountedProducts = async (req, res) => {
 
 // Funzioni helper
 async function applyDiscountToProducts(discount) {
+  console.log('🔵 [APPLY DISCOUNT] Applicazione sconto ai prodotti:', {
+    discountId: discount._id,
+    discountName: discount.name,
+    productIds: discount.products,
+    startDate: discount.startDate,
+    endDate: discount.endDate,
+    isValidNow: discount.isValidNow(),
+    now: new Date()
+  });
+
   const products = await Product.find({
     _id: { $in: discount.products },
     seller: discount.seller
   });
 
+  console.log('🔵 [APPLY DISCOUNT] Prodotti trovati:', products.length);
+
   for (const product of products) {
+    console.log('🔵 [APPLY DISCOUNT] Applicando a prodotto:', {
+      productId: product._id,
+      productName: product.name,
+      hasVariants: product.hasVariants,
+      variantsCount: product.variants?.length || 0
+    });
     product.applyDiscount(discount);
     await product.save();
+    console.log('✅ [APPLY DISCOUNT] Sconto applicato a:', product.name, {
+      hasActiveDiscount: product.hasActiveDiscount,
+      discountedPrice: product.discountedPrice
+    });
   }
 }
 
