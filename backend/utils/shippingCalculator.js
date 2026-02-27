@@ -37,18 +37,49 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     
     // Se non ci sono tariffe avanzate, applica le regole globali
     if (!hasAdvancedRates) {
-        // Se il venditore offre spedizione gratuita globale
+        // Se il venditore ha abilitato la spedizione gratuita
         if (vendorShippingSettings.freeShipping === true) {
+            const threshold = vendorShippingSettings.freeShippingThreshold || 0;
+            
+            // Se la soglia è 0, spedizione sempre gratuita
+            if (threshold === 0) {
+                return {
+                    shippingCost: 0,
+                    appliedRate: null,
+                    freeShipping: true,
+                    message: 'Spedizione gratuita',
+                    shippingOptions: []
+                };
+            }
+            
+            // Se il totale carrello supera la soglia, spedizione gratuita
+            if (calculatedCartTotal >= threshold) {
+                return {
+                    shippingCost: 0,
+                    appliedRate: null,
+                    freeShipping: true,
+                    message: `Spedizione gratuita (soglia €${threshold.toFixed(2)} raggiunta)`,
+                    shippingOptions: []
+                };
+            }
+            
+            // Altrimenti, usa la tariffa predefinita
+            const defaultRate = vendorShippingSettings.defaultShippingRate || 0;
             return {
-                shippingCost: 0,
-                appliedRate: null,
-                freeShipping: true,
-                message: 'Spedizione gratuita',
+                shippingCost: defaultRate,
+                appliedRate: {
+                    type: 'default',
+                    rate: defaultRate
+                },
+                freeShipping: false,
+                message: defaultRate > 0 
+                    ? `Tariffa standard: €${defaultRate.toFixed(2)} (spedizione gratuita da €${threshold.toFixed(2)})` 
+                    : 'Spedizione gratuita',
                 shippingOptions: []
             };
         }
         
-        // Usa la tariffa predefinita
+        // Se non c'è spedizione gratuita abilitata, usa la tariffa predefinita
         const defaultRate = vendorShippingSettings.defaultShippingRate || 0;
         return {
             shippingCost: defaultRate,
