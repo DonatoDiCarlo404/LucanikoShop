@@ -1,14 +1,31 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+const COOKIE_KEY = "lucaniko_cookie_consent";
+
 /**
  * Componente per il tracciamento di Google Analytics 4
  * Traccia automaticamente le page views quando cambia la route
+ * CARICA GA SOLO SE L'UTENTE HA ACCETTATO I COOKIE ANALYTICS (GDPR compliant)
  */
 const GoogleAnalytics = ({ measurementId }) => {
   const location = useLocation();
 
   useEffect(() => {
+    // Verifica consenso cookie analytics
+    const consent = localStorage.getItem(COOKIE_KEY);
+    if (!consent) return; // Nessun consenso dato
+    
+    let consentData;
+    try {
+      consentData = JSON.parse(consent);
+    } catch (e) {
+      return; // Consenso malformato
+    }
+    
+    // Carica GA solo se analytics è true
+    if (!consentData.analytics) return;
+    
     // Carica lo script di Google Analytics solo se measurementId è fornito
     if (!measurementId || typeof window === 'undefined') return;
 
