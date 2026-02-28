@@ -50,6 +50,7 @@ const categoriesData = [
     subcategories: [
       'Arredamento interno',
       'Arredamento esterno',
+      'Giardinaggio e outdoor',
       'Illuminazione',
       'Decorazioni e complementi',
       'Tessili per la casa',
