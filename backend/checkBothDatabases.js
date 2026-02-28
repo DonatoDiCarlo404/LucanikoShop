@@ -1,13 +1,22 @@
 import mongoose from 'mongoose';
 import Category from './models/Category.js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 /**
  * Script per verificare le sottocategorie su entrambi i database
  */
 
 const checkBothDatabases = async () => {
-  const DEV_URI = 'mongodb+srv://lucanikofood_db_user:m5Qvi9N2DsTHCgF3GZoY6zMuyr0SVEP4@lucanikoshop-developmen.kvj8tge.mongodb.net/lucanikoshop-dev?retryWrites=true&w=majority&appName=lucanikoshop-development';
-  const PROD_URI = 'mongodb+srv://lucanikofood_db_user:m5Qvi9N2DsTHCgF3GZoY6zMuyr0SVEP4@lucanikoshop-production.vocyyy.mongodb.net/lucanikoshop?retryWrites=true&w=majority&appName=lucanikoshop-production';
+  const DEV_URI = process.env.MONGODB_URI_DEV;
+  const PROD_URI = process.env.MONGODB_URI_PROD;
+
+  if (!DEV_URI || !PROD_URI) {
+    console.error('❌ Errore: MONGODB_URI_DEV e MONGODB_URI_PROD devono essere definiti nel file .env');
+    process.exit(1);
+  }
 
   try {
     // Check DEVELOPMENT

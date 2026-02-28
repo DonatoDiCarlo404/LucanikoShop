@@ -11,8 +11,13 @@ dotenv.config();
 
 const addSubcategoryToProduction = async () => {
   try {
-    // URI del database di PRODUZIONE (hardcoded per sicurezza)
-    const PRODUCTION_URI = 'mongodb+srv://lucanikofood_db_user:m5Qvi9N2DsTHCgF3GZoY6zMuyr0SVEP4@lucanikoshop-production.vocyyy.mongodb.net/lucanikoshop?retryWrites=true&w=majority&appName=lucanikoshop-production';
+    // URI del database di PRODUZIONE (da variabile d'ambiente)
+    const PRODUCTION_URI = process.env.MONGODB_URI_PROD;
+    
+    if (!PRODUCTION_URI) {
+      console.error('❌ Errore: MONGODB_URI_PROD deve essere definita nel file .env');
+      process.exit(1);
+    }
 
     console.log('🚨 ATTENZIONE: Sto per modificare il DATABASE DI PRODUZIONE!');
     console.log('📡 Connessione in corso...\n');
