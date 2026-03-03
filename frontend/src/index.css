@@ -107,6 +107,11 @@ footer, .footer, .footer * {
   background-color: rgb(255 255 255)!important;
 }
 
+/* Fix conflitto Bootstrap .bg-primary con stili inline personalizzati */
+.bg-primary {
+  background-color: #004b75 !important;
+}
+
 /* Animazione icone social footer - colori con contrasto migliorato */
 .footer-social-icon {
   display: inline-block;

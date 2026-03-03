@@ -52,6 +52,10 @@ const HelpCenterVendor = lazy(() => import('./pages/HelpCenterVendor'));
 const BillingInfo = lazy(() => import('./pages/BillingInfo'));
 const Negozi = lazy(() => import('./pages/Negozi'));
 const Partners = lazy(() => import('./pages/Partners'));
+const Esperienze = lazy(() => import('./pages/Esperienze'));
+const ExperienceDetail = lazy(() => import('./pages/ExperienceDetail'));
+const Eventi = lazy(() => import('./pages/Eventi'));
+const EventDetail = lazy(() => import('./pages/EventDetail'));
 const AdminPaymentControl = lazy(() => import('./pages/AdminPaymentControl'));
 const CookieList = lazy(() => import('./pages/CookieList'));
 const AdminCookieConsent = lazy(() => import('./pages/AdminCookieConsent'));
@@ -121,6 +125,10 @@ function AppContent() {
           <Route path="/categories" element={<Categories />} />
           <Route path="/negozi" element={<Negozi />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/esperienze" element={<Esperienze />} />
+          <Route path="/esperienze/:id" element={<ExperienceDetail />} />
+          <Route path="/eventi" element={<Eventi />} />
+          <Route path="/eventi/:id" element={<EventDetail />} />
           <Route path="/billing-info" element={<BillingInfo />} />
 
           {/* Prodotti protetti (solo seller/admin) */}

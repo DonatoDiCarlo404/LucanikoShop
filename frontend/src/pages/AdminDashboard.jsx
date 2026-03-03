@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Button, Badge, Spinner, Alert, Tabs, Tab, Form, Modal } from 'react-bootstrap';
-import { adminAPI, uploadVendorDocument, API_URL, sponsorAPI, uploadAPI } from '../services/api';
+import { adminAPI, uploadVendorDocument, API_URL, sponsorAPI, experienceAPI, eventAPI, uploadAPI } from '../services/api';
 // Espone la funzione uploadVendorDocument su window per uso inline
 window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
@@ -20,6 +20,8 @@ const AdminDashboard = () => {
   const [vendorDocs, setVendorDocs] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [sellersPage, setSellersPage] = useState(1);
+  const [eventSearchTerm, setEventSearchTerm] = useState("");
+  const [experienceSearchTerm, setExperienceSearchTerm] = useState("");
   
   // Stato per le News
   const [adminNews, setAdminNews] = useState([]);
@@ -48,10 +50,55 @@ const AdminDashboard = () => {
   const [showSponsorSuccessModal, setShowSponsorSuccessModal] = useState(false);
   const [sponsorSuccessMessage, setSponsorSuccessMessage] = useState('');
 
+  // Stato per le Esperienze
+  const [experiences, setExperiences] = useState([]);
+  const [showExperienceModal, setShowExperienceModal] = useState(false);
+  const [editingExperience, setEditingExperience] = useState(null);
+  const [experienceFormData, setExperienceFormData] = useState({
+    title: '',
+    description: '',
+    company: '',
+    city: '',
+    address: '',
+    phone: '',
+    website: '',
+    category: 'Enogastronomiche',
+    status: 'active'
+  });
+  const [savingExperience, setSavingExperience] = useState(false);
+  const [experienceImageItems, setExperienceImageItems] = useState([]);
+  const [showExperienceSuccessModal, setShowExperienceSuccessModal] = useState(false);
+  const [experienceSuccessMessage, setExperienceSuccessMessage] = useState('');
+
+  // Stato per gli Eventi
+  const [events, setEvents] = useState([]);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    description: '',
+    company: '',
+    city: '',
+    address: '',
+    phone: '',
+    website: '',
+    category: 'Sagre & Eventi Enogastronomici',
+    eventDates: [],
+    eventTime: '',
+    status: 'active'
+  });
+  const [savingEvent, setSavingEvent] = useState(false);
+  const [eventImageItems, setEventImageItems] = useState([]);
+  const [showEventSuccessModal, setShowEventSuccessModal] = useState(false);
+  const [eventSuccessMessage, setEventSuccessMessage] = useState('');
+  const [eventCalendarMonth, setEventCalendarMonth] = useState(new Date());
+
   useEffect(() => {
     loadData();
     loadNews();
     loadSponsors();
+    loadExperiences();
+    loadEvents();
   }, []);
 
   const loadData = async () => {
@@ -396,6 +443,584 @@ const AdminDashboard = () => {
     }
   };
 
+  // === GESTIONE ESPERIENZE ===
+  const loadExperiences = async () => {
+    try {
+      const data = await experienceAPI.getAllExperiences(user.token);
+      setExperiences(data);
+    } catch (err) {
+      console.error('Errore caricamento esperienze:', err);
+    }
+  };
+
+  const handleOpenExperienceModal = (experience = null) => {
+    if (experience) {
+      setEditingExperience(experience);
+      setExperienceFormData({
+        title: experience.title,
+        description: experience.description,
+        company: experience.company,
+        city: experience.city,
+        address: experience.address || '',
+        phone: experience.phone,
+        website: experience.website,
+        category: experience.category,
+        status: experience.status
+      });
+      // Carica immagini esistenti
+      if (experience.images && experience.images.length > 0) {
+        setExperienceImageItems(experience.images.map((img, idx) => ({
+          file: null,
+          url: img.url,
+          public_id: img.public_id,
+          isMain: idx === 0
+        })));
+      } else {
+        setExperienceImageItems([]);
+      }
+    } else {
+      setEditingExperience(null);
+      setExperienceFormData({
+        title: '',
+        description: '',
+        company: '',
+        city: '',
+        address: '',
+        phone: '',
+        category: 'Enogastronomiche',
+        website: '',
+        status: 'active'
+      });
+      setExperienceImageItems([]);
+    }
+    setShowExperienceModal(true);
+  };
+
+  const handleCloseExperienceModal = () => {
+    setShowExperienceModal(false);
+    setEditingExperience(null);
+    setExperienceFormData({
+      title: '',
+      description: '',
+      company: '',
+      city: '',
+      phone: '',
+      category: 'Enogastronomiche',
+      website: '',
+      status: 'active'
+    });
+    setExperienceImageItems([]);
+  };
+
+  // Handler per multiple immagini esperienze
+  const handleExperienceImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setExperienceImageItems(prev => {
+      const newItems = files.map(file => ({
+        file: file,
+        url: URL.createObjectURL(file),
+        isMain: false
+      }));
+      
+      const combined = [...prev, ...newItems];
+      // Se non c'è nessuna immagine principale, imposta la prima come principale
+      if (!combined.some(item => item.isMain) && combined.length > 0) {
+        combined[0].isMain = true;
+      }
+      return combined;
+    });
+    
+    // Reset input per permettere di caricare lo stesso file
+    e.target.value = '';
+  };
+
+  const handleExperienceSetAsMain = (idx) => {
+    setExperienceImageItems(prev => 
+      prev.map((item, i) => ({ ...item, isMain: i === idx }))
+    );
+  };
+
+  const handleExperienceRemoveImage = (idx) => {
+    setExperienceImageItems(prev => {
+      const newItems = prev.filter((_, i) => i !== idx);
+      // Se rimuovi la principale e ci sono altre immagini, imposta la prima come principale
+      if (newItems.length > 0 && !newItems.some(item => item.isMain)) {
+        newItems[0].isMain = true;
+      }
+      return newItems;
+    });
+  };
+
+  const handleSaveExperience = async (e) => {
+    e.preventDefault();
+    
+    if (!experienceFormData.title || !experienceFormData.description || !experienceFormData.company ||
+        !experienceFormData.city || !experienceFormData.phone) {
+      alert('Compila tutti i campi obbligatori');
+      return;
+    }
+
+    try {
+      setSavingExperience(true);
+      
+      let updatedImages = [];
+      
+      if (editingExperience) {
+        // MODIFICA ESPERIENZA ESISTENTE
+        const newImages = experienceImageItems.filter(item => item.file !== null);
+        
+        if (newImages.length > 0) {
+          // Ci sono nuove immagini: elimina le vecchie e carica le nuove
+          // Elimina vecchie immagini da Cloudinary
+          if (editingExperience.images && editingExperience.images.length > 0) {
+            for (const img of editingExperience.images) {
+              if (img.public_id) {
+                try {
+                  const encodedPublicId = encodeURIComponent(img.public_id);
+                  await fetch(`${API_URL}/upload/${encodedPublicId}`, {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${user.token}`,
+                    },
+                  });
+                } catch (err) {
+                  console.error('Errore eliminazione immagine:', err);
+                }
+              }
+            }
+          }
+          // Carica tutte le nuove immagini
+          for (const item of newImages) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (uploadResponse && uploadResponse.url) {
+                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+              }
+            } catch (uploadErr) {
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
+        } else {
+          // Nessuna nuova immagine: mantieni quelle esistenti
+          updatedImages = experienceImageItems
+            .filter(item => item.file === null)
+            .map(item => {
+              const found = editingExperience.images.find(img => img.url === item.url);
+              return found ? { url: found.url, public_id: found.public_id } : null;
+            })
+            .filter(Boolean);
+        }
+        
+        // Ordina: la principale per prima
+        const mainItem = experienceImageItems.find(item => item.isMain);
+        if (mainItem) {
+          updatedImages = updatedImages.sort((a, b) => {
+            if (a.url === mainItem.url) return -1;
+            if (b.url === mainItem.url) return 1;
+            return 0;
+          });
+        }
+        
+        const dataToSave = {
+          ...experienceFormData,
+          images: updatedImages
+        };
+        
+        await experienceAPI.updateExperience(editingExperience._id, dataToSave, user.token);
+        setExperienceSuccessMessage('Esperienza aggiornata con successo!');
+      } else {
+        // CREAZIONE NUOVA ESPERIENZA
+        // Carica le immagini
+        for (const item of experienceImageItems) {
+          if (item.file) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (uploadResponse && uploadResponse.url) {
+                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+              }
+            } catch (uploadErr) {
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
+        }
+        
+        // Ordina: la principale per prima
+        const mainItem = experienceImageItems.find(item => item.isMain);
+        if (mainItem) {
+          updatedImages = updatedImages.sort((a, b) => {
+            if (a.file === mainItem.file) return -1;
+            if (b.file === mainItem.file) return 1;
+            return 0;
+          });
+        }
+        
+        const dataToSave = {
+          ...experienceFormData,
+          images: updatedImages
+        };
+        
+        await experienceAPI.createExperience(dataToSave, user.token);
+        setExperienceSuccessMessage('Esperienza creata con successo!');
+      }
+      
+      await loadExperiences();
+      handleCloseExperienceModal();
+      setShowExperienceSuccessModal(true);
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    } finally {
+      setSavingExperience(false);
+    }
+  };
+
+  const handleDeleteExperience = async (experienceId) => {
+    if (!confirm('Sei sicuro di voler eliminare questa esperienza?')) return;
+
+    try {
+      await experienceAPI.deleteExperience(experienceId, user.token);
+      alert('✅ Esperienza eliminata!');
+      await loadExperiences();
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  const handleToggleExperienceStatus = async (experienceId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await experienceAPI.updateExperience(experienceId, { status: newStatus }, user.token);
+      await loadExperiences();
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  // === GESTIONE EVENTI ===
+  const loadEvents = async () => {
+    try {
+      const data = await eventAPI.getAllEvents(user.token);
+      setEvents(data);
+    } catch (err) {
+      console.error('Errore caricamento eventi:', err);
+    }
+  };
+
+  const handleOpenEventModal = (event = null) => {
+    if (event) {
+      setEditingEvent(event);
+      setEventFormData({
+        title: event.title,
+        description: event.description,
+        company: event.company,
+        city: event.city,
+        address: event.address || '',
+        phone: event.phone,
+        website: event.website,
+        category: event.category,
+        eventDates: event.eventDates ? event.eventDates.map(d => new Date(d).toISOString().split('T')[0]) : [],
+        eventTime: event.eventTime || '',
+        status: event.status
+      });
+      // Carica immagini esistenti
+      if (event.images && event.images.length > 0) {
+        setEventImageItems(event.images.map((img, idx) => ({
+          file: null,
+          url: img.url,
+          public_id: img.public_id,
+          isMain: idx === 0
+        })));
+      } else {
+        setEventImageItems([]);
+      }
+      // Imposta il calendario sul mese della prima data selezionata
+      if (event.eventDates && event.eventDates.length > 0) {
+        setEventCalendarMonth(new Date(event.eventDates[0]));
+      } else {
+        setEventCalendarMonth(new Date());
+      }
+    } else {
+      setEditingEvent(null);
+      setEventFormData({
+        title: '',
+        description: '',
+        company: '',
+        city: '',
+        address: '',
+        phone: '',
+        category: 'Sagre & Eventi Enogastronomici',
+        website: '',
+        eventDates: [],
+        eventTime: '',
+        status: 'active'
+      });
+      setEventImageItems([]);
+    }
+    setEventCalendarMonth(new Date());
+    setShowEventModal(true);
+  };
+
+  const handleCloseEventModal = () => {
+    setShowEventModal(false);
+    setEditingEvent(null);
+    setEventFormData({
+      title: '',
+      description: '',
+      company: '',
+      city: '',
+      phone: '',
+      category: 'Sagre & Eventi Enogastronomici',
+      website: '',
+      eventDates: [],
+      eventTime: '',
+      status: 'active'
+    });
+    setEventImageItems([]);
+    setEventCalendarMonth(new Date());
+  };
+
+  // Handler per gestione date multiple con calendario
+  const handleToggleEventDate = (date) => {
+    if (!date) return;
+    const dateStr = date.toISOString().split('T')[0];
+    
+    if (eventFormData.eventDates.includes(dateStr)) {
+      // Rimuovi data
+      setEventFormData({ 
+        ...eventFormData, 
+        eventDates: eventFormData.eventDates.filter(d => d !== dateStr)
+      });
+    } else {
+      // Aggiungi data
+      setEventFormData({ 
+        ...eventFormData, 
+        eventDates: [...eventFormData.eventDates, dateStr].sort()
+      });
+    }
+  };
+
+  const handleRemoveEventDate = (dateString) => {
+    setEventFormData({ 
+      ...eventFormData, 
+      eventDates: eventFormData.eventDates.filter(d => d !== dateString) 
+    });
+  };
+
+  // Funzioni helper per calendario evento
+  const getEventCalendarDays = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+    return days;
+  };
+
+  const isEventDateSelected = (date) => {
+    if (!date) return false;
+    const dateStr = date.toISOString().split('T')[0];
+    return eventFormData.eventDates.includes(dateStr);
+  };
+
+  const changeEventCalendarMonth = (direction) => {
+    setEventCalendarMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + direction);
+      return newDate;
+    });
+  };
+
+  // Handler per multiple immagini eventi
+  const handleEventImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setEventImageItems(prev => {
+      const newItems = files.map(file => ({
+        file: file,
+        url: URL.createObjectURL(file),
+        isMain: false
+      }));
+      
+      const combined = [...prev, ...newItems];
+      if (!combined.some(item => item.isMain) && combined.length > 0) {
+        combined[0].isMain = true;
+      }
+      return combined;
+    });
+    
+    e.target.value = '';
+  };
+
+  const handleEventSetAsMain = (idx) => {
+    setEventImageItems(prev => 
+      prev.map((item, i) => ({ ...item, isMain: i === idx }))
+    );
+  };
+
+  const handleEventRemoveImage = (idx) => {
+    setEventImageItems(prev => {
+      const newItems = prev.filter((_, i) => i !== idx);
+      if (newItems.length > 0 && !newItems.some(item => item.isMain)) {
+        newItems[0].isMain = true;
+      }
+      return newItems;
+    });
+  };
+
+  const handleSaveEvent = async (e) => {
+    e.preventDefault();
+    
+    if (!eventFormData.title || !eventFormData.description || !eventFormData.company ||
+        !eventFormData.city || 
+        !eventFormData.eventDates || eventFormData.eventDates.length === 0) {
+      alert('Compila tutti i campi obbligatori, inclusa almeno una data');
+      return;
+    }
+
+    try {
+      setSavingEvent(true);
+      
+      let updatedImages = [];
+      
+      if (editingEvent) {
+        // MODIFICA EVENTO ESISTENTE
+        const newImages = eventImageItems.filter(item => item.file !== null);
+        
+        if (newImages.length > 0) {
+          // Elimina vecchie immagini da Cloudinary
+          if (editingEvent.images && editingEvent.images.length > 0) {
+            for (const img of editingEvent.images) {
+              if (img.public_id) {
+                try {
+                  const encodedPublicId = encodeURIComponent(img.public_id);
+                  await fetch(`${API_URL}/upload/${encodedPublicId}`, {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${user.token}`,
+                    },
+                  });
+                } catch (err) {
+                  console.error('Errore eliminazione immagine:', err);
+                }
+              }
+            }
+          }
+          // Carica nuove immagini
+          for (const item of newImages) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (uploadResponse && uploadResponse.url) {
+                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+              }
+            } catch (uploadErr) {
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
+        } else {
+          // Mantieni immagini esistenti
+          updatedImages = eventImageItems
+            .filter(item => item.file === null)
+            .map(item => {
+              const found = editingEvent.images.find(img => img.url === item.url);
+              return found ? { url: found.url, public_id: found.public_id } : null;
+            })
+            .filter(Boolean);
+        }
+        
+        // Ordina: principale per prima
+        const mainItem = eventImageItems.find(item => item.isMain);
+        if (mainItem) {
+          updatedImages = updatedImages.sort((a, b) => {
+            if (a.url === mainItem.url) return -1;
+            if (b.url === mainItem.url) return 1;
+            return 0;
+          });
+        }
+        
+        const dataToSave = {
+          ...eventFormData,
+          images: updatedImages
+        };
+        
+        await eventAPI.updateEvent(editingEvent._id, dataToSave, user.token);
+        setEventSuccessMessage('Evento aggiornato con successo!');
+      } else {
+        // CREAZIONE NUOVO EVENTO
+        for (const item of eventImageItems) {
+          if (item.file) {
+            try {
+              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+              if (uploadResponse && uploadResponse.url) {
+                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+              }
+            } catch (uploadErr) {
+              console.error('Errore upload immagine:', uploadErr);
+            }
+          }
+        }
+        
+        // Ordina: principale per prima
+        const mainItem = eventImageItems.find(item => item.isMain);
+        if (mainItem) {
+          updatedImages = updatedImages.sort((a, b) => {
+            if (a.file === mainItem.file) return -1;
+            if (b.file === mainItem.file) return 1;
+            return 0;
+          });
+        }
+        
+        const dataToSave = {
+          ...eventFormData,
+          images: updatedImages
+        };
+        
+        await eventAPI.createEvent(dataToSave, user.token);
+        setEventSuccessMessage('Evento creato con successo!');
+      }
+      
+      await loadEvents();
+      handleCloseEventModal();
+      setShowEventSuccessModal(true);
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!confirm('Sei sicuro di voler eliminare questo evento?')) return;
+
+    try {
+      await eventAPI.deleteEvent(eventId, user.token);
+      alert('✅ Evento eliminato!');
+      await loadEvents();
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
+  const handleToggleEventStatus = async (eventId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+      await eventAPI.updateEvent(eventId, { status: newStatus }, user.token);
+      await loadEvents();
+    } catch (err) {
+      alert('❌ Errore: ' + err.message);
+    }
+  };
+
   // Filtro venditori per nome o nome azienda
   const filteredSellers = allSellers.filter(seller => {
     const name = seller.name?.toLowerCase() || "";
@@ -403,6 +1028,26 @@ const AdminDashboard = () => {
     return (
       name.includes(searchTerm.toLowerCase()) ||
       business.includes(searchTerm.toLowerCase())
+    );
+  });
+
+  // Filtro esperienze per titolo o azienda
+  const filteredExperiences = experiences.filter(experience => {
+    const title = experience.title?.toLowerCase() || "";
+    const company = experience.company?.toLowerCase() || "";
+    return (
+      title.includes(experienceSearchTerm.toLowerCase()) ||
+      company.includes(experienceSearchTerm.toLowerCase())
+    );
+  });
+
+  // Filtro eventi per titolo o azienda
+  const filteredEvents = events.filter(event => {
+    const title = event.title?.toLowerCase() || "";
+    const company = event.company?.toLowerCase() || "";
+    return (
+      title.includes(eventSearchTerm.toLowerCase()) ||
+      company.includes(eventSearchTerm.toLowerCase())
     );
   });
 
@@ -461,6 +1106,14 @@ const AdminDashboard = () => {
               <Card.Body>
                 <h3 className="text-success">{stats.approvedSellers}</h3>
                 <p className="text-muted mb-0">Venditori Approvati</p>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center">
+              <Card.Body>
+                <h3 className="text-info">{stats.buyers || 0}</h3>
+                <p className="text-muted mb-0">Buyer Registrati</p>
               </Card.Body>
             </Card>
           </Col>
@@ -956,6 +1609,225 @@ const AdminDashboard = () => {
           </Card>
         </Tab>
 
+        {/* Tab Esperienze */}
+        <Tab eventKey="experiences" title={<span><i className="bi bi-calendar-event text-success"></i> Esperienze</span>}>
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5><i className="bi bi-calendar-event me-2"></i>Gestione Esperienze</h5>
+                <small className="text-muted">Gestisci i pacchetti esperienze della piattaforma</small>
+              </div>
+              <Button variant="primary" onClick={() => handleOpenExperienceModal()}>
+                <i className="bi bi-plus-circle me-2"></i>Aggiungi Esperienza
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3 d-flex align-items-center">
+                <strong>Ricerca per nome o azienda:</strong>
+                <input
+                  type="text"
+                  className="form-control d-inline-block ms-2"
+                  style={{ width: 260, maxWidth: '100%' }}
+                  placeholder="Cerca esperienza..."
+                  value={experienceSearchTerm}
+                  onChange={e => setExperienceSearchTerm(e.target.value)}
+                />
+              </div>
+              {filteredExperiences.length === 0 ? (
+                <Alert variant="info">Nessuna esperienza trovata</Alert>
+              ) : (
+                <Table striped bordered hover responsive>
+                  <thead>
+                    <tr>
+                      <th>Immagine</th>
+                      <th>Titolo</th>
+                      <th>Azienda</th>
+                      <th>Città</th>
+                      <th>Categoria</th>
+                      <th>Status</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredExperiences.map((experience) => (
+                      <tr key={experience._id}>
+                        <td>
+                          {experience.images && experience.images.length > 0 ? (
+                            <img 
+                              src={experience.images[0].url} 
+                              alt={experience.title}
+                              style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                            />
+                          ) : (
+                            <div style={{ width: '80px', height: '50px', backgroundColor: '#f0f0f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <i className="bi bi-calendar-event" style={{ fontSize: '1.5rem', color: '#6c757d' }}></i>
+                            </div>
+                          )}
+                        </td>
+                        <td><strong>{experience.title}</strong></td>
+                        <td>{experience.company}</td>
+                        <td>{experience.city}</td>
+                        <td>
+                          <Badge bg="info" style={{ fontSize: '0.75rem' }}>
+                            {experience.category}
+                          </Badge>
+                        </td>
+                        <td>
+                          <Badge bg={experience.status === 'active' ? 'success' : 'secondary'}>
+                            {experience.status === 'active' ? 'Attivo' : 'Inattivo'}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleOpenExperienceModal(experience)}
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button
+                              variant={experience.status === 'active' ? 'outline-warning' : 'outline-success'}
+                              size="sm"
+                              onClick={() => handleToggleExperienceStatus(experience._id, experience.status)}
+                            >
+                              <i className={`bi bi-${experience.status === 'active' ? 'pause' : 'play'}`}></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteExperience(experience._id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+
+        {/* TAB GESTIONE EVENTI */}
+        <Tab eventKey="events" title={<span><i className="bi bi-calendar3 text-primary"></i> Eventi</span>}>
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <div>
+                <h5><i className="bi bi-calendar3 me-2"></i>Gestione Eventi</h5>
+                <small className="text-muted">Gestisci gli eventi della piattaforma</small>
+              </div>
+              <Button variant="primary" onClick={() => handleOpenEventModal()}>
+                <i className="bi bi-plus-circle me-2"></i>Aggiungi Evento
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              <div className="mb-3 d-flex align-items-center">
+                <strong>Ricerca per nome o azienda:</strong>
+                <input
+                  type="text"
+                  className="form-control d-inline-block ms-2"
+                  style={{ width: 260, maxWidth: '100%' }}
+                  placeholder="Cerca evento..."
+                  value={eventSearchTerm}
+                  onChange={e => setEventSearchTerm(e.target.value)}
+                />
+              </div>
+              {filteredEvents.length === 0 ? (
+                <Alert variant="info">Nessun evento trovato</Alert>
+              ) : (
+                <Table striped bordered hover responsive>
+                  <thead>
+                    <tr>
+                      <th>Immagine</th>
+                      <th>Titolo</th>
+                      <th>Azienda</th>
+                      <th>Città</th>
+                      <th>Data</th>
+                      <th>Ora</th>
+                      <th>Categoria</th>
+                      <th>Status</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEvents.map((event) => (
+                      <tr key={event._id}>
+                        <td>
+                          {event.images && event.images.length > 0 ? (
+                            <img 
+                              src={event.images[0].url} 
+                              alt={event.title}
+                              style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                            />
+                          ) : (
+                            <div style={{ width: '80px', height: '50px', backgroundColor: '#f0f0f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <i className="bi bi-calendar3" style={{ fontSize: '1.5rem', color: '#6c757d' }}></i>
+                            </div>
+                          )}
+                        </td>
+                        <td><strong>{event.title}</strong></td>
+                        <td>{event.company}</td>
+                        <td>{event.city}</td>
+                        <td>
+                          {event.eventDates && event.eventDates.length > 0 ? (
+                            <div className="d-flex align-items-center gap-1">
+                              <span>{new Date(event.eventDates[0]).toLocaleDateString('it-IT')}</span>
+                              {event.eventDates.length > 1 && (
+                                <Badge bg="secondary" style={{ fontSize: '0.7rem' }}>
+                                  +{event.eventDates.length - 1}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : '-'}
+                        </td>
+                        <td>{event.eventTime || '-'}</td>
+                        <td>
+                          <Badge bg="info" style={{ fontSize: '0.75rem' }}>
+                            {event.category}
+                          </Badge>
+                        </td>
+                        <td>
+                          <Badge bg={event.status === 'active' ? 'success' : 'secondary'}>
+                            {event.status === 'active' ? 'Attivo' : 'Inattivo'}
+                          </Badge>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleOpenEventModal(event)}
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button
+                              variant={event.status === 'active' ? 'outline-warning' : 'outline-success'}
+                              size="sm"
+                              onClick={() => handleToggleEventStatus(event._id, event.status)}
+                            >
+                              <i className={`bi bi-${event.status === 'active' ? 'pause' : 'play'}`}></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDeleteEvent(event._id)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+
         {/* TAB PANNELLO PAGAMENTI */}
         <Tab eventKey="payments" title={<><i className="bi bi-cash-stack me-2"></i>Pagamenti Venditori</>}>
           <Card>
@@ -1285,6 +2157,667 @@ const AdminDashboard = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={() => setShowSponsorSuccessModal(false)}>
+            OK
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Esperienza */}
+      <Modal show={showExperienceModal} onHide={handleCloseExperienceModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingExperience ? 'Modifica Esperienza' : 'Nuova Esperienza'}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSaveExperience}>
+          <Modal.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Titolo *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={experienceFormData.title}
+                    onChange={(e) => setExperienceFormData({ ...experienceFormData, title: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Città *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={experienceFormData.city}
+                    onChange={(e) => setExperienceFormData({ ...experienceFormData, city: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Indirizzo (opzionale)</Form.Label>
+              <Form.Control
+                type="text"
+                value={experienceFormData.address}
+                onChange={(e) => setExperienceFormData({ ...experienceFormData, address: e.target.value })}
+                placeholder="Via, numero civico"
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Descrizione *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={500}
+                value={experienceFormData.description}
+                onChange={(e) => setExperienceFormData({ ...experienceFormData, description: e.target.value })}
+                required
+              />
+              <Form.Text className="text-muted">
+                {experienceFormData.description.length}/500 caratteri
+              </Form.Text>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Azienda *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={experienceFormData.company}
+                    onChange={(e) => setExperienceFormData({ ...experienceFormData, company: e.target.value })}
+                    placeholder="Nome azienda"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contatti *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={experienceFormData.phone}
+                    onChange={(e) => setExperienceFormData({ ...experienceFormData, phone: e.target.value })}
+                    placeholder="Numero di telefono"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Categoria *</Form.Label>
+              <Form.Select
+                value={experienceFormData.category}
+                onChange={(e) => setExperienceFormData({ ...experienceFormData, category: e.target.value })}
+                required
+              >
+                <option value="Enogastronomiche">Enogastronomiche</option>
+                <option value="Outdoor & Natura">Outdoor & Natura</option>
+                <option value="Cultura & Tradizioni">Cultura & Tradizioni</option>
+                <option value="Sport & Benessere">Sport & Benessere</option>
+                <option value="Family & Educational">Family & Educational</option>
+                <option value="Tour & Attività speciali">Tour & Attività speciali</option>
+                <option value="Ospitalità">Ospitalità</option>
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Sito Web</Form.Label>
+              <Form.Control
+                type="url"
+                value={experienceFormData.website}
+                onChange={(e) => setExperienceFormData({ ...experienceFormData, website: e.target.value })}
+                placeholder="https://esempio.it"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Immagini</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleExperienceImageChange}
+              />
+              <Form.Text className="text-muted">
+                Carica una o più immagini. La prima immagine con la stella sarà quella principale mostrata nelle card.
+              </Form.Text>
+              
+              {/* Preview immagini */}
+              {experienceImageItems.length > 0 && (
+                <div className="mt-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  {experienceImageItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        width: '120px',
+                        height: '120px',
+                        border: item.isMain ? '3px solid #ffc107' : '1px solid #ddd',
+                        borderRadius: '8px',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <img
+                        src={item.url}
+                        alt={`Preview ${idx + 1}`}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover'
+                        }}
+                      />
+                      {item.isMain && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 4,
+                            left: 4,
+                            background: '#ffc107',
+                            color: '#000',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          PRINCIPALE
+                        </span>
+                      )}
+                      {/* Pulsante stella per impostare come principale */}
+                      <button
+                        type="button"
+                        onClick={() => handleExperienceSetAsMain(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          left: 4,
+                          background: item.isMain ? '#ffc107' : 'rgba(255,255,255,0.9)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 26,
+                          height: 26,
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          lineHeight: '26px',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }}
+                        title="Imposta come principale"
+                      >★</button>
+                      {/* Pulsante elimina */}
+                      <button
+                        type="button"
+                        onClick={() => handleExperienceRemoveImage(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          background: 'rgba(255,255,255,0.9)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 26,
+                          height: 26,
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          color: '#d00',
+                          lineHeight: '26px',
+                          padding: 0,
+                          fontSize: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }}
+                        title="Rimuovi immagine"
+                      >&times;</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Stato *</Form.Label>
+              <Form.Select
+                value={experienceFormData.status}
+                onChange={(e) => setExperienceFormData({ ...experienceFormData, status: e.target.value })}
+                required
+              >
+                <option value="active">Attivo</option>
+                <option value="inactive">Inattivo</option>
+              </Form.Select>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseExperienceModal}>
+              Annulla
+            </Button>
+            <Button variant="primary" type="submit" disabled={savingExperience}>
+              {savingExperience ? 'Salvataggio...' : 'Salva'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Modal Successo Esperienza */}
+      <Modal show={showExperienceSuccessModal} onHide={() => setShowExperienceSuccessModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="bi bi-check-circle-fill text-success me-2"></i>
+            Operazione completata
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-0">{experienceSuccessMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => setShowExperienceSuccessModal(false)}>
+            OK
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Gestione Eventi */}
+      <Modal show={showEventModal} onHide={handleCloseEventModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingEvent ? 'Modifica Evento' : 'Nuovo Evento'}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSaveEvent}>
+          <Modal.Body>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Titolo *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={eventFormData.title}
+                    onChange={(e) => setEventFormData({ ...eventFormData, title: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Città *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={eventFormData.city}
+                    onChange={(e) => setEventFormData({ ...eventFormData, city: e.target.value })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Indirizzo (opzionale)</Form.Label>
+              <Form.Control
+                type="text"
+                value={eventFormData.address}
+                onChange={(e) => setEventFormData({ ...eventFormData, address: e.target.value })}
+                placeholder="Via, numero civico"
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Descrizione *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                maxLength={500}
+                value={eventFormData.description}
+                onChange={(e) => setEventFormData({ ...eventFormData, description: e.target.value })}
+                required
+              />
+              <Form.Text className="text-muted">
+                {eventFormData.description.length}/500 caratteri
+              </Form.Text>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Azienda Organizzatrice *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={eventFormData.company}
+                    onChange={(e) => setEventFormData({ ...eventFormData, company: e.target.value })}
+                    placeholder="Nome azienda"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Contatti (opzionale)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={eventFormData.phone}
+                    onChange={(e) => setEventFormData({ ...eventFormData, phone: e.target.value })}
+                    placeholder="Numero di telefono"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            {/* CALENDARIO SELEZIONE DATE */}
+            <Form.Group className="mb-3">
+              <Form.Label>Date Evento * (clicca per selezionare/deselezionare)</Form.Label>
+              <Card className="shadow-sm">
+                <Card.Header style={{ backgroundColor: '#004b75', color: 'white', padding: '0.75rem' }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <Button 
+                      variant="link" 
+                      className="text-white p-0"
+                      onClick={() => changeEventCalendarMonth(-1)}
+                      type="button"
+                    >
+                      <i className="bi bi-chevron-left" style={{ fontSize: '1.3rem' }}></i>
+                    </Button>
+                    <h6 className="mb-0">
+                      {['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 
+                        'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'][eventCalendarMonth.getMonth()]} {eventCalendarMonth.getFullYear()}
+                    </h6>
+                    <Button 
+                      variant="link" 
+                      className="text-white p-0"
+                      onClick={() => changeEventCalendarMonth(1)}
+                      type="button"
+                    >
+                      <i className="bi bi-chevron-right" style={{ fontSize: '1.3rem' }}></i>
+                    </Button>
+                  </div>
+                </Card.Header>
+                <Card.Body style={{ padding: '0.75rem' }}>
+                  {/* Nomi giorni */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' }}>
+                    {['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'].map(day => (
+                      <div 
+                        key={day} 
+                        style={{ 
+                          textAlign: 'center', 
+                          fontWeight: 600, 
+                          fontSize: '0.75rem',
+                          color: '#6c757d',
+                          padding: '4px 0'
+                        }}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Griglia giorni */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                    {getEventCalendarDays(eventCalendarMonth).map((day, index) => {
+                      const isSelected = day && isEventDateSelected(day);
+                      const isPast = day && day < new Date().setHours(0, 0, 0, 0);
+                      
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          disabled={!day || isPast}
+                          onClick={() => day && !isPast && handleToggleEventDate(day)}
+                          style={{
+                            padding: '8px',
+                            border: isSelected ? '2px solid #0d6efd' : '1px solid #dee2e6',
+                            borderRadius: '6px',
+                            backgroundColor: isSelected ? '#0d6efd' : (day ? 'white' : 'transparent'),
+                            color: isSelected ? 'white' : (isPast ? '#ccc' : '#212529'),
+                            cursor: (day && !isPast) ? 'pointer' : 'default',
+                            fontWeight: isSelected ? 600 : 400,
+                            fontSize: '0.85rem',
+                            textAlign: 'center',
+                            transition: 'all 0.2s',
+                            opacity: (day && !isPast) ? 1 : 0.3
+                          }}
+                          onMouseEnter={(e) => {
+                            if (day && !isPast && !isSelected) {
+                              e.currentTarget.style.backgroundColor = '#e7f1ff';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (day && !isPast && !isSelected) {
+                              e.currentTarget.style.backgroundColor = 'white';
+                            }
+                          }}
+                        >
+                          {day ? day.getDate() : ''}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card.Body>
+              </Card>
+              
+              {/* Date selezionate */}
+              {eventFormData.eventDates.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted d-block mb-2">
+                    <strong>{eventFormData.eventDates.length}</strong> {eventFormData.eventDates.length === 1 ? 'data selezionata' : 'date selezionate'}:
+                  </small>
+                  <div className="d-flex flex-wrap gap-2">
+                    {eventFormData.eventDates.map((date, idx) => (
+                      <Badge 
+                        key={idx} 
+                        bg="primary" 
+                        className="d-flex align-items-center gap-2"
+                        style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                      >
+                        <span>{new Date(date + 'T00:00:00').toLocaleDateString('it-IT')}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEventDate(date)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem',
+                            lineHeight: 1,
+                            padding: 0
+                          }}
+                        >
+                          &times;
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Form.Group>
+
+            <Row>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Orario (opzionale)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={eventFormData.eventTime}
+                    onChange={(e) => setEventFormData({ ...eventFormData, eventTime: e.target.value })}
+                    placeholder="es. 20:30"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Categoria *</Form.Label>
+              <Form.Select
+                value={eventFormData.category}
+                onChange={(e) => setEventFormData({ ...eventFormData, category: e.target.value })}
+                required
+              >
+                <option value="Sagre & Eventi Enogastronomici">Sagre & Eventi Enogastronomici</option>
+                <option value="Tradizioni popolari & Religiose">Tradizioni popolari & Religiose</option>
+                <option value="Festival, Spettacoli & Concerti">Festival, Spettacoli & Concerti</option>
+                <option value="Eventi Sportivi">Eventi Sportivi</option>
+                <option value="Fiere & Manifestazioni territoriali">Fiere & Manifestazioni territoriali</option>
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Sito Web</Form.Label>
+              <Form.Control
+                type="url"
+                value={eventFormData.website}
+                onChange={(e) => setEventFormData({ ...eventFormData, website: e.target.value })}
+                placeholder="https://esempio.it"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Immagini</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleEventImageChange}
+              />
+              <Form.Text className="text-muted">
+                Carica una o più immagini. La prima immagine con la stella sarà quella principale mostrata nelle card.
+              </Form.Text>
+              
+              {/* Preview immagini */}
+              {eventImageItems.length > 0 && (
+                <div className="mt-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                  {eventImageItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        width: '120px',
+                        height: '120px',
+                        border: item.isMain ? '3px solid #ffc107' : '1px solid #ddd',
+                        borderRadius: '8px',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <img
+                        src={item.url}
+                        alt={`Preview ${idx + 1}`}
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover'
+                        }}
+                      />
+                      {item.isMain && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 4,
+                            left: 4,
+                            background: '#ffc107',
+                            color: '#000',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          PRINCIPALE
+                        </span>
+                      )}
+                      {/* Pulsante stella per impostare come principale */}
+                      <button
+                        type="button"
+                        onClick={() => handleEventSetAsMain(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          left: 4,
+                          background: item.isMain ? '#ffc107' : 'rgba(255,255,255,0.9)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 26,
+                          height: 26,
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          lineHeight: '26px',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }}
+                        title="Imposta come principale"
+                      >★</button>
+                      {/* Pulsante elimina */}
+                      <button
+                        type="button"
+                        onClick={() => handleEventRemoveImage(idx)}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          background: 'rgba(255,255,255,0.9)',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: 26,
+                          height: 26,
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          color: '#d00',
+                          lineHeight: '26px',
+                          padding: 0,
+                          fontSize: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                        }}
+                        title="Rimuovi immagine"
+                      >&times;</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Stato *</Form.Label>
+              <Form.Select
+                value={eventFormData.status}
+                onChange={(e) => setEventFormData({ ...eventFormData, status: e.target.value })}
+                required
+              >
+                <option value="active">Attivo</option>
+                <option value="inactive">Inattivo</option>
+              </Form.Select>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseEventModal}>
+              Annulla
+            </Button>
+            <Button variant="primary" type="submit" disabled={savingEvent}>
+              {savingEvent ? 'Salvataggio...' : 'Salva'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Modal Successo Evento */}
+      <Modal show={showEventSuccessModal} onHide={() => setShowEventSuccessModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="bi bi-check-circle-fill text-success me-2"></i>
+            Operazione completata
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="mb-0">{eventSuccessMessage}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => setShowEventSuccessModal(false)}>
             OK
           </Button>
         </Modal.Footer>

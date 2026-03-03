@@ -517,3 +517,126 @@ export const sponsorAPI = {
   },
 };
 
+// Experience API
+export const experienceAPI = {
+  // Get all active experiences (public)
+  getExperiences: async () => {
+    const response = await fetch(`${API_URL}/experiences`);
+    return handleResponse(response);
+  },
+
+  // Get all experiences (admin)
+  getAllExperiences: async (token) => {
+    const response = await fetch(`${API_URL}/experiences/admin/all`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Get single experience
+  getExperienceById: async (id) => {
+    const response = await fetch(`${API_URL}/experiences/${id}`);
+    return handleResponse(response);
+  },
+
+  // Create experience (admin)
+  createExperience: async (experienceData, token) => {
+    const response = await fetch(`${API_URL}/experiences`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(experienceData),
+    });
+    return handleResponse(response);
+  },
+
+  // Update experience (admin)
+  updateExperience: async (id, experienceData, token) => {
+    const response = await fetch(`${API_URL}/experiences/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(experienceData),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete experience (admin)
+  deleteExperience: async (id, token) => {
+    const response = await fetch(`${API_URL}/experiences/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};
+
+// Event API
+export const eventAPI = {
+  // Get all active events (public)
+  getEvents: async () => {
+    const response = await fetch(`${API_URL}/events`);
+    return handleResponse(response);
+  },
+
+  // Get all events (admin)
+  getAllEvents: async (token) => {
+    const response = await fetch(`${API_URL}/events/admin/all`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Get single event
+  getEventById: async (id) => {
+    const response = await fetch(`${API_URL}/events/${id}`);
+    return handleResponse(response);
+  },
+
+  // Create event (admin)
+  createEvent: async (eventData, token) => {
+    const response = await fetch(`${API_URL}/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    });
+    return handleResponse(response);
+  },
+
+  // Update event (admin)
+  updateEvent: async (id, eventData, token) => {
+    const response = await fetch(`${API_URL}/events/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    });
+    return handleResponse(response);
+  },
+
+  // Delete event (admin)
+  deleteEvent: async (id, token) => {
+    const response = await fetch(`${API_URL}/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+};

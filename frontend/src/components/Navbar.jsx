@@ -160,6 +160,12 @@ const Navbar = () => {
                 >
                   Partners
                 </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/esperienze'); }}
+                >
+                  Esperienze
+                </Nav.Link>
                 {/* Esci sempre ultimo */}
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci
@@ -217,6 +223,18 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/esperienze'); }}
+                >
+                  <span><i className="bi bi-calendar-event"></i> Esperienze</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
+                  onClick={() => { closeMenu(); navigate('/eventi'); }}
+                >
+                  <span><i className="bi bi-calendar3"></i> Eventi</span>
+                </Nav.Link>
+                <Nav.Link 
+                  className="text-start d-lg-none w-100" 
                   onClick={handleLogout}
                   style={{ color: '#dc3545', fontWeight: 600 }}
                 >
@@ -249,6 +267,12 @@ const Navbar = () => {
             </Nav.Link>
             <Nav.Link as={Link} to="/partners" className="d-none d-lg-inline">
               Partners
+            </Nav.Link>
+            <Nav.Link as={Link} to="/esperienze" className="d-none d-lg-inline">
+              Esperienze
+            </Nav.Link>
+            <Nav.Link as={Link} to="/eventi" className="d-none d-lg-inline">
+              Eventi
             </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
@@ -346,6 +370,12 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/esperienze'); }}
+                >
+                  Esperienze
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/login'); }}
                 >
                   Accedi / Registrati
@@ -389,6 +419,12 @@ const Navbar = () => {
                   onClick={() => { closeMenu(); navigate('/negozi'); }}
                 >
                   Negozi
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/esperienze'); }}
+                >
+                  Esperienze
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
