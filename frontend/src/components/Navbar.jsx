@@ -265,14 +265,14 @@ const Navbar = () => {
             <Nav.Link as={Link} to="/negozi" className="d-none d-lg-inline">
               Negozi
             </Nav.Link>
-            <Nav.Link as={Link} to="/partners" className="d-none d-lg-inline">
-              Partners
-            </Nav.Link>
             <Nav.Link as={Link} to="/esperienze" className="d-none d-lg-inline">
               Esperienze
             </Nav.Link>
             <Nav.Link as={Link} to="/eventi" className="d-none d-lg-inline">
               Eventi
+            </Nav.Link>
+            <Nav.Link as={Link} to="/partners" className="d-none d-lg-inline">
+              Partners
             </Nav.Link>
             {isAuthenticated ? (
               <NavDropdown
@@ -364,15 +364,21 @@ const Navbar = () => {
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
-                  onClick={() => { closeMenu(); navigate('/partners'); }}
-                >
-                  Partners
-                </Nav.Link>
-                <Nav.Link 
-                  className="d-lg-none text-end w-100" 
                   onClick={() => { closeMenu(); navigate('/esperienze'); }}
                 >
                   Esperienze
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/eventi'); }}
+                >
+                  Eventi
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/partners'); }}
+                >
+                  Partners
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 
@@ -425,6 +431,12 @@ const Navbar = () => {
                   onClick={() => { closeMenu(); navigate('/esperienze'); }}
                 >
                   Esperienze
+                </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/eventi'); }}
+                >
+                  Eventi
                 </Nav.Link>
                 <Nav.Link 
                   className="d-lg-none text-end w-100" 

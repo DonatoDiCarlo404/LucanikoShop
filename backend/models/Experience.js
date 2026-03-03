@@ -38,7 +38,7 @@ const experienceSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Enogastronomiche', 'Outdoor & Natura', 'Cultura & Tradizioni', 'Sport & Benessere', 'Family & Educational', 'Tour & Attività speciali'],
+    enum: ['Enogastronomiche', 'Outdoor & Natura', 'Cultura & Tradizioni', 'Sport & Benessere', 'Family & Educational', 'Tour & Attività speciali', 'Ospitalità'],
     required: true
   },
   images: [{
