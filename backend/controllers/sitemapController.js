@@ -6,7 +6,7 @@ import Experience from '../models/Experience.js';
 // Genera sitemap.xml dinamica
 export const generateSitemap = async (req, res) => {
   try {
-    const baseUrl = 'https://lucanikoshop.it';
+    const baseUrl = 'https://www.lucanikoshop.it';
     const today = new Date().toISOString().split('T')[0];
 
     // Recupera prodotti attivi
