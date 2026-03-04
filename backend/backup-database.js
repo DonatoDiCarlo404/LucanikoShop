@@ -34,7 +34,9 @@ const COLLECTIONS = [
   'adminnews',
   'notifications',
   'cookieconsents',
-  'wishlists'
+  'wishlists',
+  'events',
+  'experiences'
 ];
 
 async function backupDatabase() {

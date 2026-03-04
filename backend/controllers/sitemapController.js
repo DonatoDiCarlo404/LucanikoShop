@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import Event from '../models/Event.js';
+import Experience from '../models/Experience.js';
 
 // Genera sitemap.xml dinamica
 export const generateSitemap = async (req, res) => {
@@ -18,6 +20,16 @@ export const generateSitemap = async (req, res) => {
       'sellerProfile.isApproved': true 
     })
       .select('_id updatedAt')
+      .lean();
+
+    // Recupera eventi attivi
+    const events = await Event.find({ status: 'active' })
+      .select('_id title updatedAt')
+      .lean();
+
+    // Recupera esperienze attive
+    const experiences = await Experience.find({ status: 'active' })
+      .select('_id title updatedAt')
       .lean();
 
     // Costruisci XML
@@ -62,6 +74,20 @@ export const generateSitemap = async (req, res) => {
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>${baseUrl}/esperienze</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>${baseUrl}/eventi</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   
   <url>
@@ -154,6 +180,38 @@ export const generateSitemap = async (req, res) => {
       xml += `  
   <url>
     <loc>${baseUrl}/shop/${vendor._id}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+    });
+
+    // Aggiungi eventi
+    events.forEach(event => {
+      const lastmod = event.updatedAt 
+        ? new Date(event.updatedAt).toISOString().split('T')[0] 
+        : today;
+      
+      xml += `  
+  <url>
+    <loc>${baseUrl}/eventi/${event._id}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+    });
+
+    // Aggiungi esperienze
+    experiences.forEach(experience => {
+      const lastmod = experience.updatedAt 
+        ? new Date(experience.updatedAt).toISOString().split('T')[0] 
+        : today;
+      
+      xml += `  
+  <url>
+    <loc>${baseUrl}/esperienze/${experience._id}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

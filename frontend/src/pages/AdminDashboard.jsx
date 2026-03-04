@@ -567,6 +567,9 @@ const AdminDashboard = () => {
       
       let updatedImages = [];
       
+      // Trova l'indice dell'immagine principale
+      const mainIndex = experienceImageItems.findIndex(item => item.isMain);
+      
       if (editingExperience) {
         // MODIFICA ESPERIENZA ESISTENTE
         const newImages = experienceImageItems.filter(item => item.file !== null);
@@ -591,54 +594,62 @@ const AdminDashboard = () => {
               }
             }
           }
-          // Carica tutte le nuove immagini
-          for (const item of newImages) {
-            try {
-              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
-              if (uploadResponse && uploadResponse.url) {
-                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+          // Carica tutte le nuove immagini mantenendo traccia dell'indice
+          const uploadedWithIndex = [];
+          for (let i = 0; i < experienceImageItems.length; i++) {
+            const item = experienceImageItems[i];
+            if (item.file) {
+              try {
+                const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+                if (uploadResponse && uploadResponse.url) {
+                  uploadedWithIndex.push({
+                    url: uploadResponse.url,
+                    public_id: uploadResponse.public_id,
+                    originalIndex: i
+                  });
+                }
+              } catch (uploadErr) {
+                console.error('Errore upload immagine:', uploadErr);
               }
-            } catch (uploadErr) {
-              console.error('Errore upload immagine:', uploadErr);
             }
           }
+          // Ordina: l'immagine principale per prima
+          updatedImages = uploadedWithIndex.sort((a, b) => {
+            if (a.originalIndex === mainIndex) return -1;
+            if (b.originalIndex === mainIndex) return 1;
+            return a.originalIndex - b.originalIndex;
+          }).map(({ url, public_id }) => ({ url, public_id }));
         } else {
-          // Nessuna nuova immagine: mantieni quelle esistenti
+          // Nessuna nuova immagine: mantieni quelle esistenti e riordina in base a isMain
           updatedImages = experienceImageItems
             .filter(item => item.file === null)
-            .map(item => {
+            .map((item, idx) => {
               const found = editingExperience.images.find(img => img.url === item.url);
-              return found ? { url: found.url, public_id: found.public_id } : null;
+              return found ? { url: found.url, public_id: found.public_id, originalIndex: idx } : null;
             })
             .filter(Boolean);
-        }
-        
-        // Ordina: la principale per prima
-        const mainItem = experienceImageItems.find(item => item.isMain);
-        if (mainItem) {
+          
+          // Ordina: l'immagine principale per prima
           updatedImages = updatedImages.sort((a, b) => {
-            if (a.url === mainItem.url) return -1;
-            if (b.url === mainItem.url) return 1;
-            return 0;
-          });
+            if (a.originalIndex === mainIndex) return -1;
+            if (b.originalIndex === mainIndex) return 1;
+            return a.originalIndex - b.originalIndex;
+          }).map(({ url, public_id }) => ({ url, public_id }));
         }
-        
-        const dataToSave = {
-          ...experienceFormData,
-          images: updatedImages
-        };
-        
-        await experienceAPI.updateExperience(editingExperience._id, dataToSave, user.token);
-        setExperienceSuccessMessage('Esperienza aggiornata con successo!');
       } else {
         // CREAZIONE NUOVA ESPERIENZA
-        // Carica le immagini
-        for (const item of experienceImageItems) {
+        const uploadedWithIndex = [];
+        for (let i = 0; i < experienceImageItems.length; i++) {
+          const item = experienceImageItems[i];
           if (item.file) {
             try {
               const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
               if (uploadResponse && uploadResponse.url) {
-                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+                uploadedWithIndex.push({
+                  url: uploadResponse.url,
+                  public_id: uploadResponse.public_id,
+                  originalIndex: i
+                });
               }
             } catch (uploadErr) {
               console.error('Errore upload immagine:', uploadErr);
@@ -646,22 +657,23 @@ const AdminDashboard = () => {
           }
         }
         
-        // Ordina: la principale per prima
-        const mainItem = experienceImageItems.find(item => item.isMain);
-        if (mainItem) {
-          updatedImages = updatedImages.sort((a, b) => {
-            if (a.file === mainItem.file) return -1;
-            if (b.file === mainItem.file) return 1;
-            return 0;
-          });
-        }
+        // Ordina: l'immagine principale per prima
+        updatedImages = uploadedWithIndex.sort((a, b) => {
+          if (a.originalIndex === mainIndex) return -1;
+          if (b.originalIndex === mainIndex) return 1;
+          return a.originalIndex - b.originalIndex;
+        }).map(({ url, public_id }) => ({ url, public_id }));
+      }
         
-        const dataToSave = {
-          ...experienceFormData,
-          images: updatedImages
-        };
-        
-        await experienceAPI.createExperience(dataToSave, user.token);
+      const dataToSave = {
+        ...experienceFormData,
+        images: updatedImages
+      };
+      
+      if (editingExperience) {
+        await experienceAPI.updateExperience(editingExperience._id, dataToSave, user.token);
+        setExperienceSuccessMessage('Esperienza aggiornata con successo!');
+      } else {
         setExperienceSuccessMessage('Esperienza creata con successo!');
       }
       
@@ -893,6 +905,9 @@ const AdminDashboard = () => {
       
       let updatedImages = [];
       
+      // Trova l'indice dell'immagine principale
+      const mainIndex = eventImageItems.findIndex(item => item.isMain);
+      
       if (editingEvent) {
         // MODIFICA EVENTO ESISTENTE
         const newImages = eventImageItems.filter(item => item.file !== null);
@@ -916,53 +931,62 @@ const AdminDashboard = () => {
               }
             }
           }
-          // Carica nuove immagini
-          for (const item of newImages) {
-            try {
-              const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
-              if (uploadResponse && uploadResponse.url) {
-                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+          // Carica nuove immagini mantenendo traccia dell'indice
+          const uploadedWithIndex = [];
+          for (let i = 0; i < eventImageItems.length; i++) {
+            const item = eventImageItems[i];
+            if (item.file) {
+              try {
+                const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
+                if (uploadResponse && uploadResponse.url) {
+                  uploadedWithIndex.push({
+                    url: uploadResponse.url,
+                    public_id: uploadResponse.public_id,
+                    originalIndex: i
+                  });
+                }
+              } catch (uploadErr) {
+                console.error('Errore upload immagine:', uploadErr);
               }
-            } catch (uploadErr) {
-              console.error('Errore upload immagine:', uploadErr);
             }
           }
+          // Ordina: l'immagine principale per prima
+          updatedImages = uploadedWithIndex.sort((a, b) => {
+            if (a.originalIndex === mainIndex) return -1;
+            if (b.originalIndex === mainIndex) return 1;
+            return a.originalIndex - b.originalIndex;
+          }).map(({ url, public_id }) => ({ url, public_id }));
         } else {
-          // Mantieni immagini esistenti
+          // Mantieni immagini esistenti e riordina
           updatedImages = eventImageItems
             .filter(item => item.file === null)
-            .map(item => {
+            .map((item, idx) => {
               const found = editingEvent.images.find(img => img.url === item.url);
-              return found ? { url: found.url, public_id: found.public_id } : null;
+              return found ? { url: found.url, public_id: found.public_id, originalIndex: idx } : null;
             })
             .filter(Boolean);
-        }
-        
-        // Ordina: principale per prima
-        const mainItem = eventImageItems.find(item => item.isMain);
-        if (mainItem) {
+          
+          // Ordina: l'immagine principale per prima
           updatedImages = updatedImages.sort((a, b) => {
-            if (a.url === mainItem.url) return -1;
-            if (b.url === mainItem.url) return 1;
-            return 0;
-          });
+            if (a.originalIndex === mainIndex) return -1;
+            if (b.originalIndex === mainIndex) return 1;
+            return a.originalIndex - b.originalIndex;
+          }).map(({ url, public_id }) => ({ url, public_id }));
         }
-        
-        const dataToSave = {
-          ...eventFormData,
-          images: updatedImages
-        };
-        
-        await eventAPI.updateEvent(editingEvent._id, dataToSave, user.token);
-        setEventSuccessMessage('Evento aggiornato con successo!');
       } else {
         // CREAZIONE NUOVO EVENTO
-        for (const item of eventImageItems) {
+        const uploadedWithIndex = [];
+        for (let i = 0; i < eventImageItems.length; i++) {
+          const item = eventImageItems[i];
           if (item.file) {
             try {
               const uploadResponse = await uploadAPI.uploadProductImage(item.file, user.token);
               if (uploadResponse && uploadResponse.url) {
-                updatedImages.push({ url: uploadResponse.url, public_id: uploadResponse.public_id });
+                uploadedWithIndex.push({
+                  url: uploadResponse.url,
+                  public_id: uploadResponse.public_id,
+                  originalIndex: i
+                });
               }
             } catch (uploadErr) {
               console.error('Errore upload immagine:', uploadErr);
@@ -970,22 +994,23 @@ const AdminDashboard = () => {
           }
         }
         
-        // Ordina: principale per prima
-        const mainItem = eventImageItems.find(item => item.isMain);
-        if (mainItem) {
-          updatedImages = updatedImages.sort((a, b) => {
-            if (a.file === mainItem.file) return -1;
-            if (b.file === mainItem.file) return 1;
-            return 0;
-          });
-        }
+        // Ordina: l'immagine principale per prima
+        updatedImages = uploadedWithIndex.sort((a, b) => {
+          if (a.originalIndex === mainIndex) return -1;
+          if (b.originalIndex === mainIndex) return 1;
+          return a.originalIndex - b.originalIndex;
+        }).map(({ url, public_id }) => ({ url, public_id }));
+      }
         
-        const dataToSave = {
-          ...eventFormData,
-          images: updatedImages
-        };
-        
-        await eventAPI.createEvent(dataToSave, user.token);
+      const dataToSave = {
+        ...eventFormData,
+        images: updatedImages
+      };
+      
+      if (editingEvent) {
+        await eventAPI.updateEvent(editingEvent._id, dataToSave, user.token);
+        setEventSuccessMessage('Evento aggiornato con successo!');
+      } else {
         setEventSuccessMessage('Evento creato con successo!');
       }
       
@@ -2209,13 +2234,13 @@ const AdminDashboard = () => {
               <Form.Control
                 as="textarea"
                 rows={3}
-                maxLength={500}
+                maxLength={1000}
                 value={experienceFormData.description}
                 onChange={(e) => setExperienceFormData({ ...experienceFormData, description: e.target.value })}
                 required
               />
               <Form.Text className="text-muted">
-                {experienceFormData.description.length}/500 caratteri
+                {experienceFormData.description.length}/1000 caratteri
               </Form.Text>
             </Form.Group>
 
@@ -2470,13 +2495,13 @@ const AdminDashboard = () => {
               <Form.Control
                 as="textarea"
                 rows={3}
-                maxLength={500}
+                maxLength={1000}
                 value={eventFormData.description}
                 onChange={(e) => setEventFormData({ ...eventFormData, description: e.target.value })}
                 required
               />
               <Form.Text className="text-muted">
-                {eventFormData.description.length}/500 caratteri
+                {eventFormData.description.length}/1000 caratteri
               </Form.Text>
             </Form.Group>
 

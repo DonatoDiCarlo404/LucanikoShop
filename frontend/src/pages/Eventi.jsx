@@ -123,7 +123,7 @@ const Eventi = () => {
               placeholder="Cerca per parola chiave o città..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              style={{ fontSize: 14, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
+              style={{ fontSize: 16, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
             />
           </div>
         </div>

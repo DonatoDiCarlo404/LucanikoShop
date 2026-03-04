@@ -1,6 +1,7 @@
 footer .row.gy-4 {
   --bs-gutter-x: 0.5rem;
 }
+
 /* Reset e base styles */
 * {
   margin: 0;
@@ -65,6 +66,7 @@ body {
     width: 80vw;
     max-width: 95vw;
   }
+
   /* Logo footer ancora più piccolo */
   footer .mt-4 img,
   footer .mt-4 .logo-anim {
@@ -72,6 +74,7 @@ body {
     width: 35vw !important;
     margin-bottom: 10px !important;
   }
+
   /* Testi footer più piccoli */
   footer .list-unstyled li,
   footer .list-unstyled a,
@@ -79,6 +82,7 @@ body {
   footer h6 {
     font-size: 0.92rem !important;
   }
+
   /* Maggiori margini laterali */
   footer .container {
     padding-left: 2rem !important;
@@ -87,24 +91,39 @@ body {
 }
 
 @keyframes fadeInScale {
-  0% { opacity: 0; transform: scale(0.7);}
-  60% { opacity: 1; transform: scale(1.1);}
-  100% { opacity: 1; transform: scale(1);}
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Sfondo bianco per navbar, carosello categorie e footer */
 .navbar {
   background: #fff !important;
 }
+
 .categories-carousel-container {
   background: #fff !important;
 }
-footer, .footer, .footer * {
+
+footer,
+.footer,
+.footer * {
   background: #fff !important;
 }
 
 .bg-light {
-  background-color: rgb(255 255 255)!important;
+  background-color: rgb(255 255 255) !important;
 }
 
 /* Fix conflitto Bootstrap .bg-primary con stili inline personalizzati */
@@ -143,4 +162,10 @@ footer .border-top.py-3.text-center {
   background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(20,20,20,1)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
   background-color: #fff !important;
   border: none !important;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  background: rgb(255 255 255 / 12%) !important;
+
 }

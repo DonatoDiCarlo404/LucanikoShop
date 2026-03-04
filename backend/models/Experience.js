@@ -9,7 +9,7 @@ const experienceSchema = new mongoose.Schema({
   description: {
     type: String,
     required: true,
-    maxLength: 500
+    maxLength: 1000
   },
   company: {
     type: String,
@@ -56,5 +56,11 @@ const experienceSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indici per ottimizzare le query
+experienceSchema.index({ status: 1, createdAt: -1 }); // Query pubblica: attive ordinate per data
+experienceSchema.index({ category: 1 }); // Filtro per categoria
+experienceSchema.index({ city: 1 }); // Filtro per città
+experienceSchema.index({ title: 'text', description: 'text', company: 'text' }); // Ricerca full-text
 
 export default mongoose.model('Experience', experienceSchema);

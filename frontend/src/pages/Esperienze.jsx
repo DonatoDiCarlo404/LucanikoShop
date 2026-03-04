@@ -91,7 +91,7 @@ const Esperienze = () => {
               placeholder="Cerca per parola chiave o città..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              style={{ fontSize: 14, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
+              style={{ fontSize: 16, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
             />
           </div>
         </div>
@@ -193,8 +193,10 @@ const Esperienze = () => {
                         maxWidth: '320px',
                         margin: '0 auto',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)',
-                        border: '2px solid transparent'
+                        border: '2px solid transparent',
+                        cursor: 'pointer'
                       }}
+                      onClick={() => navigate(`/esperienze/${experience._id}`)}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-8px)';
                         e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.16)';
@@ -288,7 +290,10 @@ const Esperienze = () => {
                         </div>
 
                         <Button
-                          onClick={() => navigate(`/esperienze/${experience._id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/esperienze/${experience._id}`);
+                          }}
                           variant="primary"
                           className="mt-auto w-100"
                           style={{
