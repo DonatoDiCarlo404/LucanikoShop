@@ -13,4 +13,4 @@ Disallow: /profile
 Disallow: /orders/
 
 # Sitemap
-Sitemap: https://api.lucanikoshop.it/api/sitemap
+Sitemap: https://lucanikoshop.it/api/sitemap

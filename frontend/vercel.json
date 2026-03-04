@@ -4,6 +4,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/sitemap",
+      "destination": "https://api.lucanikoshop.it/api/sitemap"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
