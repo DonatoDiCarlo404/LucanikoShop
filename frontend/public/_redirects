@@ -1,0 +1,13 @@
+# Redirect images and assets - serve them directly, don't redirect
+/*.png  /:splat  200
+/*.jpg  /:splat  200
+/*.jpeg /:splat  200
+/*.svg  /:splat  200
+/*.webp /:splat  200
+/immagini-categorie-lucaniko-shop/*  /immagini-categorie-lucaniko-shop/:splat  200
+
+# API Sitemap proxy
+/api/sitemap  https://api.lucanikoshop.it/api/sitemap  200
+
+# SPA fallback for all other routes
+/*  /index.html  200
