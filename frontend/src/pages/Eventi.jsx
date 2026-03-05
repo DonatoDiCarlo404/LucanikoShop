@@ -223,27 +223,33 @@ const Eventi = () => {
               : `Tutti gli Eventi (${sortedEvents.length})`
             }
           </h4>
-          <Row>
+          <Row xs={1} md={2} lg={3} className="g-4">
             {sortedEvents.map(event => (
-              <Col key={event._id} md={6} lg={4} className="mb-4">
+              <Col key={event._id}>
                 <Card 
-                  className="h-100 shadow-sm border-0"
-                  style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
+                  className="h-100"
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    maxWidth: '400px',
+                    margin: '0 auto',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)',
+                    border: '2px solid transparent'
+                  }}
                   onClick={() => navigate(`/eventi/${event._id}`)}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 16px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.16)';
+                    e.currentTarget.style.borderColor = '#004b75';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.12)';
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }}
                 >
-                  {event.images && event.images.length > 0 && (
-                    <img
-                      src={event.images[0].url}
-                      alt={event.title}
-                      style={{
-                        height: '180px',
-                        objectFit: 'cover',
-                        borderRadius: '8px 8px 0 0'
-                      }}
-                    />
-                  )}
                   <Card.Body>
                     <div className="mb-2">
                       <Badge style={{ fontSize: '0.75rem', backgroundColor: '#004b75', color: '#fff' }}>

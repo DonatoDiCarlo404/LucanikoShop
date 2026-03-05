@@ -795,7 +795,11 @@ const AdminDashboard = () => {
   // Handler per gestione date multiple con calendario
   const handleToggleEventDate = (date) => {
     if (!date) return;
-    const dateStr = date.toISOString().split('T')[0];
+    // Fix timezone: usa metodi locali invece di toISOString()
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     
     if (eventFormData.eventDates.includes(dateStr)) {
       // Rimuovi data
@@ -840,7 +844,11 @@ const AdminDashboard = () => {
 
   const isEventDateSelected = (date) => {
     if (!date) return false;
-    const dateStr = date.toISOString().split('T')[0];
+    // Fix timezone: usa metodi locali invece di toISOString()
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     return eventFormData.eventDates.includes(dateStr);
   };
 

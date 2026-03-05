@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Spinner, Alert, Button, Carousel } from 'react-bootstrap';
+import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import { API_URL } from '../services/api';
 
 // Categorie delle esperienze
@@ -209,36 +209,17 @@ const Esperienze = () => {
                       }}
                     >
                       {experience.images && experience.images.length > 0 ? (
-                        experience.images.length === 1 ? (
-                          <img
-                            src={experience.images[0].url}
-                            alt={experience.title}
-                            style={{
-                              height: '200px',
-                              width: '100%',
-                              objectFit: 'cover',
-                              padding: '0',
-                              backgroundColor: '#f8f9fa'
-                            }}
-                          />
-                        ) : (
-                          <Carousel indicators={false} interval={null} style={{ height: '200px' }}>
-                            {experience.images.map((image, imgIdx) => (
-                              <Carousel.Item key={imgIdx}>
-                                <img
-                                  className="d-block w-100"
-                                  src={image.url}
-                                  alt={`${experience.title} - ${imgIdx + 1}`}
-                                  style={{
-                                    height: '200px',
-                                    objectFit: 'cover',
-                                    backgroundColor: '#f8f9fa'
-                                  }}
-                                />
-                              </Carousel.Item>
-                            ))}
-                          </Carousel>
-                        )
+                        <img
+                          src={experience.images[0].url}
+                          alt={experience.title}
+                          style={{
+                            height: '200px',
+                            width: '100%',
+                            objectFit: 'cover',
+                            padding: '0',
+                            backgroundColor: '#f8f9fa'
+                          }}
+                        />
                       ) : (
                         <div
                           style={{
@@ -259,12 +240,15 @@ const Esperienze = () => {
                         <Card.Text 
                           className="text-muted small mb-3" 
                           style={{ 
-                            flexGrow: 1,
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            textOverflow: 'ellipsis',
+                            lineHeight: '1.4rem',
+                            height: '4.2rem',
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal'
                           }}
                         >
                           {experience.description}

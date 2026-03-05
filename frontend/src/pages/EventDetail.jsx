@@ -104,8 +104,9 @@ const EventDetail = () => {
                   src={event.images[0].url}
                   alt={event.title}
                   style={{ 
-                    height: '400px', 
-                    objectFit: 'cover', 
+                    maxHeight: '500px', 
+                    width: '100%',
+                    objectFit: 'contain', 
                     borderRadius: '8px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
                   }}
@@ -119,8 +120,9 @@ const EventDetail = () => {
                         src={image.url}
                         alt={`${event.title} - ${index + 1}`}
                         style={{ 
-                          height: '400px', 
-                          objectFit: 'cover', 
+                          maxHeight: '500px',
+                          width: '100%', 
+                          objectFit: 'contain', 
                           borderRadius: '8px' 
                         }}
                       />
