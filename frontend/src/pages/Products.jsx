@@ -74,7 +74,8 @@ const Products = () => {
     try {
       const response = await fetch(`${API_URL}/categories/main`);
       const data = await response.json();
-      setCategories(data);
+      // Assicuriamoci che data sia un array
+      setCategories(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Errore caricamento categorie:', err);
       setCategories([]);
@@ -99,7 +100,7 @@ const Products = () => {
 
   // Effect per caricare sottocategorie quando cambia la categoria
   useEffect(() => {
-    if (category) {
+    if (category && Array.isArray(categories) && categories.length > 0) {
       const categoryObj = categories.find(cat => cat.name === category);
       if (categoryObj) {
         loadSubcategories(categoryObj._id);

@@ -334,14 +334,14 @@ const AdminDashboard = () => {
     if (sponsor) {
       setEditingSponsor(sponsor);
       setSponsorFormData({
-        name: sponsor.name,
-        description: sponsor.description,
-        city: sponsor.city,
-        phone: sponsor.phone,
-        website: sponsor.website,
+        name: sponsor.name || '',
+        description: sponsor.description || '',
+        city: sponsor.city || '',
+        phone: sponsor.phone || '',
+        website: sponsor.website || '',
         logo: sponsor.logo || '',
-        tier: sponsor.tier,
-        status: sponsor.status
+        tier: sponsor.tier || 'Support',
+        status: sponsor.status || 'active'
       });
     } else {
       setEditingSponsor(null);
@@ -457,15 +457,15 @@ const AdminDashboard = () => {
     if (experience) {
       setEditingExperience(experience);
       setExperienceFormData({
-        title: experience.title,
-        description: experience.description,
-        company: experience.company,
-        city: experience.city,
+        title: experience.title || '',
+        description: experience.description || '',
+        company: experience.company || '',
+        city: experience.city || '',
         address: experience.address || '',
-        phone: experience.phone,
-        website: experience.website,
-        category: experience.category,
-        status: experience.status
+        phone: experience.phone || '',
+        website: experience.website || '',
+        category: experience.category || 'Enogastronomiche',
+        status: experience.status || 'active'
       });
       // Carica immagini esistenti
       if (experience.images && experience.images.length > 0) {
@@ -674,6 +674,7 @@ const AdminDashboard = () => {
         await experienceAPI.updateExperience(editingExperience._id, dataToSave, user.token);
         setExperienceSuccessMessage('Esperienza aggiornata con successo!');
       } else {
+        await experienceAPI.createExperience(dataToSave, user.token);
         setExperienceSuccessMessage('Esperienza creata con successo!');
       }
       
@@ -723,17 +724,17 @@ const AdminDashboard = () => {
     if (event) {
       setEditingEvent(event);
       setEventFormData({
-        title: event.title,
-        description: event.description,
-        company: event.company,
-        city: event.city,
+        title: event.title || '',
+        description: event.description || '',
+        company: event.company || '',
+        city: event.city || '',
         address: event.address || '',
-        phone: event.phone,
-        website: event.website,
-        category: event.category,
+        phone: event.phone || '',
+        website: event.website || '',
+        category: event.category || 'Sagre & Eventi Enogastronomici',
         eventDates: event.eventDates ? event.eventDates.map(d => new Date(d).toISOString().split('T')[0]) : [],
         eventTime: event.eventTime || '',
-        status: event.status
+        status: event.status || 'active'
       });
       // Carica immagini esistenti
       if (event.images && event.images.length > 0) {

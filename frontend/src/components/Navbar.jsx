@@ -166,6 +166,12 @@ const Navbar = () => {
                 >
                   Esperienze
                 </Nav.Link>
+                <Nav.Link 
+                  className="d-lg-none text-end w-100" 
+                  onClick={() => { closeMenu(); navigate('/eventi'); }}
+                >
+                  Eventi
+                </Nav.Link>
                 {/* Esci sempre ultimo */}
                 <Nav.Link onClick={handleLogout} className="d-lg-none text-end w-100">
                   Esci
