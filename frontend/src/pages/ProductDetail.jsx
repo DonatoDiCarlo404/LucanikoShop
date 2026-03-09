@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -26,8 +26,12 @@ import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth() || {};
   const { addToCart, cartItems } = useCart() || {};
+
+  // Recupera info shop se si arriva da ShopPage
+  const fromShop = location.state?.fromShop;
 
   // STATE
   const [product, setProduct] = useState(null);
@@ -383,7 +387,9 @@ const ProductDetail = () => {
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
-        <Button onClick={() => navigate('/products')}>Torna al catalogo</Button>
+        <Button onClick={() => fromShop ? navigate(`/shop/${fromShop.sellerId}`) : navigate('/products')}>
+          {fromShop ? `Torna al catalogo di ${fromShop.shopName}` : 'Torna al catalogo'}
+        </Button>
       </Container>
     );
   }
@@ -392,7 +398,9 @@ const ProductDetail = () => {
     return (
       <Container className="py-5">
         <Alert variant="warning">Prodotto non trovato</Alert>
-        <Button onClick={() => navigate('/products')}>Torna al catalogo</Button>
+        <Button onClick={() => fromShop ? navigate(`/shop/${fromShop.sellerId}`) : navigate('/products')}>
+          {fromShop ? `Torna al catalogo di ${fromShop.shopName}` : 'Torna al catalogo'}
+        </Button>
       </Container>
     );
   }
@@ -408,8 +416,12 @@ const ProductDetail = () => {
         type="product"
       />
       <Container className="py-5">
-      <Button variant="outline-secondary" className="mb-4" onClick={() => navigate('/products')}>
-        ← Torna al catalogo
+      <Button 
+        variant="outline-secondary" 
+        className="mb-4" 
+        onClick={() => fromShop ? navigate(`/shop/${fromShop.sellerId}`) : navigate('/products')}
+      >
+        ← {fromShop ? `Torna al catalogo di ${fromShop.shopName}` : 'Torna al catalogo'}
       </Button>
 
 

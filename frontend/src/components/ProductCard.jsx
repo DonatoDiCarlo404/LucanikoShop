@@ -7,7 +7,7 @@ import { wishlistAPI } from '../services/api';
 import { useState, useEffect, useRef } from 'react';
 import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, fromShop }) => {
     // Calcola prezzo minimo e stock totale se ci sono varianti
     let minVariantPrice = null;
     let totalVariantStock = 0;
@@ -105,7 +105,8 @@ const ProductCard = ({ product }) => {
           e.stopPropagation();
           return;
         }
-        navigate(`/products/${product._id}`);
+        // Passa lo stato fromShop se presente
+        navigate(`/products/${product._id}`, fromShop ? { state: { fromShop } } : undefined);
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-8px)';
@@ -311,6 +312,10 @@ ProductCard.propTypes = {
         public_id: PropTypes.string.isRequired,
       })
     ),
+  fromShop: PropTypes.shape({
+    sellerId: PropTypes.string.isRequired,
+    shopName: PropTypes.string.isRequired,
+  }),
   }).isRequired,
 };
 

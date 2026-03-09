@@ -13,6 +13,18 @@ const generateSKU = (productName, attributes) => {
   return `${prefix}-${attrCode}-${random}`;
 };
 
+// Utility: converte valori numerici gestendo sia punto che virgola come separatore decimale
+const parseNumericValue = (value) => {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    // Sostituisce la virgola con il punto e converte in numero
+    const parsed = parseFloat(value.replace(',', '.'));
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
 // @desc    Ottieni tutti i prodotti (con filtri e ricerca)
 // @route   GET /api/products
 // @access  Public
@@ -229,6 +241,12 @@ export const createProduct = async (req, res) => {
       attributes, hasVariants, variants, customAttributes, selectedVariantAttributes, sellerId 
     } = req.body;
 
+    // Converti valori numerici gestendo virgola e punto
+    const parsedPrice = parseNumericValue(price);
+    const parsedIvaPercent = parseNumericValue(ivaPercent);
+    const parsedStock = parseNumericValue(stock);
+    const parsedWeight = parseNumericValue(weight);
+
     // Determina il seller: se admin e sellerId fornito, usa quello, altrimenti l'utente loggato
     let actualSellerId = req.user._id;
     if (req.user.role === 'admin' && sellerId) {
@@ -273,7 +291,15 @@ export const createProduct = async (req, res) => {
           variant.sku = generateSKU(name, variant.attributes);
         }
         
-        processedVariants.push(variant);
+        // Converti valori numerici nelle varianti
+        const processedVariant = {
+          ...variant,
+          price: parseNumericValue(variant.price),
+          stock: parseNumericValue(variant.stock),
+          weight: parseNumericValue(variant.weight)
+        };
+        
+        processedVariants.push(processedVariant);
       }
     }
 
@@ -281,12 +307,12 @@ export const createProduct = async (req, res) => {
     const productData = {
       name,
       description,
-      price,
-      ivaPercent,
+      price: parsedPrice,
+      ivaPercent: parsedIvaPercent,
       category,
       subcategory: subcategory || null,
-      stock,
-      weight,
+      stock: parsedStock,
+      weight: parsedWeight,
       unit,
       expiryDate,
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
@@ -301,6 +327,7 @@ export const createProduct = async (req, res) => {
     
     console.log('💾 [BACKEND CREATE] ProductData da creare:', productData);
     console.log('💾 [BACKEND CREATE] Weight in productData:', productData.weight);
+    console.log('💾 [BACKEND CREATE] Weight originale:', weight, '-> parsato:', parsedWeight);
     
     const product = await Product.create(productData);
     
@@ -366,8 +393,8 @@ export const updateProduct = async (req, res) => {
     // Aggiorna solo i campi forniti
     if (name) product.name = name;
     if (description) product.description = description;
-    if (price) {
-      product.price = price;
+    if (price !== undefined) {
+      product.price = parseNumericValue(price);
       // Se il prodotto ha uno sconto attivo, riapplicalo con il nuovo prezzo
       if (product.hasActiveDiscount && product.activeDiscount) {
         const Discount = (await import('../models/index.js')).Discount;
@@ -380,13 +407,13 @@ export const updateProduct = async (req, res) => {
         }
       }
     }
-    if (ivaPercent !== undefined) product.ivaPercent = ivaPercent;
+    if (ivaPercent !== undefined) product.ivaPercent = parseNumericValue(ivaPercent);
     if (category) product.category = category;
     if (subcategory !== undefined) product.subcategory = subcategory || null;
-    if (stock !== undefined) product.stock = stock;
+    if (stock !== undefined) product.stock = parseNumericValue(stock);
     if (weight !== undefined) {
-      product.weight = weight;
-      console.log('✅ [BACKEND UPDATE] Weight assegnato al prodotto:', product.weight);
+      product.weight = parseNumericValue(weight);
+      console.log('✅ [BACKEND UPDATE] Weight originale:', weight, '-> parsato:', product.weight);
     }
     if (unit) product.unit = unit;
     if (expiryDate) product.expiryDate = expiryDate;
@@ -400,10 +427,13 @@ export const updateProduct = async (req, res) => {
     if (selectedVariantAttributes) product.selectedVariantAttributes = selectedVariantAttributes;
     if (hasVariants !== undefined) product.hasVariants = hasVariants;
     if (variants) {
-      // Genera SKU per varianti che ne sono prive
+      // Genera SKU e converte valori numerici per varianti
       product.variants = variants.map(v => ({
         ...v,
-        sku: v.sku || generateSKU(product.name, v.attributes)
+        sku: v.sku || generateSKU(product.name, v.attributes),
+        price: parseNumericValue(v.price),
+        stock: parseNumericValue(v.stock),
+        weight: parseNumericValue(v.weight)
       }));
     }
 

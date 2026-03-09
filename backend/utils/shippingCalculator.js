@@ -21,8 +21,17 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
     // Calcola peso totale del carrello
     const totalWeight = items.reduce((sum, item) => {
         const weight = item.product?.weight || 0;
-        return sum + (weight * item.quantity);
+        const itemWeight = weight * item.quantity;
+        return sum + itemWeight;
     }, 0);
+
+    console.log('📦 [SHIPPING] Calcolo peso totale:', totalWeight, 'kg');
+    console.log('📦 [SHIPPING] Items:', items.map(i => ({ 
+        name: i.product?.name, 
+        weight: i.product?.weight, 
+        qty: i.quantity,
+        total: (i.product?.weight || 0) * i.quantity
+    })));
 
     // Calcola totale carrello se non passato
     const calculatedCartTotal = (typeof cartTotal === 'number' && !isNaN(cartTotal))
@@ -32,54 +41,38 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
                 return sum + (price * item.quantity);
             }, 0);
 
-    // PRIORITÀ: Controlla prima se ci sono tariffe avanzate configurate
-    const hasAdvancedRates = vendorShippingSettings.shippingRates && vendorShippingSettings.shippingRates.length > 0;
-    
-    // Se non ci sono tariffe avanzate, applica le regole globali
-    if (!hasAdvancedRates) {
-        // Se il venditore ha abilitato la spedizione gratuita
-        if (vendorShippingSettings.freeShipping === true) {
-            const threshold = vendorShippingSettings.freeShippingThreshold || 0;
-            
-            // Se la soglia è 0, spedizione sempre gratuita
-            if (threshold === 0) {
-                return {
-                    shippingCost: 0,
-                    appliedRate: null,
-                    freeShipping: true,
-                    message: 'Spedizione gratuita',
-                    shippingOptions: []
-                };
-            }
-            
-            // Se il totale carrello supera la soglia, spedizione gratuita
-            if (calculatedCartTotal >= threshold) {
-                return {
-                    shippingCost: 0,
-                    appliedRate: null,
-                    freeShipping: true,
-                    message: `Spedizione gratuita (soglia €${threshold.toFixed(2)} raggiunta)`,
-                    shippingOptions: []
-                };
-            }
-            
-            // Altrimenti, usa la tariffa predefinita
-            const defaultRate = vendorShippingSettings.defaultShippingRate || 0;
+    // PRIORITÀ 1: Controlla SEMPRE la spedizione gratuita (indipendentemente dalle tariffe avanzate)
+    if (vendorShippingSettings.freeShipping === true) {
+        const threshold = vendorShippingSettings.freeShippingThreshold || 0;
+        
+        // Se la soglia è 0, spedizione sempre gratuita
+        if (threshold === 0) {
             return {
-                shippingCost: defaultRate,
-                appliedRate: {
-                    type: 'default',
-                    rate: defaultRate
-                },
-                freeShipping: false,
-                message: defaultRate > 0 
-                    ? `Tariffa standard: €${defaultRate.toFixed(2)} (spedizione gratuita da €${threshold.toFixed(2)})` 
-                    : 'Spedizione gratuita',
+                shippingCost: 0,
+                appliedRate: null,
+                freeShipping: true,
+                message: 'Spedizione gratuita',
                 shippingOptions: []
             };
         }
         
-        // Se non c'è spedizione gratuita abilitata, usa la tariffa predefinita
+        // Se il totale carrello supera la soglia, spedizione gratuita
+        if (calculatedCartTotal >= threshold) {
+            return {
+                shippingCost: 0,
+                appliedRate: null,
+                freeShipping: true,
+                message: `Spedizione gratuita (soglia €${threshold.toFixed(2)} raggiunta)`,
+                shippingOptions: []
+            };
+        }
+    }
+
+    // PRIORITÀ 2: Controlla se ci sono tariffe avanzate configurate
+    const hasAdvancedRates = vendorShippingSettings.shippingRates && vendorShippingSettings.shippingRates.length > 0;
+    
+    // Se non ci sono tariffe avanzate, usa la tariffa predefinita
+    if (!hasAdvancedRates) {
         const defaultRate = vendorShippingSettings.defaultShippingRate || 0;
         return {
             shippingCost: defaultRate,
@@ -135,9 +128,13 @@ export const calculateShipping = (vendorShippingSettings, cartData) => {
             const cartWeightFrom = parseFloat((rate.cartWeightFrom || '0').toString().replace(',', '.')) || 0;
             const cartWeightTo = parseFloat((rate.cartWeightTo || '').toString().replace(',', '.')) || Infinity;
             
+            console.log(`📦 [SHIPPING] Verifica tariffa "${rate.name}": peso ${totalWeight} kg, range ${cartWeightFrom}-${cartWeightTo} kg`);
+            
             if (totalWeight < cartWeightFrom || totalWeight > cartWeightTo) {
+                console.log(`   ❌ Scartata: peso fuori range`);
                 continue;
             }
+            console.log(`   ✅ Accettata: peso nel range`);
         }
 
         // Restituisci le opzioni di spedizione disponibili

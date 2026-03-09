@@ -513,7 +513,13 @@ const ShopPage = () => {
             <Row>
               {paginatedProducts.map((product) => (
                 <Col key={product._id} xs={6} sm={6} md={4} lg={3} className="mb-4">
-                  <ProductCard product={product} />
+                  <ProductCard 
+                    product={product} 
+                    fromShop={{
+                      sellerId: sellerId,
+                      shopName: vendor.businessName || vendor.name || 'Negozio'
+                    }}
+                  />
                 </Col>
               ))}
             </Row>

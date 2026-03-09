@@ -57,11 +57,16 @@ export const createCheckoutSession = async (req, res) => {
                 };
             }
 
+            // Assicurati che il peso sia sempre un numero
+            const productWeight = typeof product.weight === 'string' 
+                ? parseFloat(product.weight.replace(',', '.')) || 0
+                : (typeof product.weight === 'number' ? product.weight : 0);
+
             itemsByVendor[vendorId].items.push({
                 product: {
                     _id: product._id,
                     name: product.name,
-                    weight: product.weight || 0,
+                    weight: productWeight,
                     price: product.price
                 },
                 quantity: item.quantity,
