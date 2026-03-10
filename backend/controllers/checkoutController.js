@@ -39,6 +39,18 @@ export const createCheckoutSession = async (req, res) => {
                 return res.status(404).json({ message: `Prodotto non trovato: ${item._id}` });
             }
 
+            // Controllo sicurezza: verifica che seller sia popolato
+            if (!product.seller || !product.seller._id) {
+                console.error('❌ [CHECKOUT] Prodotto senza seller valido:', {
+                    productId: item._id,
+                    productName: product.name,
+                    seller: product.seller
+                });
+                return res.status(500).json({ 
+                    message: `Il prodotto "${product.name}" non ha un venditore valido associato. Contatta l'assistenza.` 
+                });
+            }
+
             const vendorId = product.seller._id.toString();
 
             // SECURITY FIX: Salva sellerId corretto dal database
