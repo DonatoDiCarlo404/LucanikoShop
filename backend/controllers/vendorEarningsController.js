@@ -99,7 +99,7 @@ export const getVendorPayouts = async (req, res) => {
   }
 };
 
-// @desc    Ottieni vendite in attesa di pagamento (< 14 giorni)
+// @desc    Ottieni vendite in attesa di pagamento (pending o processing, < 14 giorni)
 // @route   GET /api/vendor/sales-pending
 // @access  Private (solo venditori)
 export const getSalesPending = async (req, res) => {
@@ -115,11 +115,12 @@ export const getSalesPending = async (req, res) => {
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    // Trova payouts pending con meno di 14 giorni
+    // Trova payouts pending o processing con meno di 14 giorni
     // ESCLUDE i debiti (isRefundDebt: true) che non sono vendite reali
+    // INCLUDE sia 'pending' che 'processing' perché entrambi sono in attesa di completamento
     const pendingPayouts = await VendorPayout.find({
       vendorId,
-      status: 'pending',
+      status: { $in: ['pending', 'processing'] }, // Include anche processing (transfer iniziato ma non completato)
       saleDate: { $gt: fourteenDaysAgo }, // Solo vendite con meno di 14 giorni
       $or: [
         { isRefundDebt: { $exists: false } }, // Payouts vecchi senza il campo
