@@ -141,7 +141,7 @@ export const createCheckoutSession = async (req, res) => {
                             : [],
                         metadata: {
                             productId: item._id,
-                            sellerId: item.seller._id || item.seller,
+                            sellerId: productsWithSeller[item._id], // SECURITY FIX: usa sellerId dal database
                         },
                     },
                     unit_amount: Math.round(price * 100),
