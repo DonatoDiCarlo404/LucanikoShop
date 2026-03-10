@@ -365,12 +365,12 @@ export const handleStripeWebhook = async (req, res) => {
                     vendorPayout.paymentDate = new Date();
                     await vendorPayout.save();
 
-                    // Aggiorna statistiche venditore
-                    vendor.pendingEarnings = Math.max(0, (vendor.pendingEarnings || 0) - earning.netAmount);
-                    vendor.paidEarnings = (vendor.paidEarnings || 0) + earning.netAmount;
-                    await vendor.save();
-
+                    // NOTA: Gli earnings rimangono in pendingEarnings finché il payout non è completato
+                    // Lo spostamento da pendingEarnings a paidEarnings avviene solo quando
+                    // il payout viene segnato come 'paid' (manualmente dall'admin o via webhook)
+                    
                     console.log(`✅ [STRIPE TRANSFER] VendorPayout aggiornato a 'processing'`);
+                    console.log(`   - Earnings rimangono in pendingEarnings finché payout completato`);
 
                   } catch (transferError) {
                     console.error(`❌ [STRIPE TRANSFER] Errore transfer per venditore ${earning.vendorId}:`, transferError);

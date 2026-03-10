@@ -12,7 +12,8 @@
     "db:copy:prod-to-dev": "node copy-production-to-dev.js",
     "db:copy:dev-to-prod": "node copy-dev-to-production.js",
     "db:sync:schema-to-dev": "node sync-schema-only.js to-dev",
-    "db:sync:schema-to-prod": "node sync-schema-only.js to-prod"
+    "db:sync:schema-to-prod": "node sync-schema-only.js to-prod",
+    "fix:earnings": "node fixEarningsData.js"
   },
   "keywords": [],
   "author": "Donato Di Carlo",
