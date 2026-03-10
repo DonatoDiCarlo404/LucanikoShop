@@ -85,13 +85,13 @@ Lo script mostrerà:
 #### Step 2: Esegui con MONGODB_URI Custom
 ```bash
 cd backend
-MONGODB_URI="mongodb+srv://user:password@cluster.mongodb.net/production-db" node fixEarningsData.js
+MONGODB_URI="<COPIA_QUI_LA_MONGODB_URI_DA_RAILWAY>" node fixEarningsData.js
 ```
 
 Su Windows PowerShell:
 ```powershell
 cd backend
-$env:MONGODB_URI="mongodb+srv://user:password@cluster.mongodb.net/production-db"
+$env:MONGODB_URI="<COPIA_QUI_LA_MONGODB_URI_DA_RAILWAY>"
 node fixEarningsData.js
 ```
 
