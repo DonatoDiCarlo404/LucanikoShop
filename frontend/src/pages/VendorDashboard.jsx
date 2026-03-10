@@ -506,7 +506,7 @@ const VendorDashboard = () => {
           
           <Row className="mb-4">
             {/* Card Guadagni Totali */}
-            <Col md={3} sm={6} className="mb-3">
+            <Col md={4} sm={6} className="mb-3">
               <Card className="text-center border-success">
                 <Card.Body>
                   <div className="mb-2">
@@ -519,7 +519,7 @@ const VendorDashboard = () => {
             </Col>
 
             {/* Card In Attesa di Pagamento */}
-            <Col md={3} sm={6} className="mb-3">
+            <Col md={4} sm={6} className="mb-3">
               <Card className="text-center border-warning">
                 <Card.Body>
                   <div className="mb-2">
@@ -537,7 +537,7 @@ const VendorDashboard = () => {
             </Col>
 
             {/* Card Pagamenti Ricevuti */}
-            <Col md={3} sm={6} className="mb-3">
+            <Col md={4} sm={6} className="mb-3">
               <Card className="text-center border-primary">
                 <Card.Body>
                   <div className="mb-2">
@@ -548,127 +548,7 @@ const VendorDashboard = () => {
                 </Card.Body>
               </Card>
             </Col>
-
-            {/* Card Prossimo Pagamento */}
-            <Col md={3} sm={6} className="mb-3">
-              <Card className="text-center border-info">
-                <Card.Body>
-                  <div className="mb-2">
-                    <i className="bi bi-calendar-event fs-2 text-info"></i>
-                  </div>
-                  {pendingSales && pendingSales.pendingSales && pendingSales.pendingSales.length > 0 ? (
-                    <>
-                      <h5 className="text-info mb-1">
-                        {pendingSales.pendingSales[0].daysRemaining === 0 
-                          ? 'Oggi!' 
-                          : `${pendingSales.pendingSales[0].daysRemaining} giorni`}
-                      </h5>
-                      <p className="text-muted mb-0 small">Al Prossimo Pagamento</p>
-                      <p className="text-muted mb-0" style={{ fontSize: '0.75rem' }}>
-                        €{pendingSales.pendingSales[0].amount.toFixed(2)}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h5 className="text-muted mb-1">-</h5>
-                      <p className="text-muted mb-0 small">Nessun Pagamento Programmato</p>
-                    </>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
           </Row>
-
-          {/* Tabella Vendite in Attesa (Fase 5.3) */}
-          {pendingSales && pendingSales.pendingSales && pendingSales.pendingSales.length > 0 && (
-            <Card className="mb-4">
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
-                  <i className="bi bi-clock-history me-2"></i>
-                  Vendite in Attesa di Pagamento
-                </h5>
-                <Badge bg="warning" text="dark">
-                  Totale: €{pendingSales.totalPendingAmount.toFixed(2)}
-                </Badge>
-              </Card.Header>
-              <Card.Body className="p-0">
-                <Table responsive hover className="mb-0">
-                  <thead>
-                    <tr>
-                      <th>Data Vendita</th>
-                      <th>Ordine</th>
-                      <th>Importo</th>
-                      <th>Countdown</th>
-                      <th>Giorni Mancanti</th>
-                      <th>Pagamento Previsto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingSales.pendingSales.map((sale) => (
-                      <tr key={sale._id}>
-                        <td>
-                          <small>{new Date(sale.saleDate).toLocaleDateString('it-IT', { 
-                            day: '2-digit', 
-                            month: 'short', 
-                            year: 'numeric' 
-                          })}</small>
-                        </td>
-                        <td>
-                          <strong>#{sale.orderNumber || 'N/A'}</strong>
-                        </td>
-                        <td>
-                          <strong className="text-success">€{sale.amount.toFixed(2)}</strong>
-                        </td>
-                        <td style={{ minWidth: '200px' }}>
-                          <div className="mb-1">
-                            <div className="progress" style={{ height: '20px' }}>
-                              <div 
-                                className={`progress-bar ${
-                                  sale.progressPercentage >= 100 ? 'bg-success' :
-                                  sale.progressPercentage >= 70 ? 'bg-info' :
-                                  sale.progressPercentage >= 40 ? 'bg-warning' :
-                                  'bg-secondary'
-                                }`}
-                                role="progressbar" 
-                                style={{ width: `${Math.min(sale.progressPercentage, 100)}%` }}
-                                aria-valuenow={sale.progressPercentage} 
-                                aria-valuemin="0" 
-                                aria-valuemax="100"
-                              >
-                                <small className="fw-bold">{sale.progressPercentage}%</small>
-                              </div>
-                            </div>
-                          </div>
-                          <small className="text-muted">
-                            {sale.daysSinceSale} su 14 giorni trascorsi
-                          </small>
-                        </td>
-                        <td>
-                          {sale.daysRemaining === 0 ? (
-                            <Badge bg="success">Oggi!</Badge>
-                          ) : sale.daysRemaining === 1 ? (
-                            <Badge bg="info">Domani</Badge>
-                          ) : (
-                            <Badge bg="warning" text="dark">
-                              {sale.daysRemaining} giorni
-                            </Badge>
-                          )}
-                        </td>
-                        <td>
-                          <small className="text-muted">
-                            {new Date(sale.estimatedPaymentDate).toLocaleDateString('it-IT', {
-                              day: '2-digit',
-                              month: 'short'
-                            })}
-                          </small>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          )}
         </>
       )}
 
