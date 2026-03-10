@@ -9,10 +9,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // @route   POST /api/checkout/create-session
 // @access  Public (supporta guest checkout)
 export const createCheckoutSession = async (req, res) => {
+    console.log('🚀 [CHECKOUT] ========== INIZIO SESSIONE ==========');
+    console.log('🚀 [CHECKOUT] req.body ricevuto:', JSON.stringify(req.body, null, 2));
+    console.log('🚀 [CHECKOUT] req.user:', req.user ? req.user._id : 'guest');
+    
     try {
         const { cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType = 'shipping' } = req.body;
 
+        console.log('🚀 [CHECKOUT] cartItems estratto:', Array.isArray(cartItems) ? cartItems.length : 'non è array');
+        console.log('🚀 [CHECKOUT] guestEmail:', guestEmail);
+
         if (!cartItems || cartItems.length === 0) {
+            console.log('❌ [CHECKOUT] Carrello vuoto');
             return res.status(400).json({ message: 'Il carrello è vuoto' });
         }
 
@@ -22,24 +30,35 @@ export const createCheckoutSession = async (req, res) => {
         console.log('📦 [CHECKOUT] deliveryType:', deliveryType);
 
         // Calcola totale carrello
+        console.log('💰 [CHECKOUT] Calcolo totale carrello...');
         const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const discountedTotal = cartTotal - (discountAmount || 0);
 
         console.log('💰 [CHECKOUT] Totale: €' + cartTotal.toFixed(2), '| Dopo sconto: €' + discountedTotal.toFixed(2));
 
         // Raggruppa items per venditore
+        console.log('🔍 [CHECKOUT] Inizio loop prodotti...');
         const itemsByVendor = {};
         // SECURITY FIX: Mappa prodotti con sellerId dal database (non dal frontend)
         const productsWithSeller = {};
 
-        for (const item of cartItems) {
+        for (let i = 0; i < cartItems.length; i++) {
+            const item = cartItems[i];
+            console.log(`🔍 [CHECKOUT] Prodotto ${i + 1}/${cartItems.length}: ${item._id}`);
+            
             const product = await Product.findById(item._id).populate('seller', 'shopSettings name businessName storeAddress businessPhone businessEmail paymentMethods');
             
+            console.log(`🔍 [CHECKOUT] Prodotto trovato: ${product ? product.name : 'NULL'}`);
+            
             if (!product) {
+                console.log(`❌ [CHECKOUT] Prodotto non trovato in DB: ${item._id}`);
                 return res.status(404).json({ message: `Prodotto non trovato: ${item._id}` });
             }
 
             // Controllo sicurezza: verifica che seller sia popolato
+            console.log(`🔍 [CHECKOUT] Verifica seller per ${product.name}...`);
+            console.log(`🔍 [CHECKOUT] product.seller:`, product.seller ? 'EXISTS' : 'NULL');
+            
             if (!product.seller || !product.seller._id) {
                 console.error('❌ [CHECKOUT] Prodotto senza seller valido:', {
                     productId: item._id,
@@ -295,7 +314,16 @@ export const createCheckoutSession = async (req, res) => {
             url: session.url,
         });
     } catch (error) {
-        console.error('❌ [CHECKOUT] Errore:', error.message);
-        res.status(500).json({ message: error.message });
+        console.error('❌ [CHECKOUT] ========== ERRORE CRITICO ==========');
+        console.error('❌ [CHECKOUT] Message:', error.message);
+        console.error('❌ [CHECKOUT] Stack:', error.stack);
+        console.error('❌ [CHECKOUT] Name:', error.name);
+        console.error('❌ [CHECKOUT] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        console.error('❌ [CHECKOUT] =====================================');
+        
+        res.status(500).json({ 
+            message: error.message || 'Errore durante il checkout',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
