@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Button, ListGroup, Spinner, Alert, Row, Col, Badge } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
 import { orderAPI, reviewAPI, wishlistAPI, authAPI } from '../services/api';
+import AlertModal from '../components/AlertModal';
 
 function paymentMethodLabel(method) {
   switch (method) {
@@ -27,6 +28,14 @@ const BuyerProfile = () => {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [toRemove, setToRemove] = useState(null);
+  
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
   
   // Stati separati per ogni sezione
   const [editPassword, setEditPassword] = useState(false);
@@ -734,7 +743,7 @@ const BuyerProfile = () => {
                                               await wishlistAPI.removeFromWishlist(toRemove, token);
                                               setWishlist(wishlist => wishlist.filter(w => w.product._id !== toRemove));
                                             } catch (err) {
-                                              alert('Errore nella rimozione dalla wishlist');
+                                              showAlert('Errore nella rimozione dalla wishlist', 'error');
                                             }
                                             setToRemove(null);
                                           }, 1000);
@@ -756,6 +765,14 @@ const BuyerProfile = () => {
           )}
         </Col>
       </Row>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

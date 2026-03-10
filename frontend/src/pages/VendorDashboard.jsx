@@ -19,6 +19,7 @@ import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
 import { getEarningsSummary, getSalesPending, getVendorPayouts } from '../services/earningsService';
 import { getNotifications, markNotificationAsRead } from '../services/notificationService';
+import AlertModal from '../components/AlertModal';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -48,6 +49,14 @@ const VendorDashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Tab state for color switching
+  
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
   const [activeTab, setActiveTab] = useState('orders');
 
   // Modal per aggiornamento stato ordine
@@ -255,7 +264,7 @@ const VendorDashboard = () => {
       // Opzionalmente potresti ricaricare i dati
       // loadDashboardData();
     } catch (err) {
-      alert(err.message);
+      showAlert(err.message, 'error');
     } finally {
       setDeleting(false);
     }
@@ -1185,6 +1194,14 @@ const VendorDashboard = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </Container>
   );
 };

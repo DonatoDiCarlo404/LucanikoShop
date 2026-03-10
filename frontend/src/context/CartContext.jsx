@@ -165,8 +165,8 @@ export const CartProvider = ({ children }) => {
       });
     } catch (error) {
       console.error('🔴 [CartContext] Errore addToCart:', error);
-      // Mostra errore user-friendly
-      alert('Si è verificato un errore aggiungendo il prodotto al carrello. Riprova.');
+      // Mostra errore user-friendly nell'interfaccia (rimuovi l'alert nativo)
+      // L'errore viene gestito dai componenti tramite lo stato
     }
   }, []);
 

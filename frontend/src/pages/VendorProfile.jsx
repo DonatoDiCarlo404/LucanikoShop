@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../context/authContext';
 import DefaultShippingRateInput from './DefaultShippingRateInput';
 import './VendorProfile.css';
+import AlertModal from '../components/AlertModal';
 
 const VendorProfile = () => {
   const { user } = useAuth();
@@ -156,6 +157,14 @@ const VendorProfile = () => {
   const [savingCategories, setSavingCategories] = useState(false);
   const [categoriesError, setCategoriesError] = useState('');
   const [categoriesSuccess, setCategoriesSuccess] = useState('');
+
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
 
   // State per form
   const [formData, setFormData] = useState({
@@ -1161,7 +1170,13 @@ const VendorProfile = () => {
                     {profileData.socialLinks?.tiktok && <a href={profileData.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="me-2" title="TikTok"><i className="bi bi-tiktok" style={{ fontSize: 22 }}></i></a>}
                     {profileData.businessWhatsapp && <a href={`https://wa.me/${profileData.businessWhatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="me-2" title="WhatsApp"><i className="bi bi-whatsapp" style={{ fontSize: 22 }}></i></a>}
                     {profileData.website && <a href={profileData.website} target="_blank" rel="noopener noreferrer" className="me-2" title="Sito Web"><i className="bi bi-globe" style={{ fontSize: 22 }}></i></a>}
-                    <a href="#" onClick={(e) => { e.preventDefault(); const url = `${window.location.origin}/shop/${profileData?.slug || user._id}`; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo"><i className="bi bi-share" style={{ fontSize: 22 }}></i></a>
+                    <a href="#" onClick={(e) => { 
+                      e.preventDefault(); 
+                      const url = `${window.location.origin}/shop/${profileData?.slug || user._id}`; 
+                      navigator.clipboard.writeText(url)
+                        .then(() => showAlert('Link copiato negli appunti!', 'success'))
+                        .catch(() => showAlert('Errore nella copia', 'error')); 
+                    }} className="me-2" title="Condividi profilo"><i className="bi bi-share" style={{ fontSize: 22 }}></i></a>
                   </div>
                   <div className="d-block d-md-none w-100" style={{ borderBottom: '1px solid #eee', margin: '12px 0' }}></div>
                 </>
@@ -3418,11 +3433,11 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
             onClick={async () => {
               // Validazione
               if (!shippingRateForm.name) {
-                alert('Inserisci un nome per la tariffa');
+                showAlert('Inserisci un nome per la tariffa', 'warning');
                 return;
               }
               if (shippingRateForm.calculationType === 'zone' && (!shippingRateForm.zones || shippingRateForm.zones.length === 0)) {
-                alert('Aggiungi almeno una zona geografica');
+                showAlert('Aggiungi almeno una zona geografica', 'warning');
                 return;
               }
 
@@ -4252,6 +4267,14 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
           </Form>
         </Modal.Body>
       </Modal>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </Container>
   );
 };

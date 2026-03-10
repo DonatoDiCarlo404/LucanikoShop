@@ -48,10 +48,10 @@ export const getExperienceById = async (req, res) => {
 // @access  Private/Admin
 export const createExperience = async (req, res) => {
   try {
-    const { title, description, company, city, address, phone, website, category, images, status } = req.body;
+    const { title, description, company, city, address, phone, website, categories, images, status } = req.body;
 
     // Validazione campi obbligatori
-    if (!title || !description || !company || !city || !phone || !category) {
+    if (!title || !description || !company || !city || !phone || !categories || categories.length === 0) {
       return res.status(400).json({ message: 'Campi obbligatori mancanti' });
     }
 
@@ -63,7 +63,7 @@ export const createExperience = async (req, res) => {
       address,
       phone,
       website,
-      category,
+      categories,
       images: images || [],
       status: status || 'active'
     });
@@ -81,7 +81,7 @@ export const createExperience = async (req, res) => {
 // @access  Private/Admin
 export const updateExperience = async (req, res) => {
   try {
-    const { title, description, company, city, address, phone, website, category, images, status } = req.body;
+    const { title, description, company, city, address, phone, website, categories, images, status } = req.body;
 
     const experience = await Experience.findById(req.params.id);
     if (!experience) {
@@ -95,7 +95,7 @@ export const updateExperience = async (req, res) => {
     experience.address = address !== undefined ? address : experience.address;
     experience.phone = phone || experience.phone;
     experience.website = website !== undefined ? website : experience.website;
-    experience.category = category || experience.category;
+    experience.categories = categories !== undefined ? categories : experience.categories;
     experience.images = images !== undefined ? images : experience.images;
     experience.status = status || experience.status;
 

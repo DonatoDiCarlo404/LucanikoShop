@@ -5,6 +5,7 @@ import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Modal, Form, 
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
+import AlertModal from '../components/AlertModal';
 
 const ShopPage = () => {
   const { sellerId } = useParams();
@@ -25,6 +26,14 @@ const ShopPage = () => {
   const [allReviews, setAllReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const productsPerPage = 12;
+
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
 
   useEffect(() => {
     loadShopData();
@@ -308,7 +317,13 @@ const ShopPage = () => {
                         <i className="bi bi-tiktok"></i>
                       </a>
                     )}
-                    <a href="#" onClick={(e) => { e.preventDefault(); const url = window.location.href; navigator.clipboard.writeText(url).then(() => alert('Link copiato negli appunti!')).catch(() => alert('Errore nella copia')); }} className="me-2" title="Condividi profilo">
+                    <a href="#" onClick={(e) => { 
+                      e.preventDefault(); 
+                      const url = window.location.href; 
+                      navigator.clipboard.writeText(url)
+                        .then(() => showAlert('Link copiato negli appunti!', 'success'))
+                        .catch(() => showAlert('Errore nella copia', 'error')); 
+                    }} className="me-2" title="Condividi profilo">
                       <i className="bi bi-share"></i>
                     </a>
                   </div>
@@ -649,6 +664,14 @@ const ShopPage = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
       </Container>
     </>
   );

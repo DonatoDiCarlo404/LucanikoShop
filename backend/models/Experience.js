@@ -36,11 +36,10 @@ const experienceSchema = new mongoose.Schema({
     required: false,
     trim: true
   },
-  category: {
+  categories: [{
     type: String,
-    enum: ['Enogastronomiche', 'Outdoor & Natura', 'Cultura & Tradizioni', 'Sport & Benessere', 'Family & Educational', 'Tour & Attività speciali', 'Ospitalità'],
-    required: true
-  },
+    enum: ['Enogastronomiche', 'Outdoor & Natura', 'Cultura & Tradizioni', 'Sport & Benessere', 'Family & Educational', 'Tour & Attività speciali', 'Ospitalità']
+  }],
   images: [{
     url: {
       type: String,
@@ -59,7 +58,7 @@ const experienceSchema = new mongoose.Schema({
 
 // Indici per ottimizzare le query
 experienceSchema.index({ status: 1, createdAt: -1 }); // Query pubblica: attive ordinate per data
-experienceSchema.index({ category: 1 }); // Filtro per categoria
+experienceSchema.index({ categories: 1 }); // Filtro per categorie
 experienceSchema.index({ city: 1 }); // Filtro per città
 experienceSchema.index({ title: 'text', description: 'text', company: 'text' }); // Ricerca full-text
 

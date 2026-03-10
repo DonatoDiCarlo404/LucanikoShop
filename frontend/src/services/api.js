@@ -225,7 +225,9 @@ export const adminAPI = {
     },
     // Elimina documento PDF per venditore
     deleteVendorDocument: async (vendorId, filename, token) => {
-      const response = await fetch(`${API_URL}/upload/vendor/${vendorId}/document/${filename}`, {
+      // Codifica il filename perché potrebbe contenere slash (public_id di Cloudinary)
+      const encodedFilename = encodeURIComponent(filename);
+      const response = await fetch(`${API_URL}/upload/vendor/${vendorId}/document/${encodedFilename}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

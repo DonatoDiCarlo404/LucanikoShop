@@ -6,6 +6,7 @@ import { adminAPI, uploadVendorDocument, API_URL, sponsorAPI, experienceAPI, eve
 window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
 import RegisterCompanyForm from '../components/RegisterCompanyForm';
+import AlertModal from '../components/AlertModal';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -62,7 +63,7 @@ const AdminDashboard = () => {
     address: '',
     phone: '',
     website: '',
-    category: 'Enogastronomiche',
+    categories: [],
     status: 'active'
   });
   const [savingExperience, setSavingExperience] = useState(false);
@@ -92,6 +93,14 @@ const AdminDashboard = () => {
   const [showEventSuccessModal, setShowEventSuccessModal] = useState(false);
   const [eventSuccessMessage, setEventSuccessMessage] = useState('');
   const [eventCalendarMonth, setEventCalendarMonth] = useState(new Date());
+
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
 
   useEffect(() => {
     loadData();
@@ -140,10 +149,10 @@ const AdminDashboard = () => {
     try {
       setActionLoading(sellerId);
       await adminAPI.approveSeller(sellerId, user.token);
-      alert('✅ Venditore approvato con successo!');
+      showAlert('Venditore approvato con successo!', 'success');
       await loadData();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -155,10 +164,10 @@ const AdminDashboard = () => {
     try {
       setActionLoading(sellerId);
       await adminAPI.rejectSeller(sellerId, user.token);
-      alert('✅ Venditore rifiutato ed eliminato');
+      showAlert('Venditore rifiutato ed eliminato', 'success');
       await loadData();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -186,7 +195,7 @@ const AdminDashboard = () => {
           : seller
       ));
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -195,13 +204,13 @@ const AdminDashboard = () => {
 
     try {
       await adminAPI.deleteVendorDocument(sellerId, filename, user.token);
-      alert('✅ Documento eliminato con successo!');
+      showAlert('Documento eliminato con successo!', 'success');
       
       // Aggiorna la lista documenti
       const res = await adminAPI.getVendorDocuments(sellerId, user.token);
       setVendorDocs((prev) => ({ ...prev, [sellerId]: res.files || [] }));
     } catch (err) {
-      alert('❌ Errore eliminazione documento: ' + err.message);
+      showAlert('Errore eliminazione documento: ' + err.message, 'error');
     }
   };
 
@@ -211,10 +220,10 @@ const AdminDashboard = () => {
     try {
       setActionLoading(sellerId);
       await adminAPI.deleteSeller(sellerId, user.token);
-      alert('✅ Venditore eliminato definitivamente');
+      showAlert('Venditore eliminato definitivamente', 'success');
       await loadData();
     } catch (err) {
-      alert('❌ Errore eliminazione venditore: ' + err.message);
+      showAlert('Errore eliminazione venditore: ' + err.message, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -256,16 +265,16 @@ const AdminDashboard = () => {
       });
 
       if (response.ok) {
-        alert(editingNewsId ? '✅ News aggiornata!' : '✅ News creata!');
+        showAlert(editingNewsId ? 'News aggiornata!' : 'News creata!', 'success');
         setNewsContent('');
         setEditingNewsId(null);
         await loadNews();
       } else {
         const data = await response.json();
-        alert('❌ Errore: ' + data.message);
+        showAlert('Errore: ' + data.message, 'error');
       }
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setSavingNews(false);
     }
@@ -288,14 +297,14 @@ const AdminDashboard = () => {
       });
 
       if (response.ok) {
-        alert('✅ News eliminata!');
+        showAlert('News eliminata!', 'success');
         await loadNews();
       } else {
         const data = await response.json();
-        alert('❌ Errore: ' + data.message);
+        showAlert('Errore: ' + data.message, 'error');
       }
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -313,10 +322,10 @@ const AdminDashboard = () => {
         await loadNews();
       } else {
         const data = await response.json();
-        alert('❌ Errore: ' + data.message);
+        showAlert('Errore: ' + data.message, 'error');
       }
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -383,7 +392,7 @@ const AdminDashboard = () => {
     
     if (!sponsorFormData.name || !sponsorFormData.description || !sponsorFormData.city || 
         !sponsorFormData.phone || !sponsorFormData.website) {
-      alert('Compila tutti i campi obbligatori');
+      showAlert('Compila tutti i campi obbligatori', 'warning');
       return;
     }
 
@@ -415,7 +424,7 @@ const AdminDashboard = () => {
       handleCloseSponsorModal();
       setShowSponsorSuccessModal(true);
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setSavingSponsor(false);
     }
@@ -426,10 +435,10 @@ const AdminDashboard = () => {
 
     try {
       await sponsorAPI.deleteSponsor(sponsorId, user.token);
-      alert('✅ Sponsor eliminato!');
+      showAlert('Sponsor eliminato!', 'success');
       await loadSponsors();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -439,7 +448,7 @@ const AdminDashboard = () => {
       await sponsorAPI.updateSponsor(sponsorId, { status: newStatus }, user.token);
       await loadSponsors();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -456,6 +465,11 @@ const AdminDashboard = () => {
   const handleOpenExperienceModal = (experience = null) => {
     if (experience) {
       setEditingExperience(experience);
+      // Gestisce sia il nuovo formato (categories array) che il vecchio (category string) per retrocompatibilità
+      const categoriesArray = experience.categories 
+        ? experience.categories 
+        : (experience.category ? [experience.category] : []);
+      
       setExperienceFormData({
         title: experience.title || '',
         description: experience.description || '',
@@ -464,7 +478,7 @@ const AdminDashboard = () => {
         address: experience.address || '',
         phone: experience.phone || '',
         website: experience.website || '',
-        category: experience.category || 'Enogastronomiche',
+        categories: categoriesArray,
         status: experience.status || 'active'
       });
       // Carica immagini esistenti
@@ -487,7 +501,7 @@ const AdminDashboard = () => {
         city: '',
         address: '',
         phone: '',
-        category: 'Enogastronomiche',
+        categories: [],
         website: '',
         status: 'active'
       });
@@ -505,7 +519,7 @@ const AdminDashboard = () => {
       company: '',
       city: '',
       phone: '',
-      category: 'Enogastronomiche',
+      categories: [],
       website: '',
       status: 'active'
     });
@@ -557,8 +571,9 @@ const AdminDashboard = () => {
     e.preventDefault();
     
     if (!experienceFormData.title || !experienceFormData.description || !experienceFormData.company ||
-        !experienceFormData.city || !experienceFormData.phone) {
-      alert('Compila tutti i campi obbligatori');
+        !experienceFormData.city || !experienceFormData.phone || 
+        !experienceFormData.categories || experienceFormData.categories.length === 0) {
+      showAlert('Compila tutti i campi obbligatori e seleziona almeno una categoria', 'warning');
       return;
     }
 
@@ -682,7 +697,7 @@ const AdminDashboard = () => {
       handleCloseExperienceModal();
       setShowExperienceSuccessModal(true);
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setSavingExperience(false);
     }
@@ -693,10 +708,10 @@ const AdminDashboard = () => {
 
     try {
       await experienceAPI.deleteExperience(experienceId, user.token);
-      alert('✅ Esperienza eliminata!');
+      showAlert('Esperienza eliminata!', 'success');
       await loadExperiences();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -706,7 +721,7 @@ const AdminDashboard = () => {
       await experienceAPI.updateExperience(experienceId, { status: newStatus }, user.token);
       await loadExperiences();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -905,7 +920,7 @@ const AdminDashboard = () => {
     if (!eventFormData.title || !eventFormData.description || !eventFormData.company ||
         !eventFormData.city || 
         !eventFormData.eventDates || eventFormData.eventDates.length === 0) {
-      alert('Compila tutti i campi obbligatori, inclusa almeno una data');
+      showAlert('Compila tutti i campi obbligatori, inclusa almeno una data', 'warning');
       return;
     }
 
@@ -1027,7 +1042,7 @@ const AdminDashboard = () => {
       handleCloseEventModal();
       setShowEventSuccessModal(true);
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     } finally {
       setSavingEvent(false);
     }
@@ -1038,10 +1053,10 @@ const AdminDashboard = () => {
 
     try {
       await eventAPI.deleteEvent(eventId, user.token);
-      alert('✅ Evento eliminato!');
+      showAlert('Evento eliminato!', 'success');
       await loadEvents();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -1051,7 +1066,7 @@ const AdminDashboard = () => {
       await eventAPI.updateEvent(eventId, { status: newStatus }, user.token);
       await loadEvents();
     } catch (err) {
-      alert('❌ Errore: ' + err.message);
+      showAlert('Errore: ' + err.message, 'error');
     }
   };
 
@@ -1339,19 +1354,22 @@ const AdminDashboard = () => {
                               onSubmit={async (e) => {
                                 e.preventDefault();
                                 const files = e.target.elements[`pdf_${seller._id}`].files;
-                                if (!files.length) return alert('Seleziona almeno un file PDF');
+                                if (!files.length) {
+                                  showAlert('Seleziona almeno un file PDF', 'warning');
+                                  return;
+                                }
                                 try {
                                   for (let i = 0; i < files.length; i++) {
                                     await window.uploadVendorDocument(seller._id, files[i]);
                                   }
-                                  alert('✅ Documenti caricati!');
+                                  showAlert('Documenti caricati!', 'success');
                                   // Aggiorna la lista documenti dopo upload
                                   try {
                                     const res = await adminAPI.getVendorDocuments(seller._id, user.token);
                                     setVendorDocs((prev) => ({ ...prev, [seller._id]: res.files || [] }));
                                   } catch {}
                                 } catch (err) {
-                                  alert('❌ Errore upload: ' + err.message);
+                                  showAlert('Errore upload: ' + err.message, 'error');
                                 }
                               }}
                               style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}
@@ -1702,9 +1720,19 @@ const AdminDashboard = () => {
                         <td>{experience.company}</td>
                         <td>{experience.city}</td>
                         <td>
-                          <Badge bg="info" style={{ fontSize: '0.75rem' }}>
-                            {experience.category}
-                          </Badge>
+                          {experience.categories && experience.categories.length > 0 ? (
+                            experience.categories.map((cat) => (
+                              <Badge key={cat} bg="info" className="me-1 mb-1" style={{ fontSize: '0.7rem' }}>
+                                {cat}
+                              </Badge>
+                            ))
+                          ) : experience.category ? (
+                            <Badge bg="info" style={{ fontSize: '0.75rem' }}>
+                              {experience.category}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
                         </td>
                         <td>
                           <Badge bg={experience.status === 'active' ? 'success' : 'secondary'}>
@@ -2281,20 +2309,46 @@ const AdminDashboard = () => {
             </Row>
 
             <Form.Group className="mb-3">
-              <Form.Label>Categoria *</Form.Label>
-              <Form.Select
-                value={experienceFormData.category}
-                onChange={(e) => setExperienceFormData({ ...experienceFormData, category: e.target.value })}
-                required
-              >
-                <option value="Enogastronomiche">Enogastronomiche</option>
-                <option value="Outdoor & Natura">Outdoor & Natura</option>
-                <option value="Cultura & Tradizioni">Cultura & Tradizioni</option>
-                <option value="Sport & Benessere">Sport & Benessere</option>
-                <option value="Family & Educational">Family & Educational</option>
-                <option value="Tour & Attività speciali">Tour & Attività speciali</option>
-                <option value="Ospitalità">Ospitalità</option>
-              </Form.Select>
+              <Form.Label>Categorie * (selezionane almeno una)</Form.Label>
+              <div className="border rounded p-3" style={{ backgroundColor: '#f8f9fa' }}>
+                {['Enogastronomiche', 'Outdoor & Natura', 'Cultura & Tradizioni', 'Sport & Benessere', 'Family & Educational', 'Tour & Attività speciali', 'Ospitalità'].map((category) => (
+                  <Form.Check
+                    key={category}
+                    type="checkbox"
+                    id={`experience-category-${category.replace(/\s+/g, '-')}`}
+                    label={category}
+                    checked={experienceFormData.categories.includes(category)}
+                    onChange={(e) => {
+                      const newCategories = e.target.checked
+                        ? [...experienceFormData.categories, category]
+                        : experienceFormData.categories.filter(c => c !== category);
+                      setExperienceFormData({ ...experienceFormData, categories: newCategories });
+                    }}
+                    className="mb-2"
+                  />
+                ))}
+              </div>
+              {experienceFormData.categories.length > 0 && (
+                <div className="mt-2">
+                  <small className="text-muted">Categorie selezionate:</small>
+                  <div className="mt-1">
+                    {experienceFormData.categories.map((cat) => (
+                      <Badge 
+                        key={cat} 
+                        bg="primary" 
+                        className="me-1 mb-1"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          const newCategories = experienceFormData.categories.filter(c => c !== cat);
+                          setExperienceFormData({ ...experienceFormData, categories: newCategories });
+                        }}
+                      >
+                        {cat} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -2856,6 +2910,14 @@ const AdminDashboard = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </Container>
   );
 };

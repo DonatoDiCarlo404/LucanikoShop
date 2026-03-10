@@ -70,13 +70,50 @@ async function copyDatabase() {
         const documents = await prodCollection.find({}).toArray();
         
         if (documents.length > 0) {
-          // Svuota la collezione di sviluppo prima di copiare
-          await devCollection.deleteMany({});
-          
-          // Inserisci tutti i documenti
-          await devCollection.insertMany(documents, { ordered: false });
-          
-          console.log(`✅ ${collectionName}: ${documents.length} documenti copiati\n`);
+          // GESTIONE SPECIALE PER USERS: merge vendorDocuments
+          if (collectionName === 'users') {
+            let merged = 0, inserted = 0, preserved = 0;
+            
+            for (const sourceUser of documents) {
+              // Cerca utente esistente in dev per _id
+              const existingUser = await devCollection.findOne({ _id: sourceUser._id });
+              
+              if (existingUser) {
+                // MERGE: preserva vendorDocuments esistenti
+                const existingDocs = existingUser.vendorDocuments || [];
+                const sourceDocs = sourceUser.vendorDocuments || [];
+                
+                // Unisci i due array rimuovendo duplicati (per public_id)
+                const existingPublicIds = new Set(existingDocs.map(d => d.public_id));
+                const mergedDocs = [
+                  ...existingDocs,
+                  ...sourceDocs.filter(d => !existingPublicIds.has(d.public_id))
+                ];
+                
+                if (mergedDocs.length > existingDocs.length) {
+                  preserved += (mergedDocs.length - sourceDocs.length);
+                }
+                
+                // Aggiorna l'utente preservando i documenti
+                await devCollection.updateOne(
+                  { _id: sourceUser._id },
+                  { $set: { ...sourceUser, vendorDocuments: mergedDocs } }
+                );
+                merged++;
+              } else {
+                // Inserisci nuovo utente
+                await devCollection.insertOne(sourceUser);
+                inserted++;
+              }
+            }
+            
+            console.log(`✅ ${collectionName}: ${merged} utenti aggiornati, ${inserted} inseriti, ${preserved} documenti preservati\n`);
+          } else {
+            // Per altre collezioni: comportamento normale
+            await devCollection.deleteMany({});
+            await devCollection.insertMany(documents, { ordered: false });
+            console.log(`✅ ${collectionName}: ${documents.length} documenti copiati\n`);
+          }
         }
       } catch (error) {
         console.error(`❌ Errore copiando ${collectionName}:`, error.message);

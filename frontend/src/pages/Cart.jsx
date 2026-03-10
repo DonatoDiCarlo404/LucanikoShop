@@ -7,6 +7,7 @@ import { checkoutAPI, API_URL } from '../services/api';
 import { toast } from 'react-toastify';
 import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
 import SEOHelmet from '../components/SEOHelmet';
+import AlertModal from '../components/AlertModal';
 
 const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -48,6 +49,14 @@ const Cart = () => {
   const [loadingTerms, setLoadingTerms] = useState(false);
 
   // State per modale privacy policy
+  
+  // Stato per AlertModal
+  const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
+  
+  // Funzione helper per mostrare alert modal
+  const showAlert = (message, type = 'info') => {
+    setAlertModal({ show: true, message, type });
+  };
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   // Stato per il paese e la regione di spedizione
@@ -294,7 +303,7 @@ const Cart = () => {
     if (cartCount === 0) return;
 
     if (!acceptedTerms) {
-      alert('Devi accettare i Termini e Condizioni per procedere.');
+      showAlert('Devi accettare i Termini e Condizioni per procedere.', 'warning');
       return;
     }
 
@@ -1150,6 +1159,14 @@ const Cart = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Alert Modal per tutti i messaggi */}
+      <AlertModal
+        show={alertModal.show}
+        onHide={() => setAlertModal({ show: false, message: '', type: 'info' })}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </Container>
     </>
   );

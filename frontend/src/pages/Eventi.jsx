@@ -203,6 +203,60 @@ const Eventi = () => {
         </div>
       </div>
 
+      {/* Visualizza selezione corrente */}
+      {(selectedMonth !== null || selectedCategory) && (
+        <div className="mt-4 mb-3 text-center">
+          <h2 className="d-none d-md-block" style={{ 
+            color: '#004b75', 
+            fontWeight: 700, 
+            fontSize: '1.8rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            flexWrap: 'wrap'
+          }}>
+            {selectedMonth !== null && (
+              <span style={{ color: '#00bf63' }}>
+                {monthNames[selectedMonth]}
+              </span>
+            )}
+            {selectedMonth !== null && selectedCategory && (
+              <span style={{ color: '#004b75' }}>-</span>
+            )}
+            {selectedCategory && (
+              <span style={{ color: '#004b75' }}>
+                {selectedCategory}
+              </span>
+            )}
+          </h2>
+          <h5 className="d-block d-md-none" style={{ 
+            color: '#004b75', 
+            fontWeight: 600, 
+            fontSize: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            flexWrap: 'wrap'
+          }}>
+            {selectedMonth !== null && (
+              <span style={{ color: '#00bf63' }}>
+                {monthNames[selectedMonth]}
+              </span>
+            )}
+            {selectedMonth !== null && selectedCategory && (
+              <span style={{ color: '#004b75' }}>-</span>
+            )}
+            {selectedCategory && (
+              <span style={{ color: '#004b75' }}>
+                {selectedCategory}
+              </span>
+            )}
+          </h5>
+        </div>
+      )}
+
       {/* Lista Eventi */}
       {sortedEvents.length === 0 ? (
         <div className="text-center text-muted py-5">

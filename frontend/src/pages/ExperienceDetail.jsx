@@ -74,7 +74,7 @@ const ExperienceDetail = () => {
       <SEOHelmet
         title={`${experience.title} - Esperienze`}
         description={experience.description}
-        keywords={`esperienza, ${experience.category}, ${experience.city}, ${experience.company}`}
+        keywords={`esperienza, ${experience.categories ? experience.categories.join(', ') : experience.category || ''}, ${experience.city}, ${experience.company}`}
         type="article"
       />
 
@@ -98,8 +98,9 @@ const ExperienceDetail = () => {
                   src={experience.images[0].url}
                   alt={experience.title}
                   style={{ 
-                    height: '400px', 
-                    objectFit: 'cover', 
+                    maxHeight: '500px', 
+                    width: '100%',
+                    objectFit: 'contain', 
                     borderRadius: '8px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
                   }}
@@ -113,8 +114,9 @@ const ExperienceDetail = () => {
                         src={image.url}
                         alt={`${experience.title} - ${index + 1}`}
                         style={{ 
-                          height: '400px', 
-                          objectFit: 'cover', 
+                          maxHeight: '500px',
+                          width: '100%', 
+                          objectFit: 'contain', 
                           borderRadius: '8px' 
                         }}
                       />
@@ -141,12 +143,26 @@ const ExperienceDetail = () => {
           {/* COLONNA DETTAGLI */}
           <Col lg={6}>
             <div className="mb-3">
-              <Badge 
-                className="mb-2" 
-                style={{ fontSize: '0.9rem', padding: '8px 14px', backgroundColor: '#004b75', color: '#fff' }}
-              >
-                {experience.category}
-              </Badge>
+              <div className="mb-2">
+                {experience.categories && experience.categories.length > 0 ? (
+                  experience.categories.map((cat) => (
+                    <Badge 
+                      key={cat}
+                      className="me-2 mb-1" 
+                      style={{ fontSize: '0.85rem', padding: '6px 12px', backgroundColor: '#004b75', color: '#fff' }}
+                    >
+                      {cat}
+                    </Badge>
+                  ))
+                ) : experience.category ? (
+                  <Badge 
+                    className="mb-1" 
+                    style={{ fontSize: '0.9rem', padding: '8px 14px', backgroundColor: '#004b75', color: '#fff' }}
+                  >
+                    {experience.category}
+                  </Badge>
+                ) : null}
+              </div>
               <h1 style={{ color: '#004b75', fontWeight: 700, fontSize: '2.2rem' }}>
                 {experience.title}
               </h1>
@@ -249,7 +265,7 @@ const ExperienceDetail = () => {
           <Col>
             <hr style={{ margin: '3rem 0 2rem 0', border: 'none', borderTop: '2px solid #e0e0e0' }} />
             <h3 style={{ color: '#004b75', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
-              Altre esperienze in <span style={{ color: '#00bf63' }}>{experience.category}</span>
+              Altre esperienze simili
             </h3>
           </Col>
         </Row>
