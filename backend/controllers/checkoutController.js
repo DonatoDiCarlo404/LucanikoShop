@@ -214,7 +214,7 @@ export const createCheckoutSession = async (req, res) => {
         }
         
         const sessionOptions = {
-            payment_method_types: ['card', 'klarna', 'paypal'],
+            payment_method_types: ['card'], // Solo card - altri metodi (klarna, paypal) devono essere attivati in Stripe Dashboard
             line_items: lineItems,
             mode: 'payment',
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
