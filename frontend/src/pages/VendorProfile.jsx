@@ -20,6 +20,7 @@ import { useAuth } from '../context/authContext';
 import DefaultShippingRateInput from './DefaultShippingRateInput';
 import './VendorProfile.css';
 import AlertModal from '../components/AlertModal';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const VendorProfile = () => {
   const { user } = useAuth();
@@ -1928,7 +1929,7 @@ const VendorProfile = () => {
                           <td>
                             {product.images && product.images.length > 0 ? (
                               <img 
-                                src={product.images[0].url} 
+                                src={CloudinaryPresets.thumbnail(product.images[0].url)}
                                 alt={product.name}
                                 style={{ 
                                   width: '60px', 
@@ -1936,6 +1937,7 @@ const VendorProfile = () => {
                                   objectFit: 'cover',
                                   borderRadius: '4px'
                                 }}
+                                loading="lazy"
                               />
                             ) : (
                               <div 

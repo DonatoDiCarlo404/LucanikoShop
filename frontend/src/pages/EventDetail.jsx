@@ -14,6 +14,7 @@ import {
 } from 'react-bootstrap';
 import { API_URL } from '../services/api';
 import SEOHelmet from '../components/SEOHelmet';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -101,8 +102,9 @@ const EventDetail = () => {
               event.images.length === 1 ? (
                 <img
                   className="d-block w-100"
-                  src={event.images[0].url}
+                  src={CloudinaryPresets.productDetail(event.images[0].url)}
                   alt={event.title}
+                  loading="lazy"
                   style={{ 
                     maxHeight: '500px', 
                     width: '100%',
@@ -117,7 +119,8 @@ const EventDetail = () => {
                     <Carousel.Item key={index}>
                       <img
                         className="d-block w-100"
-                        src={image.url}
+                        src={CloudinaryPresets.productDetail(image.url)}
+                        loading="lazy"
                         alt={`${event.title} - ${index + 1}`}
                         style={{ 
                           maxHeight: '500px',

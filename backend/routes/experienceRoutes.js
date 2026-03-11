@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import { protect, admin } from '../middlewares/auth.js';
+import { cache } from '../middlewares/cache.js';
 import {
   getExperiences,
   getAllExperiences,
@@ -10,9 +11,9 @@ import {
   deleteExperience
 } from '../controllers/experienceController.js';
 
-// Route pubbliche
-router.get('/', getExperiences);
-router.get('/:id', getExperienceById);
+// Route pubbliche (CACHE: 5 minuti per liste, 10 minuti per dettagli)
+router.get('/', cache(300), getExperiences);
+router.get('/:id', cache(600), getExperienceById);
 
 // Route admin
 router.get('/admin/all', protect, admin, getAllExperiences);

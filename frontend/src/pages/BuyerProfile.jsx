@@ -5,6 +5,7 @@ import { Card, Button, ListGroup, Spinner, Alert, Row, Col, Badge } from 'react-
 import { useAuth } from '../context/authContext';
 import { orderAPI, reviewAPI, wishlistAPI, authAPI } from '../services/api';
 import AlertModal from '../components/AlertModal';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 function paymentMethodLabel(method) {
   switch (method) {
@@ -693,9 +694,10 @@ const BuyerProfile = () => {
                           <div className="d-flex align-items-center">
                             {item.product?.images?.[0]?.url && (
                               <img
-                                src={item.product.images[0].url}
+                                src={CloudinaryPresets.thumbnail(item.product.images[0].url)}
                                 alt={item.product.name}
                                 style={{ width: 50, height: 50, objectFit: 'cover', marginRight: 15, borderRadius: 5 }}
+                                loading="lazy"
                               />
                             )}
                             <div>

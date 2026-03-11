@@ -8,12 +8,13 @@ import {
   deleteEvent
 } from '../controllers/eventController.js';
 import { protect, admin } from '../middlewares/auth.js';
+import { cache } from '../middlewares/cache.js';
 
 const router = express.Router();
 
-// Public routes
-router.get('/', getEvents);
-router.get('/:id', getEventById);
+// Public routes (CACHE: 5 minuti per liste, 10 minuti per dettagli)
+router.get('/', cache(300), getEvents);
+router.get('/:id', cache(600), getEventById);
 
 // Admin routes
 router.get('/admin/all', protect, admin, getAllEvents);

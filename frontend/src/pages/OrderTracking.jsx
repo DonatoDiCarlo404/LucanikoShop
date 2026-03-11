@@ -3,6 +3,7 @@ import { API_URL } from '../services/api';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Card, Row, Col, Badge, Button, Alert, Spinner, ProgressBar } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const OrderTracking = () => {
   const { id } = useParams();
@@ -238,10 +239,11 @@ const OrderTracking = () => {
             <div key={index} className="d-flex align-items-center border-bottom py-3">
               {item.product?.images?.[0]?.url && (
                 <img
-                  src={item.product.images[0].url}
+                  src={CloudinaryPresets.thumbnail(item.product.images[0].url)}
                   alt={item.name}
                   style={{ width: '60px', height: '60px', objectFit: 'cover' }}
                   className="me-3 rounded"
+                  loading="lazy"
                 />
               )}
               <div className="flex-grow-1">

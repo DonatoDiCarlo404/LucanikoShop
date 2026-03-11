@@ -7,6 +7,7 @@ window.uploadVendorDocument = uploadVendorDocument;
 import { useAuth } from '../context/authContext';
 import RegisterCompanyForm from '../components/RegisterCompanyForm';
 import AlertModal from '../components/AlertModal';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -1706,9 +1707,10 @@ const AdminDashboard = () => {
                         <td>
                           {experience.images && experience.images.length > 0 ? (
                             <img 
-                              src={experience.images[0].url} 
+                              src={CloudinaryPresets.thumbnail(experience.images[0].url)}
                               alt={experience.title}
                               style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                              loading="lazy"
                             />
                           ) : (
                             <div style={{ width: '80px', height: '50px', backgroundColor: '#f0f0f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1820,9 +1822,10 @@ const AdminDashboard = () => {
                         <td>
                           {event.images && event.images.length > 0 ? (
                             <img 
-                              src={event.images[0].url} 
+                              src={CloudinaryPresets.thumbnail(event.images[0].url)}
                               alt={event.title}
                               style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                              loading="lazy"
                             />
                           ) : (
                             <div style={{ width: '80px', height: '50px', backgroundColor: '#f0f0f0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

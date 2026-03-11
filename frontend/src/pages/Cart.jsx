@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import SuggestedProductsCarousel from '../components/SuggestedProductsCarousel';
 import SEOHelmet from '../components/SEOHelmet';
 import AlertModal from '../components/AlertModal';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const Cart = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -488,7 +489,7 @@ const Cart = () => {
                   <Col md={2}>
                     {item.images && item.images.length > 0 ? (
                       <img
-                        src={item.images[item.images.length - 1].url}
+                        src={CloudinaryPresets.thumbnail(item.images[item.images.length - 1].url)}
                         alt={item.name}
                         style={{ width: '100%', height: '80px', objectFit: 'contain', borderRadius: '8px' }}
                         loading="lazy"

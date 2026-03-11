@@ -3,6 +3,7 @@ import { Container, Card, Row, Col, Table, Badge, Button, Alert, Spinner, ListGr
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { orderAPI } from '../services/api';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 const OrderDetail = () => {
   const [order, setOrder] = useState(null);
@@ -127,9 +128,10 @@ const OrderDetail = () => {
                         <div className="d-flex align-items-center">
                           {item.product?.images && item.product.images.length > 0 && (
                             <img
-                              src={item.product.images[0].url}
+                              src={CloudinaryPresets.thumbnail(item.product.images[0].url)}
                               alt={item.name}
                               style={{ width: '50px', height: '50px', objectFit: 'cover', marginRight: '10px', borderRadius: '4px' }}
+                              loading="lazy"
                             />
                           )}
                           <span>{item.name}</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import { API_URL } from '../services/api';
+import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 
 // Categorie delle esperienze
 const EXPERIENCE_CATEGORIES = [
@@ -212,8 +213,14 @@ const Esperienze = () => {
                     >
                       {experience.images && experience.images.length > 0 ? (
                         <img
-                          src={experience.images[0].url}
+                          src={CloudinaryPresets.productCard(experience.images[0].url)}
+                          srcSet={`
+                            ${CloudinaryPresets.thumbnail(experience.images[0].url)} 200w,
+                            ${CloudinaryPresets.productCard(experience.images[0].url)} 400w
+                          `}
+                          sizes="(max-width: 576px) 200px, 400px"
                           alt={experience.title}
+                          loading="lazy"
                           style={{
                             height: '200px',
                             width: '100%',
