@@ -227,6 +227,16 @@ const BillingInfo = () => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
+                  <Form.Label>Provincia <span style={{color: 'red'}}>*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.provincia || ''}
+                    onChange={e => setFormData({ ...formData, provincia: e.target.value })}
+                    required
+                    placeholder="Inserisci la provincia"
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>Numero di telefono <span style={{color: 'red'}}>*</span></Form.Label>
                   <Form.Control
                     type="tel"
@@ -342,6 +352,16 @@ const BillingInfo = () => {
                         onChange={e => setFormData({ ...formData, altCitta: e.target.value })}
                         required
                         placeholder="Inserisci la città"
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Provincia <span style={{color: 'red'}}>*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.altProvincia || ''}
+                        onChange={e => setFormData({ ...formData, altProvincia: e.target.value })}
+                        required
+                        placeholder="Inserisci la provincia"
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">
@@ -495,6 +515,16 @@ const BillingInfo = () => {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
+                  <Form.Label>Provincia <span style={{color: 'red'}}>*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.aziendaProvincia || ''}
+                    onChange={e => setFormData({ ...formData, aziendaProvincia: e.target.value })}
+                    required
+                    placeholder="Inserisci la provincia"
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>Numero di telefono <span style={{color: 'red'}}>*</span></Form.Label>
                   <Form.Control
                     type="tel"
@@ -610,6 +640,16 @@ const BillingInfo = () => {
                         onChange={e => setFormData({ ...formData, altCitta: e.target.value })}
                         required
                         placeholder="Inserisci la città"
+                      />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Provincia <span style={{color: 'red'}}>*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={formData.altProvincia || ''}
+                        onChange={e => setFormData({ ...formData, altProvincia: e.target.value })}
+                        required
+                        placeholder="Inserisci la provincia"
                       />
                     </Form.Group>
                     <Form.Group className="mb-3">

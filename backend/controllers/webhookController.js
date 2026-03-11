@@ -172,6 +172,17 @@ export const handleStripeWebhook = async (req, res) => {
       // Ottieni costo spedizione dai metadata
       const shippingCost = parseFloat(session.metadata.shippingCost || '0');
       
+      // Ottieni breakdown spedizione per venditore dai metadata
+      let vendorShippingBreakdown = null;
+      try {
+        if (session.metadata.vendorShippingCosts) {
+          vendorShippingBreakdown = JSON.parse(session.metadata.vendorShippingCosts);
+          console.log('📦 [WEBHOOK] Breakdown spedizione per venditore:', vendorShippingBreakdown);
+        }
+      } catch (err) {
+        console.warn('⚠️ [WEBHOOK] Errore parsing vendorShippingCosts:', err.message);
+      }
+      
       // Ottieni info sconto dai metadata
       const discountAmount = parseFloat(session.metadata.discountAmount || '0');
       const appliedCouponId = session.metadata.appliedCouponId || null;
@@ -285,8 +296,8 @@ export const handleStripeWebhook = async (req, res) => {
         console.log('⏭️  [WEBHOOK] Earnings già calcolati, skippo per evitare duplicati');
       } else {
         try {
-          // Calcola earnings per ogni venditore
-          const vendorEarnings = calculateVendorEarnings(order);
+          // Calcola earnings per ogni venditore (include shipping per venditore se disponibile)
+          const vendorEarnings = calculateVendorEarnings(order, vendorShippingBreakdown);
         
         // Salva earnings nell'ordine
         order.vendorEarnings = vendorEarnings;
@@ -307,6 +318,8 @@ export const handleStripeWebhook = async (req, res) => {
             });
             
             console.log(`✅ [WEBHOOK] VendorPayout creato per venditore ${earning.vendorId}:`, vendorPayout._id);
+            console.log(`   - Prezzo prodotti: €${earning.productPrice}`);
+            console.log(`   - Prezzo spedizione: €${earning.shippingPrice}`);
             console.log(`   - Importo netto: €${earning.netAmount}`);
             console.log(`   - Fee Stripe: €${earning.stripeFee}`);
             console.log(`   - Fee Transfer: €${earning.transferFee}`);

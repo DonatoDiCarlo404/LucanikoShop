@@ -225,6 +225,13 @@ export const createCheckoutSession = async (req, res) => {
                 guestEmail: guestEmail || '',
                 deliveryType: deliveryType,
                 shippingCost: shippingResult.totalShipping.toString(),
+                // Salva breakdown shipping per venditore (formato compatto)
+                vendorShippingCosts: JSON.stringify(
+                    Object.entries(shippingResult.vendorShippingCosts || {}).reduce((acc, [vendorId, data]) => {
+                        acc[vendorId] = data.shippingCost || 0;
+                        return acc;
+                    }, {})
+                ),
                 appliedCouponCode: appliedCoupon?.couponCode || '',
                 appliedCouponId: appliedCoupon?._id?.toString() || '',
                 discountAmount: discountAmount ? discountAmount.toString() : '0',

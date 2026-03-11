@@ -4,9 +4,10 @@
  * Transfer interni tramite Stripe Connect Express: GRATUITI
  * 
  * @param {Object} order - Oggetto ordine con items, totalPrice, shippingPrice
+ * @param {Object} vendorShippingBreakdown - (opzionale) Oggetto {vendorId: shippingCost} con costi spedizione per venditore
  * @returns {Array} Array di oggetti con vendorId e calcoli earnings
  */
-export const calculateVendorEarnings = (order) => {
+export const calculateVendorEarnings = (order, vendorShippingBreakdown = null) => {
   try {
     // 1. Calcola totale ordine (items + shipping)
     const totalOrder = order.totalPrice; // già include items + shipping
@@ -17,6 +18,9 @@ export const calculateVendorEarnings = (order) => {
     console.log('\n💰 [EARNINGS] ============ CALCOLO EARNINGS VENDITORI ============');
     console.log('💰 [EARNINGS] Totale ordine:', totalOrder.toFixed(2), '€');
     console.log('💰 [EARNINGS] Fee Stripe transazione:', stripeTransactionFee.toFixed(2), '€');
+    if (vendorShippingBreakdown) {
+      console.log('💰 [EARNINGS] Breakdown spedizione per venditore:', vendorShippingBreakdown);
+    }
 
     // 3. Raggruppa prodotti per venditore
     const vendorSales = {};
@@ -29,6 +33,7 @@ export const calculateVendorEarnings = (order) => {
         vendorSales[vendorId] = {
           vendorId: vendorId,
           productPrice: 0,
+          shippingPrice: 0,
           items: []
         };
       }
@@ -43,25 +48,37 @@ export const calculateVendorEarnings = (order) => {
       });
     }
 
+    // 3.5. Aggiungi shipping per ogni venditore (se disponibile)
+    if (vendorShippingBreakdown) {
+      for (const vendorId in vendorSales) {
+        vendorSales[vendorId].shippingPrice = vendorShippingBreakdown[vendorId] || 0;
+      }
+    }
+
     // 4. Calcola earnings per ogni venditore
     const vendorEarnings = [];
 
     for (const vendorId in vendorSales) {
       const vendor = vendorSales[vendorId];
       const productPrice = vendor.productPrice;
+      const shippingPrice = vendor.shippingPrice;
+      
+      // Totale che il venditore deve ricevere (prodotti + shipping)
+      const vendorTotal = productPrice + shippingPrice;
 
-      // Fee Stripe proporzionale al valore dei prodotti del venditore
-      const proportionalStripeFee = (productPrice / totalOrder) * stripeTransactionFee;
+      // Fee Stripe proporzionale al valore totale del venditore (prodotti + shipping)
+      const proportionalStripeFee = (vendorTotal / totalOrder) * stripeTransactionFee;
 
       // Fee transfer Stripe Connect Express: GRATIS
       const transferFee = 0.00;
 
       // Netto che riceverà il venditore
-      const netAmount = productPrice - proportionalStripeFee - transferFee;
+      const netAmount = vendorTotal - proportionalStripeFee - transferFee;
 
       vendorEarnings.push({
         vendorId: vendorId,
         productPrice: Math.round(productPrice * 100) / 100,
+        shippingPrice: Math.round(shippingPrice * 100) / 100,
         stripeFee: Math.round(proportionalStripeFee * 100) / 100,
         transferFee: transferFee,
         netAmount: Math.round(netAmount * 100) / 100,
@@ -70,6 +87,8 @@ export const calculateVendorEarnings = (order) => {
 
       console.log(`\n💰 [EARNINGS] Venditore: ${vendorId}`);
       console.log(`   - Prezzo prodotti: ${productPrice.toFixed(2)} €`);
+      console.log(`   - Prezzo spedizione: ${shippingPrice.toFixed(2)} €`);
+      console.log(`   - Totale venditore: ${vendorTotal.toFixed(2)} €`);
       console.log(`   - Fee Stripe proporzionale: ${proportionalStripeFee.toFixed(2)} €`);
       console.log(`   - Fee transfer: ${transferFee.toFixed(2)} €`);
       console.log(`   - Netto da trasferire: ${netAmount.toFixed(2)} €`);
