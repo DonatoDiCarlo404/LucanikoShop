@@ -264,6 +264,7 @@ export const createCheckoutSession = async (req, res) => {
                 metadata.billing_altCap = billingData.altCap || '';
                 metadata.billing_altCitta = billingData.altCitta || '';
                 metadata.billing_altProvincia = billingData.altProvincia || '';
+                metadata.billing_altNazione = billingData.altNazione || billingData.nazione || 'Italia'; // Fallback su nazione principale
                 metadata.billing_altTelefono = billingData.altTelefono || '';
                 metadata.billing_altEmail = billingData.altEmail || '';
             }

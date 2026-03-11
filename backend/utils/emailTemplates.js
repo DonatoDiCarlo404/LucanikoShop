@@ -19,24 +19,24 @@ export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderN
   // Costruisci indirizzo fatturazione
   const billing = orderData.billingAddress;
   let billingHtml = `<strong>Dati di Fatturazione:</strong><br>`;
-  billingHtml += `${billing.firstName} ${billing.lastName}<br>`;
+  billingHtml += `${billing.firstName || 'N/A'} ${billing.lastName || ''}<br>`;
   if (billing.codiceFiscale) billingHtml += `CF: ${billing.codiceFiscale}<br>`;
   if (billing.ragioneSociale) billingHtml += `Ragione Sociale: ${billing.ragioneSociale}<br>`;
   if (billing.partitaIVA) billingHtml += `P.IVA: ${billing.partitaIVA}<br>`;
   if (billing.pecSdi) billingHtml += `PEC/SDI: ${billing.pecSdi}<br>`;
-  billingHtml += `${billing.street}<br>${billing.city}, ${billing.state} ${billing.zipCode}<br>${billing.country}<br>`;
-  billingHtml += `<strong>Email: ${billing.email}</strong><br>`;
-  billingHtml += `<strong>Telefono: ${billing.phone}</strong>`;
+  billingHtml += `${billing.street || 'N/A'}<br>${billing.city || 'N/A'}, ${billing.state || 'N/A'} ${billing.zipCode || ''}<br>${billing.country || 'Italia'}<br>`;
+  billingHtml += `<strong>Email: ${billing.email || 'N/A'}</strong><br>`;
+  billingHtml += `<strong>Telefono: ${billing.phone || 'N/A'}</strong>`;
 
   let billingText = `Dati di Fatturazione:\n`;
-  billingText += `${billing.firstName} ${billing.lastName}\n`;
+  billingText += `${billing.firstName || 'N/A'} ${billing.lastName || ''}\n`;
   if (billing.codiceFiscale) billingText += `CF: ${billing.codiceFiscale}\n`;
   if (billing.ragioneSociale) billingText += `Ragione Sociale: ${billing.ragioneSociale}\n`;
   if (billing.partitaIVA) billingText += `P.IVA: ${billing.partitaIVA}\n`;
   if (billing.pecSdi) billingText += `PEC/SDI: ${billing.pecSdi}\n`;
-  billingText += `${billing.street}\n${billing.city}, ${billing.state} ${billing.zipCode}\n${billing.country}\n`;
-  billingText += `Email: ${billing.email}\n`;
-  billingText += `Telefono: ${billing.phone}`;
+  billingText += `${billing.street || 'N/A'}\n${billing.city || 'N/A'}, ${billing.state || 'N/A'} ${billing.zipCode || ''}\n${billing.country || 'Italia'}\n`;
+  billingText += `Email: ${billing.email || 'N/A'}\n`;
+  billingText += `Telefono: ${billing.phone || 'N/A'}`;
 
   // Costruisci indirizzo spedizione o ritiro
   let shippingHtml = '';
@@ -48,13 +48,13 @@ export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderN
   } else {
     const shipping = orderData.shippingAddress;
     shippingHtml = `<strong>Indirizzo di Spedizione:</strong><br>`;
-    shippingHtml += `${shipping.firstName} ${shipping.lastName}<br>`;
-    shippingHtml += `${shipping.street}<br>${shipping.city}, ${shipping.state} ${shipping.zipCode}<br>${shipping.country}<br>`;
+    shippingHtml += `${shipping.firstName || 'N/A'} ${shipping.lastName || ''}<br>`;
+    shippingHtml += `${shipping.street || 'N/A'}<br>${shipping.city || 'N/A'}, ${shipping.state || 'N/A'} ${shipping.zipCode || ''}<br>${shipping.country || 'Italia'}<br>`;
     if (shipping.phone) shippingHtml += `<strong>Telefono: ${shipping.phone}</strong>`;
 
     shippingText = `Indirizzo di Spedizione:\n`;
-    shippingText += `${shipping.firstName} ${shipping.lastName}\n`;
-    shippingText += `${shipping.street}\n${shipping.city}, ${shipping.state} ${shipping.zipCode}\n${shipping.country}\n`;
+    shippingText += `${shipping.firstName || 'N/A'} ${shipping.lastName || ''}\n`;
+    shippingText += `${shipping.street || 'N/A'}\n${shipping.city || 'N/A'}, ${shipping.state || 'N/A'} ${shipping.zipCode || ''}\n${shipping.country || 'Italia'}\n`;
     if (shipping.phone) shippingText += `Telefono: ${shipping.phone}`;
   }
 
@@ -119,24 +119,24 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   // Costruisci indirizzo fatturazione
   const billing = orderData.billingAddress;
   let billingHtml = `<strong>Dati di Fatturazione:</strong><br>`;
-  billingHtml += `${billing.firstName} ${billing.lastName}<br>`;
+  billingHtml += `${billing.firstName || 'N/A'} ${billing.lastName || ''}<br>`;
   if (billing.codiceFiscale) billingHtml += `CF: ${billing.codiceFiscale}<br>`;
   if (billing.ragioneSociale) billingHtml += `Ragione Sociale: ${billing.ragioneSociale}<br>`;
   if (billing.partitaIVA) billingHtml += `P.IVA: ${billing.partitaIVA}<br>`;
   if (billing.pecSdi) billingHtml += `PEC/SDI: ${billing.pecSdi}<br>`;
-  billingHtml += `${billing.street}<br>${billing.city}, ${billing.state} ${billing.zipCode}<br>${billing.country}<br>`;
-  billingHtml += `<strong>Email: ${billing.email}</strong><br>`;
-  billingHtml += `<strong>Telefono: ${billing.phone}</strong>`;
+  billingHtml += `${billing.street || 'N/A'}<br>${billing.city || 'N/A'}, ${billing.state || 'N/A'} ${billing.zipCode || ''}<br>${billing.country || 'Italia'}<br>`;
+  billingHtml += `<strong>Email: ${billing.email || 'N/A'}</strong><br>`;
+  billingHtml += `<strong>Telefono: ${billing.phone || 'N/A'}</strong>`;
 
   let billingText = `Dati di Fatturazione:\n`;
-  billingText += `${billing.firstName} ${billing.lastName}\n`;
+  billingText += `${billing.firstName || 'N/A'} ${billing.lastName || ''}\n`;
   if (billing.codiceFiscale) billingText += `CF: ${billing.codiceFiscale}\n`;
   if (billing.ragioneSociale) billingText += `Ragione Sociale: ${billing.ragioneSociale}\n`;
   if (billing.partitaIVA) billingText += `P.IVA: ${billing.partitaIVA}\n`;
   if (billing.pecSdi) billingText += `PEC/SDI: ${billing.pecSdi}\n`;
-  billingText += `${billing.street}\n${billing.city}, ${billing.state} ${billing.zipCode}\n${billing.country}\n`;
-  billingText += `Email: ${billing.email}\n`;
-  billingText += `Telefono: ${billing.phone}`;
+  billingText += `${billing.street || 'N/A'}\n${billing.city || 'N/A'}, ${billing.state || 'N/A'} ${billing.zipCode || ''}\n${billing.country || 'Italia'}\n`;
+  billingText += `Email: ${billing.email || 'N/A'}\n`;
+  billingText += `Telefono: ${billing.phone || 'N/A'}`;
 
   // Costruisci indirizzo spedizione o ritiro
   let shippingHtml = '';
@@ -148,13 +148,13 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   } else {
     const shipping = orderData.shippingAddress;
     shippingHtml = `<strong>Indirizzo di Spedizione:</strong><br>`;
-    shippingHtml += `${shipping.firstName} ${shipping.lastName}<br>`;
-    shippingHtml += `${shipping.street}<br>${shipping.city}, ${shipping.state} ${shipping.zipCode}<br>${shipping.country}<br>`;
+    shippingHtml += `${shipping.firstName || 'N/A'} ${shipping.lastName || ''}<br>`;
+    shippingHtml += `${shipping.street || 'N/A'}<br>${shipping.city || 'N/A'}, ${shipping.state || 'N/A'} ${shipping.zipCode || ''}<br>${shipping.country || 'Italia'}<br>`;
     if (shipping.phone) shippingHtml += `<strong>Telefono: ${shipping.phone}</strong>`;
 
     shippingText = `Indirizzo di Spedizione:\n`;
-    shippingText += `${shipping.firstName} ${shipping.lastName}\n`;
-    shippingText += `${shipping.street}\n${shipping.city}, ${shipping.state} ${shipping.zipCode}\n${shipping.country}\n`;
+    shippingText += `${shipping.firstName || 'N/A'} ${shipping.lastName || ''}\n`;
+    shippingText += `${shipping.street || 'N/A'}\n${shipping.city || 'N/A'}, ${shipping.state || 'N/A'} ${shipping.zipCode || ''}\n${shipping.country || 'Italia'}\n`;
     if (shipping.phone) shippingText += `Telefono: ${shipping.phone}`;
   }
 

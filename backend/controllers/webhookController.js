@@ -137,6 +137,7 @@ export const handleStripeWebhook = async (req, res) => {
           billingData.altCap = metadata.billing_altCap || '';
           billingData.altCitta = metadata.billing_altCitta || '';
           billingData.altProvincia = metadata.billing_altProvincia || '';
+          billingData.altNazione = metadata.billing_altNazione || billingData.nazione || 'Italia';
           billingData.altTelefono = metadata.billing_altTelefono || '';
           billingData.altEmail = metadata.billing_altEmail || '';
         }
@@ -186,6 +187,23 @@ export const handleStripeWebhook = async (req, res) => {
             zipCode: pickupAddress.zipCode,
             country: pickupAddress.country,
             phone: billingData.telefono || 'N/A'
+          };
+          
+          // Costruisci anche billingAddress per pickup
+          finalBillingAddress = {
+            firstName: billingData.nome || billingData.aziendaNome || 'N/A',
+            lastName: billingData.cognome || billingData.aziendaCognome || 'N/A',
+            codiceFiscale: billingData.codiceFiscale,
+            ragioneSociale: billingData.ragioneSociale,
+            partitaIVA: billingData.partitaIVA,
+            pecSdi: billingData.pecSdi,
+            street: billingData.indirizzo,
+            city: billingData.citta,
+            state: billingData.provincia || billingData.nazione,
+            zipCode: billingData.cap,
+            country: billingData.nazione,
+            phone: billingData.telefono,
+            email: billingData.email,
           };
         } else {
           // Fallback Stripe
@@ -283,13 +301,16 @@ export const handleStripeWebhook = async (req, res) => {
       const discountAmount = parseFloat(session.metadata.discountAmount || '0');
       const appliedCouponId = session.metadata.appliedCouponId || null;
 
-      // Calcola importo IVA totale
+      // Calcola importo IVA totale e somma prodotti
       let totalIva = 0;
+      let itemsSubtotal = 0;
       for (const item of orderItems) {
         // Calcolo IVA su prezzo lordo (inclusa):
         // iva = prezzo * (ivaPercent / (100 + ivaPercent))
         const ivaItem = (item.price * item.quantity) * (item.ivaPercent / (100 + item.ivaPercent));
         totalIva += ivaItem;
+        // Somma prezzo prodotti (senza spedizione)
+        itemsSubtotal += item.price * item.quantity;
       }
 
       // Crea l'ordine nel database
@@ -297,6 +318,8 @@ export const handleStripeWebhook = async (req, res) => {
       console.log('💾 [WEBHOOK] isGuestOrder:', isGuestOrder);
       console.log('💾 [WEBHOOK] buyer:', isGuestOrder ? 'null (guest)' : userId);
       console.log('💾 [WEBHOOK] Items:', orderItems.length);
+      console.log('💾 [WEBHOOK] Items subtotal:', itemsSubtotal);
+      console.log('💾 [WEBHOOK] Shipping cost:', shippingCost);
       console.log('💾 [WEBHOOK] Total:', session.amount_total / 100);
       
       const orderData = {
@@ -311,7 +334,7 @@ export const handleStripeWebhook = async (req, res) => {
           status: session.payment_status,
           email_address: session.customer_details?.email,
         },
-        itemsPrice: session.amount_subtotal / 100,
+        itemsPrice: Math.round(itemsSubtotal * 100) / 100, // Somma prodotti (senza spedizione)
         shippingPrice: shippingCost,
         taxPrice: Math.round(totalIva * 100) / 100,
         discountAmount: discountAmount,
@@ -544,12 +567,12 @@ export const handleStripeWebhook = async (req, res) => {
               quantity: item.quantity,
               price: item.price
             })),
-            itemsPrice: order.itemsPrice || (order.totalPrice - order.shippingPrice),
+            itemsPrice: order.itemsPrice,
             shippingPrice: order.shippingPrice || 0,
             totalPrice: order.totalPrice,
             customerName: recipientName,
-            billingAddress: order.billingAddress,
-            shippingAddress: order.shippingAddress,
+            billingAddress: finalBillingAddress || order.billingAddress, // Usa dati appena ricostruiti
+            shippingAddress: finalShippingAddress || order.shippingAddress, // Usa dati appena ricostruiti
             deliveryType: order.deliveryType,
             pickupAddress: order.pickupAddress ? 
               `${order.pickupAddress.businessName}, ${order.pickupAddress.street}, ${order.pickupAddress.city}` : null
@@ -605,8 +628,8 @@ export const handleStripeWebhook = async (req, res) => {
             shippingPrice: vendorShippingCost,
             totalPrice: vendorTotalAmount + vendorShippingCost,
             customerName: customerName,
-            billingAddress: order.billingAddress,
-            shippingAddress: order.shippingAddress,
+            billingAddress: finalBillingAddress || order.billingAddress, // Usa dati appena ricostruiti
+            shippingAddress: finalShippingAddress || order.shippingAddress, // Usa dati appena ricostruiti
             deliveryType: order.deliveryType,
             pickupAddress: order.pickupAddress ? 
               `${order.pickupAddress.businessName}, ${order.pickupAddress.street}, ${order.pickupAddress.city}` : null
