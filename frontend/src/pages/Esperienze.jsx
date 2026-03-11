@@ -48,7 +48,9 @@ const Esperienze = () => {
 
   // Raggruppa esperienze per categoria
   const groupedExperiences = EXPERIENCE_CATEGORIES.reduce((acc, category) => {
-    acc[category] = experiences.filter(exp => exp.category === category);
+    acc[category] = experiences.filter(exp => 
+      exp.categories && Array.isArray(exp.categories) && exp.categories.includes(category)
+    );
     return acc;
   }, {});
 
