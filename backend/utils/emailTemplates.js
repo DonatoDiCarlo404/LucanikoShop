@@ -1,26 +1,92 @@
 import sgMail from '../config/sendgrid.js';
 
 // Email nuovo ordine ricevuto (venditore)
-export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderNumber, productsList, totalAmount, customerName, billingShippingData, loginLink = 'https://www.lucanikoshop.it/login') => {
+export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderNumber, orderData, loginLink = 'https://www.lucanikoshop.it/login') => {
+  // Costruisci lista prodotti con quantità
+  const productsListHtml = orderData.products.map(p => 
+    `<li>${p.name} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`
+  ).join('');
+  
+  const productsListText = orderData.products.map(p => 
+    `- ${p.name} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`
+  ).join('\n');
+
+  // Formatta prezzi
+  const itemsPrice = `€${Number(orderData.itemsPrice).toFixed(2)}`;
+  const shippingPrice = `€${Number(orderData.shippingPrice).toFixed(2)}`;
+  const totalPrice = `€${Number(orderData.totalPrice).toFixed(2)}`;
+
+  // Costruisci indirizzo fatturazione
+  const billing = orderData.billingAddress;
+  let billingHtml = `<strong>Dati di Fatturazione:</strong><br>`;
+  billingHtml += `${billing.firstName} ${billing.lastName}<br>`;
+  if (billing.codiceFiscale) billingHtml += `CF: ${billing.codiceFiscale}<br>`;
+  if (billing.ragioneSociale) billingHtml += `Ragione Sociale: ${billing.ragioneSociale}<br>`;
+  if (billing.partitaIVA) billingHtml += `P.IVA: ${billing.partitaIVA}<br>`;
+  if (billing.pecSdi) billingHtml += `PEC/SDI: ${billing.pecSdi}<br>`;
+  billingHtml += `${billing.street}<br>${billing.city}, ${billing.state} ${billing.zipCode}<br>${billing.country}<br>`;
+  billingHtml += `<strong>Email: ${billing.email}</strong><br>`;
+  billingHtml += `<strong>Telefono: ${billing.phone}</strong>`;
+
+  let billingText = `Dati di Fatturazione:\n`;
+  billingText += `${billing.firstName} ${billing.lastName}\n`;
+  if (billing.codiceFiscale) billingText += `CF: ${billing.codiceFiscale}\n`;
+  if (billing.ragioneSociale) billingText += `Ragione Sociale: ${billing.ragioneSociale}\n`;
+  if (billing.partitaIVA) billingText += `P.IVA: ${billing.partitaIVA}\n`;
+  if (billing.pecSdi) billingText += `PEC/SDI: ${billing.pecSdi}\n`;
+  billingText += `${billing.street}\n${billing.city}, ${billing.state} ${billing.zipCode}\n${billing.country}\n`;
+  billingText += `Email: ${billing.email}\n`;
+  billingText += `Telefono: ${billing.phone}`;
+
+  // Costruisci indirizzo spedizione o ritiro
+  let shippingHtml = '';
+  let shippingText = '';
+  
+  if (orderData.deliveryType === 'pickup' && orderData.pickupAddress) {
+    shippingHtml = `<strong>Ritiro presso:</strong><br>${orderData.pickupAddress}`;
+    shippingText = `Ritiro presso:\n${orderData.pickupAddress}`;
+  } else {
+    const shipping = orderData.shippingAddress;
+    shippingHtml = `<strong>Indirizzo di Spedizione:</strong><br>`;
+    shippingHtml += `${shipping.firstName} ${shipping.lastName}<br>`;
+    shippingHtml += `${shipping.street}<br>${shipping.city}, ${shipping.state} ${shipping.zipCode}<br>${shipping.country}<br>`;
+    if (shipping.phone) shippingHtml += `<strong>Telefono: ${shipping.phone}</strong>`;
+
+    shippingText = `Indirizzo di Spedizione:\n`;
+    shippingText += `${shipping.firstName} ${shipping.lastName}\n`;
+    shippingText += `${shipping.street}\n${shipping.city}, ${shipping.state} ${shipping.zipCode}\n${shipping.country}\n`;
+    if (shipping.phone) shippingText += `Telefono: ${shipping.phone}`;
+  }
+
   const msg = {
     to: vendorEmail,
     from: 'ordini@lucanikoshop.it',
     subject: 'Hai ricevuto un nuovo ordine 📦',
-    text: `Ciao ${companyName},\n\nhai ricevuto un nuovo ordine su Lucaniko Shop.\n\nDettagli ordine:\n\nNumero ordine: #${orderNumber}\nProdotti: ${productsList}\nImporto totale: ${totalAmount}\nCliente: ${customerName}\nDati fatturazione e spedizione: ${billingShippingData}\n\nAccedi al tuo account: ${loginLink}\n\nTi ricordiamo di aggiornare lo stato dell’ordine una volta avviata la spedizione.\n\nBuon lavoro,\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    text: `Ciao ${companyName},\n\nhai ricevuto un nuovo ordine su Lucaniko Shop.\n\nDettagli ordine:\n\nNumero ordine: #${orderNumber}\nCliente: ${orderData.customerName}\n\nProdotti ordinati:\n${productsListText}\n\nImporto prodotti: ${itemsPrice}\nSpese di spedizione: ${shippingPrice}\nTotale ordine: ${totalPrice}\n\n${billingText}\n\n${shippingText}\n\nAccedi al tuo account: ${loginLink}\n\nTi ricordiamo di aggiornare lo stato dell'ordine una volta avviata la spedizione.\n\nBuon lavoro,\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
     html: `Ciao <strong>${companyName}</strong>,<br><br>
 hai ricevuto un nuovo ordine su <strong>Lucaniko Shop</strong>.<br><br>
 <strong>Dettagli ordine:</strong><br>
 <ul style="margin-top: 0.5em; margin-bottom: 0.5em;">
   <li><b>Numero ordine:</b> #${orderNumber}</li>
-  <li><b>Prodotti:</b> ${productsList}</li>
-  <li><b>Importo totale:</b> ${totalAmount}</li>
-  <li><b>Cliente:</b> ${customerName}</li>
-  <li><b>Dati fatturazione e spedizione:</b> ${billingShippingData}</li>
+  <li><b>Cliente:</b> ${orderData.customerName}</li>
 </ul>
+<strong>Prodotti ordinati:</strong><br>
+<ul style="margin: 0.5em 0;">${productsListHtml}</ul>
+<div style="background: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  <strong>Importo prodotti:</strong> ${itemsPrice}<br>
+  <strong>Spese di spedizione:</strong> ${shippingPrice}<br>
+  <strong style="font-size: 1.1em; color: #004b75;">Totale ordine: ${totalPrice}</strong>
+</div>
+<div style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  ${billingHtml}
+</div>
+<div style="background: #d1ecf1; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  ${shippingHtml}
+</div>
 <p style="margin: 1.5em 0;">
   <a href="${loginLink}" style="background: #004b75; color: #fff; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-weight: bold;">👉 Accedi al tuo account</a>
 </p>
-Ti ricordiamo di aggiornare lo stato dell’ordine una volta avviata la spedizione.<br><br>
+Ti ricordiamo di aggiornare lo stato dell'ordine una volta avviata la spedizione.<br><br>
 Buon lavoro,<br>
 Il team Lucaniko<br><br>
 <a href="https://www.lucanikoshop.it" style="color: #004b75; text-decoration: underline;">www.lucanikoshop.it</a>`
@@ -35,21 +101,85 @@ Il team Lucaniko<br><br>
 };
 
 // Email di conferma ordine acquirente
-export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumber, productsList, totalAmount, shippingAddress) => {
+export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumber, orderData) => {
+  // Costruisci lista prodotti con quantità
+  const productsListHtml = orderData.products.map(p => 
+    `<li>${p.name} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`
+  ).join('');
+  
+  const productsListText = orderData.products.map(p => 
+    `- ${p.name} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`
+  ).join('\n');
+
+  // Formatta prezzi
+  const itemsPrice = `€${Number(orderData.itemsPrice).toFixed(2)}`;
+  const shippingPrice = `€${Number(orderData.shippingPrice).toFixed(2)}`;
+  const totalPrice = `€${Number(orderData.totalPrice).toFixed(2)}`;
+
+  // Costruisci indirizzo fatturazione
+  const billing = orderData.billingAddress;
+  let billingHtml = `<strong>Dati di Fatturazione:</strong><br>`;
+  billingHtml += `${billing.firstName} ${billing.lastName}<br>`;
+  if (billing.codiceFiscale) billingHtml += `CF: ${billing.codiceFiscale}<br>`;
+  if (billing.ragioneSociale) billingHtml += `Ragione Sociale: ${billing.ragioneSociale}<br>`;
+  if (billing.partitaIVA) billingHtml += `P.IVA: ${billing.partitaIVA}<br>`;
+  if (billing.pecSdi) billingHtml += `PEC/SDI: ${billing.pecSdi}<br>`;
+  billingHtml += `${billing.street}<br>${billing.city}, ${billing.state} ${billing.zipCode}<br>${billing.country}<br>`;
+  billingHtml += `<strong>Email: ${billing.email}</strong><br>`;
+  billingHtml += `<strong>Telefono: ${billing.phone}</strong>`;
+
+  let billingText = `Dati di Fatturazione:\n`;
+  billingText += `${billing.firstName} ${billing.lastName}\n`;
+  if (billing.codiceFiscale) billingText += `CF: ${billing.codiceFiscale}\n`;
+  if (billing.ragioneSociale) billingText += `Ragione Sociale: ${billing.ragioneSociale}\n`;
+  if (billing.partitaIVA) billingText += `P.IVA: ${billing.partitaIVA}\n`;
+  if (billing.pecSdi) billingText += `PEC/SDI: ${billing.pecSdi}\n`;
+  billingText += `${billing.street}\n${billing.city}, ${billing.state} ${billing.zipCode}\n${billing.country}\n`;
+  billingText += `Email: ${billing.email}\n`;
+  billingText += `Telefono: ${billing.phone}`;
+
+  // Costruisci indirizzo spedizione o ritiro
+  let shippingHtml = '';
+  let shippingText = '';
+  
+  if (orderData.deliveryType === 'pickup' && orderData.pickupAddress) {
+    shippingHtml = `<strong>Ritiro presso:</strong><br>${orderData.pickupAddress}`;
+    shippingText = `Ritiro presso:\n${orderData.pickupAddress}`;
+  } else {
+    const shipping = orderData.shippingAddress;
+    shippingHtml = `<strong>Indirizzo di Spedizione:</strong><br>`;
+    shippingHtml += `${shipping.firstName} ${shipping.lastName}<br>`;
+    shippingHtml += `${shipping.street}<br>${shipping.city}, ${shipping.state} ${shipping.zipCode}<br>${shipping.country}<br>`;
+    if (shipping.phone) shippingHtml += `<strong>Telefono: ${shipping.phone}</strong>`;
+
+    shippingText = `Indirizzo di Spedizione:\n`;
+    shippingText += `${shipping.firstName} ${shipping.lastName}\n`;
+    shippingText += `${shipping.street}\n${shipping.city}, ${shipping.state} ${shipping.zipCode}\n${shipping.country}\n`;
+    if (shipping.phone) shippingText += `Telefono: ${shipping.phone}`;
+  }
+
   const msg = {
     to: userEmail,
     from: 'ordini@lucanikoshop.it',
     subject: 'Ordine confermato – Grazie per il tuo acquisto 🛒',
-    text: `Ciao ${userName},\n\ngrazie per il tuo acquisto su Lucaniko Shop!\n\nIl tuo ordine #${orderNumber} è stato ricevuto correttamente ed è in fase di lavorazione da parte dell’azienda venditrice.\n\nRiepilogo ordine:\n\nProdotti: ${productsList}\n\nTotale: ${totalAmount}\n\nIndirizzo di spedizione e fatturazione: ${shippingAddress}\n\nGrazie per aver scelto Lucaniko Shop\ne per sostenere le aziende del territorio.\n\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    text: `Ciao ${userName},\n\ngrazie per il tuo acquisto su Lucaniko Shop!\n\nIl tuo ordine #${orderNumber} è stato ricevuto correttamente ed è in fase di lavorazione da parte dell'azienda venditrice.\n\nRiepilogo ordine:\n\nProdotti:\n${productsListText}\n\nImporto prodotti: ${itemsPrice}\nSpese di spedizione: ${shippingPrice}\nTotale: ${totalPrice}\n\n${billingText}\n\n${shippingText}\n\nGrazie per aver scelto Lucaniko Shop\ne per sostenere le aziende del territorio.\n\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
     html: `Ciao <strong>${userName}</strong>,<br><br>
 grazie per il tuo acquisto su <strong>Lucaniko Shop</strong>!<br><br>
-Il tuo ordine <b>#${orderNumber}</b> è stato ricevuto correttamente ed è in fase di lavorazione da parte dell’azienda venditrice.<br><br>
+Il tuo ordine <b>#${orderNumber}</b> è stato ricevuto correttamente ed è in fase di lavorazione da parte dell'azienda venditrice.<br><br>
 <strong>Riepilogo ordine:</strong><br>
-<ul style="margin-top: 0.5em; margin-bottom: 0.5em;">
-  <li><b>Prodotti:</b> ${productsList}</li>
-  <li><b>Totale:</b> ${totalAmount}</li>
-  <li><b>Indirizzo di spedizione e fatturazione:</b> ${shippingAddress}</li>
-</ul>
+<strong>Prodotti:</strong><br>
+<ul style="margin: 0.5em 0;">${productsListHtml}</ul>
+<div style="background: #f8f9fa; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  <strong>Importo prodotti:</strong> ${itemsPrice}<br>
+  <strong>Spese di spedizione:</strong> ${shippingPrice}<br>
+  <strong style="font-size: 1.1em; color: #004b75;">Totale: ${totalPrice}</strong>
+</div>
+<div style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  ${billingHtml}
+</div>
+<div style="background: #d1ecf1; padding: 15px; margin: 20px 0; border-radius: 6px;">
+  ${shippingHtml}
+</div>
 <br>
 Grazie per aver scelto Lucaniko Shop<br>
 e per sostenere le aziende del territorio.<br><br>
@@ -65,13 +195,12 @@ Il team Lucaniko<br><br>
   }
 };
 
-// Email di conferma approvazione account venditore
 export const sendVendorApprovalEmail = async (userEmail, companyName, loginLink = 'https://www.lucanikoshop.it/login') => {
   const msg = {
     to: userEmail,
     from: 'info@lucanikoshop.it',
     subject: 'Il tuo account venditore è attivo 🚀',
-    text: `Ciao ${companyName},\n\nottime notizie: il tuo account venditore su Lucaniko Shop è stato approvato.\n\nDa ora puoi:\n\n- accedere al pannello venditore,\n- inserire i tuoi prodotti,\n- gestire ordini e spedizioni,\n- iniziare a vendere online all’interno dell’ecosistema Lucaniko.\n\nAccedi al tuo account: ${loginLink}\n\nBenvenuto ufficialmente in Lucaniko Shop,\ninsieme costruiamo valore per le aziende della Basilicata.\n\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    text: `Ciao ${companyName},\n\nottime notizie: il tuo account venditore su Lucaniko Shop è stato approvato.\n\nDa ora puoi:\n\n- accedere al pannello venditore,\n- inserire i tuoi prodotti,\n- gestire ordini e spedizioni,\n- iniziare a vendere online all'interno dell'ecosistema Lucaniko.\n\nAccedi al tuo account: ${loginLink}\n\nBenvenuto ufficialmente in Lucaniko Shop,\ninsieme costruiamo valore per le aziende della Basilicata.\n\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
     html: `Ciao <strong>${companyName}</strong>,<br><br>
 ottime notizie: il tuo account venditore su <strong>Lucaniko Shop</strong> è stato approvato.<br><br>
 Da ora puoi:<br>
@@ -79,7 +208,7 @@ Da ora puoi:<br>
   <li>accedere al pannello venditore,</li>
   <li>inserire i tuoi prodotti,</li>
   <li>gestire ordini e spedizioni,</li>
-  <li>iniziare a vendere online all’interno dell’ecosistema Lucaniko.</li>
+  <li>iniziare a vendere online all'interno dell'ecosistema Lucaniko.</li>
 </ul>
 <p style="margin: 1.5em 0;">
   <a href="${loginLink}" style="background: #004b75; color: #fff; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-weight: bold;">👉 Accedi al tuo account</a>
@@ -104,10 +233,10 @@ export const sendVendorRegistrationEmail = async (userEmail, companyName) => {
     to: userEmail,
     from: 'info@lucanikoshop.it',
     subject: 'Registrazione ricevuta – Lucaniko Shop',
-    text: `Ciao ${companyName},\n\nabbiamo ricevuto correttamente la tua richiesta di registrazione come Venditore su Lucaniko Shop.\n\nIl nostro team sta verificando i dati inseriti per completare l’attivazione del tuo account.\nRiceverai una comunicazione non appena la registrazione sarà approvata.\n\nGrazie per aver scelto di far parte di Lucaniko Shop.\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
+    text: `Ciao ${companyName},\n\nabbiamo ricevuto correttamente la tua richiesta di registrazione come Venditore su Lucaniko Shop.\n\nIl nostro team sta verificando i dati inseriti per completare l'attivazione del tuo account.\nRiceverai una comunicazione non appena la registrazione sarà approvata.\n\nGrazie per aver scelto di far parte di Lucaniko Shop.\nIl team Lucaniko\n\nwww.lucanikoshop.it`,
     html: `Ciao <strong>${companyName}</strong>,<br><br>
 abbiamo ricevuto correttamente la tua richiesta di registrazione come <strong>Venditore</strong> su Lucaniko Shop.<br><br>
-Il nostro team sta verificando i dati inseriti per completare l’attivazione del tuo account.<br>
+Il nostro team sta verificando i dati inseriti per completare l'attivazione del tuo account.<br>
 Riceverai una comunicazione non appena la registrazione sarà approvata.<br><br>
 Grazie per aver scelto di far parte di Lucaniko Shop.<br>
 Il team Lucaniko<br><br>

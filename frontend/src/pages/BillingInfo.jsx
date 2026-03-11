@@ -82,13 +82,49 @@ const BillingInfo = () => {
         ? formData.aziendaEmail 
         : formData.email;
 
+      // Prepara i dati di fatturazione e spedizione per il backend
+      const billingData = {
+        buyerType: formData.buyerType,
+        // Dati fatturazione (privato)
+        nome: formData.nome,
+        cognome: formData.cognome,
+        codiceFiscale: formData.codiceFiscale,
+        // Dati fatturazione (azienda)
+        aziendaNome: formData.aziendaNome,
+        aziendaCognome: formData.aziendaCognome,
+        ragioneSociale: formData.aziendaRagioneSociale,
+        partitaIVA: formData.aziendaPartitaIVA,
+        pecSdi: formData.aziendaPecSdi,
+        // Indirizzo fatturazione principale
+        indirizzo: formData.buyerType === 'azienda' ? formData.aziendaIndirizzo : formData.indirizzo,
+        cap: formData.buyerType === 'azienda' ? formData.aziendaCap : formData.cap,
+        citta: formData.buyerType === 'azienda' ? formData.aziendaCitta : formData.citta,
+        provincia: formData.buyerType === 'azienda' ? formData.aziendaProvincia : formData.provincia,
+        nazione: formData.buyerType === 'azienda' ? billingCountry : billingCountry,
+        telefono: formData.buyerType === 'azienda' ? formData.aziendaTelefono : formData.telefono,
+        email: customerEmail,
+        // Indirizzo spedizione alternativo (se selezionato)
+        useAltShipping: useAltShipping,
+        altDestinatario: useAltShipping ? formData.altDestinatario : null,
+        altNazione: useAltShipping ? formData.altNazione : null,
+        altIndirizzo: useAltShipping ? formData.altIndirizzo : null,
+        altCap: useAltShipping ? formData.altCap : null,
+        altCitta: useAltShipping ? formData.altCitta : null,
+        altProvincia: useAltShipping ? formData.altProvincia : null,
+        altTelefono: useAltShipping ? formData.altTelefono : null,
+        altEmail: useAltShipping ? formData.altEmail : null,
+        // Note aggiuntive
+        noteAggiuntive: formData.noteAggiuntive
+      };
+
       const { sessionId, url } = await checkoutAPI.createSession(
         cartItems, 
         user ? user.token : null,
         customerEmail,
         appliedCoupon,
         discountAmount,
-        deliveryType  // ✅ Passa il tipo di consegna
+        deliveryType,  // ✅ Passa il tipo di consegna
+        billingData    // ✅ Passa i dati di fatturazione e spedizione
       );
 
       localStorage.setItem('cart', JSON.stringify(cartItems));

@@ -340,7 +340,7 @@ export const orderAPI = {
 // Checkout API
 export const checkoutAPI = {
   // Crea sessione di Stripe Checkout (supporta guest checkout)
-  createSession: async (cartItems, token = null, guestEmail = null, appliedCoupon = null, discountAmount = 0, deliveryType = 'shipping') => {
+  createSession: async (cartItems, token = null, guestEmail = null, appliedCoupon = null, discountAmount = 0, deliveryType = 'shipping', billingData = null) => {
     const headers = {
       'Content-Type': 'application/json',
     };
@@ -351,7 +351,7 @@ export const checkoutAPI = {
     const response = await fetch(`${API_URL}/checkout/create-session`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType }),
+      body: JSON.stringify({ cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType, billingData }),
     });
     return handleResponse(response);
   },

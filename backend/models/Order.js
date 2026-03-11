@@ -91,6 +91,22 @@ const orderSchema = new mongoose.Schema(
         required: function() { return this.deliveryType === 'shipping'; }
       }
     },
+    // Indirizzo di fatturazione (può essere diverso da spedizione)
+    billingAddress: {
+      firstName: String,
+      lastName: String,
+      codiceFiscale: String,
+      ragioneSociale: String,
+      partitaIVA: String,
+      pecSdi: String,
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+      phone: String,
+      email: String
+    },
     // Indirizzo negozio per ritiro (snapshot al momento dell'ordine)
     pickupAddress: {
       businessName: String,

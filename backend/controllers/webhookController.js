@@ -103,19 +103,33 @@ export const handleStripeWebhook = async (req, res) => {
         });
       }
 
-      // Ottieni indirizzo di spedizione da Stripe (ora raccolto automaticamente)
+      // Ottieni indirizzo di spedizione e fatturazione da BillingInfo (nei metadata)
       const deliveryType = session.metadata.deliveryType || 'shipping';
-      const shippingAddress = session.shipping_details?.address || session.customer_details?.address;
-      const shippingName = session.shipping_details?.name || session.customer_details?.name;
-      const shippingPhone = session.shipping_details?.phone || session.customer_details?.phone;
+      
+      // Recupera i dati di fatturazione/spedizione dal form BillingInfo (metadata)
+      let billingData = null;
+      try {
+        if (session.metadata.billingData) {
+          billingData = JSON.parse(session.metadata.billingData);
+          console.log('📋 [WEBHOOK] Dati fatturazione/spedizione recuperati da BillingInfo:', billingData);
+        }
+      } catch (err) {
+        console.warn('⚠️ [WEBHOOK] Errore parsing billingData:', err.message);
+      }
+      
+      // Fallback: se non ci sono dati da BillingInfo, usa quelli di Stripe (backward compatibility)
+      const stripeShippingAddress = session.shipping_details?.address || session.customer_details?.address;
+      const stripeShippingName = session.shipping_details?.name || session.customer_details?.name;
+      const stripeShippingPhone = session.shipping_details?.phone || session.customer_details?.phone;
 
       console.log('📍 [WEBHOOK] deliveryType:', deliveryType);
-      console.log('📍 [WEBHOOK] Stripe shipping_details:', session.shipping_details);
-      console.log('📍 [WEBHOOK] Stripe customer_details:', session.customer_details);
-      console.log('📍 [WEBHOOK] User address nel DB:', buyerUser?.address);
+      console.log('📍 [WEBHOOK] billingData presente:', billingData ? 'SÌ' : 'NO');
+      console.log('📍 [WEBHOOK] Stripe shipping_details (fallback):', session.shipping_details);
+      console.log('📍 [WEBHOOK] User address nel DB (fallback):', buyerUser?.address);
       
       // Prepara indirizzo spedizione (obbligatorio solo per shipping)
       let finalShippingAddress = null;
+      let finalBillingAddress = null;
       let pickupAddress = null;
 
       if (deliveryType === 'pickup') {
@@ -134,40 +148,95 @@ export const handleStripeWebhook = async (req, res) => {
         };
         console.log('🏪 [WEBHOOK] Ritiro in negozio:', pickupAddress.businessName);
         
-        // Per pickup, creiamo uno shippingAddress minimale per compatibilità (usare nome cliente)
-        const fullName = buyerUser?.name || guestEmail || 'Cliente';
-        const nameParts = fullName.split(' ');
-        finalShippingAddress = {
-          firstName: nameParts[0] || 'N/A',
-          lastName: nameParts.slice(1).join(' ') || 'N/A',
-          street: 'Ritiro in negozio',
-          city: pickupAddress.city,
-          state: pickupAddress.state,
-          zipCode: pickupAddress.zipCode,
-          country: pickupAddress.country,
-          phone: session.customer_details?.phone || buyerUser?.phone || 'N/A'
-        };
+        // Per pickup, indirizzo spedizione minimale (compatibilità)
+        if (billingData) {
+          finalShippingAddress = {
+            firstName: billingData.nome || billingData.aziendaNome || 'N/A',
+            lastName: billingData.cognome || billingData.aziendaCognome || 'N/A',
+            street: 'Ritiro in negozio',
+            city: pickupAddress.city,
+            state: pickupAddress.state,
+            zipCode: pickupAddress.zipCode,
+            country: pickupAddress.country,
+            phone: billingData.telefono || 'N/A'
+          };
+        } else {
+          // Fallback Stripe
+          const fullName = buyerUser?.name || guestEmail || 'Cliente';
+          const nameParts = fullName.split(' ');
+          finalShippingAddress = {
+            firstName: nameParts[0] || 'N/A',
+            lastName: nameParts.slice(1).join(' ') || 'N/A',
+            street: 'Ritiro in negozio',
+            city: pickupAddress.city,
+            state: pickupAddress.state,
+            zipCode: pickupAddress.zipCode,
+            country: pickupAddress.country,
+            phone: session.customer_details?.phone || buyerUser?.phone || 'N/A'
+          };
+        }
       } else {
-        // Dividi il nome completo in firstName e lastName
-        const fullName = shippingName || buyerUser?.name || 'N/A';
-        const nameParts = fullName.split(' ');
-        const firstName = nameParts[0] || 'N/A';
-        const lastName = nameParts.slice(1).join(' ') || 'N/A';
-        
-        // Utilizza indirizzo salvato nel profilo se Stripe non fornisce dati completi
-        finalShippingAddress = {
-          firstName: firstName,
-          lastName: lastName,
-          street: shippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
-          city: shippingAddress?.city || buyerUser?.address?.city || 'N/A',
-          state: shippingAddress?.state || buyerUser?.address?.state || 'N/A',
-          zipCode: shippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
-          country: shippingAddress?.country || buyerUser?.address?.country || 'IT',
-          phone: shippingPhone || buyerUser?.phone || 'N/A',
-        };
+        // SPEDIZIONE A DOMICILIO: usa i dati da BillingInfo se disponibili
+        if (billingData) {
+          // Determina se usa indirizzo alternativo o principale
+          const useAlt = billingData.useAltShipping;
+          
+          finalShippingAddress = {
+            firstName: useAlt ? (billingData.altDestinatario?.split(' ')[0] || 'N/A') : (billingData.nome || billingData.aziendaNome || 'N/A'),
+            lastName: useAlt ? (billingData.altDestinatario?.split(' ').slice(1).join(' ') || 'N/A') : (billingData.cognome || billingData.aziendaCognome || 'N/A'),
+            street: useAlt ? billingData.altIndirizzo : billingData.indirizzo,
+            city: useAlt ? billingData.altCitta : billingData.citta,
+            state: useAlt ? (billingData.altProvincia || billingData.altNazione) : (billingData.provincia || billingData.nazione),
+            zipCode: useAlt ? billingData.altCap : billingData.cap,
+            country: useAlt ? billingData.altNazione : billingData.nazione,
+            phone: useAlt ? billingData.altTelefono : billingData.telefono,
+          };
+          
+          // Indirizzo fatturazione (sempre dall'indirizzo principale di BillingInfo)
+          finalBillingAddress = {
+            firstName: billingData.nome || billingData.aziendaNome || 'N/A',
+            lastName: billingData.cognome || billingData.aziendaCognome || 'N/A',
+            codiceFiscale: billingData.codiceFiscale,
+            ragioneSociale: billingData.ragioneSociale,
+            partitaIVA: billingData.partitaIVA,
+            pecSdi: billingData.pecSdi,
+            street: billingData.indirizzo,
+            city: billingData.citta,
+            state: billingData.provincia || billingData.nazione,
+            zipCode: billingData.cap,
+            country: billingData.nazione,
+            phone: billingData.telefono,
+            email: billingData.email,
+          };
+          
+          console.log('✅ [WEBHOOK] Indirizzi costruiti da BillingInfo');
+        } else {
+          // Fallback: usa dati Stripe (backward compatibility per ordini vecchi)
+          const fullName = stripeShippingName || buyerUser?.name || 'N/A';
+          const nameParts = fullName.split(' ');
+          const firstName = nameParts[0] || 'N/A';
+          const lastName = nameParts.slice(1).join(' ') || 'N/A';
+          
+          finalShippingAddress = {
+            firstName: firstName,
+            lastName: lastName,
+            street: stripeShippingAddress?.line1 || buyerUser?.address?.street || 'N/A',
+            city: stripeShippingAddress?.city || buyerUser?.address?.city || 'N/A',
+            state: stripeShippingAddress?.state || buyerUser?.address?.state || 'N/A',
+            zipCode: stripeShippingAddress?.postal_code || buyerUser?.address?.zipCode || 'N/A',
+            country: stripeShippingAddress?.country || buyerUser?.address?.country || 'IT',
+            phone: stripeShippingPhone || buyerUser?.phone || 'N/A',
+          };
+          
+          // Fallback: billing = shipping
+          finalBillingAddress = { ...finalShippingAddress };
+          
+          console.log('⚠️ [WEBHOOK] Indirizzi costruiti da Stripe (fallback)');
+        }
       }
       
       console.log('📍 [WEBHOOK] Indirizzo spedizione finale:', finalShippingAddress);
+      console.log('📍 [WEBHOOK] Indirizzo fatturazione finale:', finalBillingAddress);
 
       // Ottieni costo spedizione dai metadata
       const shippingCost = parseFloat(session.metadata.shippingCost || '0');
@@ -207,6 +276,7 @@ export const handleStripeWebhook = async (req, res) => {
         items: orderItems,
         deliveryType: deliveryType,
         shippingAddress: finalShippingAddress,
+        billingAddress: finalBillingAddress || finalShippingAddress, // Se non c'è billing, usa shipping
         pickupAddress: pickupAddress || undefined,
         paymentMethod: 'stripe',
         paymentResult: {
@@ -440,18 +510,29 @@ export const handleStripeWebhook = async (req, res) => {
         }
 
         if (recipientEmail) {
-          // Prepara lista prodotti
-          const productsList = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
-          const totalAmount = `€${order.totalPrice.toFixed(2)}`;
-          const shippingAddress = `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`;
+          // Prepara dati ordine completi per email acquirente
+          const orderDataForEmail = {
+            products: order.items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            })),
+            itemsPrice: order.itemsPrice || (order.totalPrice - order.shippingPrice),
+            shippingPrice: order.shippingPrice || 0,
+            totalPrice: order.totalPrice,
+            customerName: recipientName,
+            billingAddress: order.billingAddress,
+            shippingAddress: order.shippingAddress,
+            deliveryType: order.deliveryType,
+            pickupAddress: order.pickupAddress ? 
+              `${order.pickupAddress.businessName}, ${order.pickupAddress.street}, ${order.pickupAddress.city}` : null
+          };
           
           await sendOrderConfirmationEmail(
             recipientEmail, 
             recipientName, 
             order._id.toString(), 
-            productsList, 
-            totalAmount, 
-            shippingAddress
+            orderDataForEmail
           );
         }
       } catch (emailError) {
@@ -482,20 +563,33 @@ export const handleStripeWebhook = async (req, res) => {
 
           const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
           const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const vendorShippingCost = vendorShippingBreakdown && vendorShippingBreakdown[vendorId] ? vendorShippingBreakdown[vendorId] : 0;
           const companyName = vendor.businessName || vendor.companyName || vendor.name;
           const customerName = isGuestOrder ? (order.guestName || 'Cliente Guest') : (buyerUser?.name || 'Cliente');
-          const billingShippingData = order.deliveryType === 'pickup' 
-            ? `Ritiro in negozio: ${order.pickupAddress?.city || 'N/A'}`
-            : `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.country}`;
+          
+          // Prepara dati ordine completi per email venditore
+          const orderDataForVendor = {
+            products: vendorItems.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
+            })),
+            itemsPrice: vendorTotalAmount,
+            shippingPrice: vendorShippingCost,
+            totalPrice: vendorTotalAmount + vendorShippingCost,
+            customerName: customerName,
+            billingAddress: order.billingAddress,
+            shippingAddress: order.shippingAddress,
+            deliveryType: order.deliveryType,
+            pickupAddress: order.pickupAddress ? 
+              `${order.pickupAddress.businessName}, ${order.pickupAddress.street}, ${order.pickupAddress.city}` : null
+          };
 
           const emailPromise = sendNewOrderToVendorEmail(
             vendor.email,
             companyName,
             order._id.toString(),
-            vendorProductsList,
-            `€${vendorTotalAmount.toFixed(2)}`,
-            customerName,
-            billingShippingData
+            orderDataForVendor
           ).catch(err => {
             console.error(`❌ [WEBHOOK] Errore invio email a venditore ${vendor.email}:`, err.message);
           });

@@ -14,10 +14,11 @@ export const createCheckoutSession = async (req, res) => {
     console.log('🚀 [CHECKOUT] req.user:', req.user ? req.user._id : 'guest');
     
     try {
-        const { cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType = 'shipping' } = req.body;
+        const { cartItems, guestEmail, appliedCoupon, discountAmount, deliveryType = 'shipping', billingData } = req.body;
 
         console.log('🚀 [CHECKOUT] cartItems estratto:', Array.isArray(cartItems) ? cartItems.length : 'non è array');
         console.log('🚀 [CHECKOUT] guestEmail:', guestEmail);
+        console.log('🚀 [CHECKOUT] billingData ricevuto:', billingData ? 'SÌ' : 'NO');
 
         if (!cartItems || cartItems.length === 0) {
             console.log('❌ [CHECKOUT] Carrello vuoto');
@@ -235,6 +236,8 @@ export const createCheckoutSession = async (req, res) => {
                 appliedCouponCode: appliedCoupon?.couponCode || '',
                 appliedCouponId: appliedCoupon?._id?.toString() || '',
                 discountAmount: discountAmount ? discountAmount.toString() : '0',
+                // Salva i dati di fatturazione e spedizione dal form BillingInfo
+                billingData: billingData ? JSON.stringify(billingData) : '',
                 // SECURITY FIX: Usa sellerId dal database, non dal frontend
                 cartItems: JSON.stringify(cartItems.map(item => ({
                     productId: item._id,
