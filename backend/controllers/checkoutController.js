@@ -275,19 +275,18 @@ export const createCheckoutSession = async (req, res) => {
             mode: 'payment',
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
-            billing_address_collection: 'auto',
+            // NON raccogliamo billing/shipping in Stripe perché già raccolti in BillingInfo.jsx
+            // billing_address_collection: 'auto', // RIMOSSO - dati già nei metadata
+            customer_email: guestEmail || req.user?.email, // Pre-compila email per riconoscimento cliente
+            phone_number_collection: {
+                enabled: false // Non chiediamo telefono, già in BillingInfo
+            },
             metadata: metadata,
         };
 
-        // Aggiungi shipping_address_collection SOLO per spedizione
-        if (deliveryType === 'shipping') {
-            sessionOptions.shipping_address_collection = {
-                allowed_countries: ['IT', 'FR', 'DE', 'ES', 'AT', 'BE', 'NL', 'PT', 'GR', 'IE', 'LU', 'MT', 'CY', 'SI', 'SK', 'EE', 'LV', 'LT', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR'],
-            };
-        } else if (deliveryType === 'pickup') {
-            // Per il ritiro, salva info negozio nei metadata
-            sessionOptions.metadata.pickupInfo = JSON.stringify(pickupInfo);
-        }
+        // NON aggiungiamo shipping_address_collection - dati già raccolti in BillingInfo.jsx
+        // La spedizione viene gestita dai metadata billing_* campi
+        // Tutti i dati necessari (fatturazione, spedizione, pickup) sono già nei metadata
         
         console.log('📦 [CHECKOUT] Metadata preparati:', {
             userId: sessionOptions.metadata.userId,
@@ -295,9 +294,6 @@ export const createCheckoutSession = async (req, res) => {
             deliveryType: deliveryType,
             itemsCount: cartItems.length
         });
-
-        // Per utenti registrati, usa customer_email per pre-compilare
-        sessionOptions.customer_email = customerEmail;
 
         // Se c'è uno sconto, crea un Coupon Stripe al volo e applicalo
         if (discountAmount && discountAmount > 0) {
