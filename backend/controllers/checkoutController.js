@@ -214,6 +214,61 @@ export const createCheckoutSession = async (req, res) => {
             console.log('👤 [CHECKOUT] req.user._id.toString():', req.user._id.toString());
         }
         
+        // Costruisci metadata con billingData suddiviso in campi separati per evitare limite 500 caratteri
+        const metadata = {
+            userId: req.user ? req.user._id.toString() : 'guest',
+            guestEmail: guestEmail || '',
+            deliveryType: deliveryType,
+            shippingCost: shippingResult.totalShipping.toString(),
+            // Salva breakdown shipping per venditore (formato compatto)
+            vendorShippingCosts: JSON.stringify(
+                Object.entries(shippingResult.vendorShippingCosts || {}).reduce((acc, [vendorId, data]) => {
+                    acc[vendorId] = data.shippingCost || 0;
+                    return acc;
+                }, {})
+            ),
+            appliedCouponCode: appliedCoupon?.couponCode || '',
+            appliedCouponId: appliedCoupon?._id?.toString() || '',
+            discountAmount: discountAmount ? discountAmount.toString() : '0',
+            // SECURITY FIX: Usa sellerId dal database, non dal frontend
+            cartItems: JSON.stringify(cartItems.map(item => ({
+                productId: item._id,
+                sellerId: productsWithSeller[item._id], // <-- Dal database!
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+            }))),
+        };
+
+        // Aggiungi dati di fatturazione come campi separati (evita limite 500 caratteri Stripe)
+        if (billingData) {
+            metadata.billing_buyerType = billingData.buyerType || '';
+            metadata.billing_nome = billingData.nome || '';
+            metadata.billing_cognome = billingData.cognome || '';
+            metadata.billing_codiceFiscale = billingData.codiceFiscale || '';
+            metadata.billing_ragioneSociale = billingData.ragioneSociale || '';
+            metadata.billing_partitaIVA = billingData.partitaIVA || '';
+            metadata.billing_pecSdi = billingData.pecSdi || '';
+            metadata.billing_indirizzo = billingData.indirizzo || '';
+            metadata.billing_cap = billingData.cap || '';
+            metadata.billing_citta = billingData.citta || '';
+            metadata.billing_provincia = billingData.provincia || '';
+            metadata.billing_nazione = billingData.nazione || '';
+            metadata.billing_telefono = billingData.telefono || '';
+            metadata.billing_email = billingData.email || '';
+            metadata.billing_useAltShipping = billingData.useAltShipping ? 'true' : 'false';
+            // Dati indirizzo alternativo (se presente)
+            if (billingData.useAltShipping) {
+                metadata.billing_altDestinatario = billingData.altDestinatario || '';
+                metadata.billing_altIndirizzo = billingData.altIndirizzo || '';
+                metadata.billing_altCap = billingData.altCap || '';
+                metadata.billing_altCitta = billingData.altCitta || '';
+                metadata.billing_altProvincia = billingData.altProvincia || '';
+                metadata.billing_altTelefono = billingData.altTelefono || '';
+                metadata.billing_altEmail = billingData.altEmail || '';
+            }
+        }
+
         const sessionOptions = {
             payment_method_types: ['card'], // Solo card - altri metodi (klarna, paypal) devono essere attivati in Stripe Dashboard
             line_items: lineItems,
@@ -221,32 +276,7 @@ export const createCheckoutSession = async (req, res) => {
             success_url: `${process.env.FRONTEND_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`,
             billing_address_collection: 'auto',
-            metadata: {
-                userId: req.user ? req.user._id.toString() : 'guest',
-                guestEmail: guestEmail || '',
-                deliveryType: deliveryType,
-                shippingCost: shippingResult.totalShipping.toString(),
-                // Salva breakdown shipping per venditore (formato compatto)
-                vendorShippingCosts: JSON.stringify(
-                    Object.entries(shippingResult.vendorShippingCosts || {}).reduce((acc, [vendorId, data]) => {
-                        acc[vendorId] = data.shippingCost || 0;
-                        return acc;
-                    }, {})
-                ),
-                appliedCouponCode: appliedCoupon?.couponCode || '',
-                appliedCouponId: appliedCoupon?._id?.toString() || '',
-                discountAmount: discountAmount ? discountAmount.toString() : '0',
-                // Salva i dati di fatturazione e spedizione dal form BillingInfo
-                billingData: billingData ? JSON.stringify(billingData) : '',
-                // SECURITY FIX: Usa sellerId dal database, non dal frontend
-                cartItems: JSON.stringify(cartItems.map(item => ({
-                    productId: item._id,
-                    sellerId: productsWithSeller[item._id], // <-- Dal database!
-                    name: item.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                }))),
-            },
+            metadata: metadata,
         };
 
         // Aggiungi shipping_address_collection SOLO per spedizione

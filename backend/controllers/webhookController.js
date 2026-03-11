@@ -106,15 +106,42 @@ export const handleStripeWebhook = async (req, res) => {
       // Ottieni indirizzo di spedizione e fatturazione da BillingInfo (nei metadata)
       const deliveryType = session.metadata.deliveryType || 'shipping';
       
-      // Recupera i dati di fatturazione/spedizione dal form BillingInfo (metadata)
+      // Recupera i dati di fatturazione/spedizione dal form BillingInfo (metadata separati)
       let billingData = null;
-      try {
-        if (session.metadata.billingData) {
-          billingData = JSON.parse(session.metadata.billingData);
-          console.log('📋 [WEBHOOK] Dati fatturazione/spedizione recuperati da BillingInfo:', billingData);
+      const metadata = session.metadata;
+      
+      // Ricostruisci billingData dai campi metadata separati (billing_*)
+      if (metadata.billing_buyerType) {
+        billingData = {
+          buyerType: metadata.billing_buyerType,
+          nome: metadata.billing_nome || '',
+          cognome: metadata.billing_cognome || '',
+          codiceFiscale: metadata.billing_codiceFiscale || '',
+          ragioneSociale: metadata.billing_ragioneSociale || '',
+          partitaIVA: metadata.billing_partitaIVA || '',
+          pecSdi: metadata.billing_pecSdi || '',
+          indirizzo: metadata.billing_indirizzo || '',
+          cap: metadata.billing_cap || '',
+          citta: metadata.billing_citta || '',
+          provincia: metadata.billing_provincia || '',
+          nazione: metadata.billing_nazione || '',
+          telefono: metadata.billing_telefono || '',
+          email: metadata.billing_email || '',
+          useAltShipping: metadata.billing_useAltShipping === 'true',
+        };
+        
+        // Aggiungi dati indirizzo alternativo se presente
+        if (billingData.useAltShipping) {
+          billingData.altDestinatario = metadata.billing_altDestinatario || '';
+          billingData.altIndirizzo = metadata.billing_altIndirizzo || '';
+          billingData.altCap = metadata.billing_altCap || '';
+          billingData.altCitta = metadata.billing_altCitta || '';
+          billingData.altProvincia = metadata.billing_altProvincia || '';
+          billingData.altTelefono = metadata.billing_altTelefono || '';
+          billingData.altEmail = metadata.billing_altEmail || '';
         }
-      } catch (err) {
-        console.warn('⚠️ [WEBHOOK] Errore parsing billingData:', err.message);
+        
+        console.log('📋 [WEBHOOK] Dati fatturazione/spedizione recuperati da BillingInfo:', billingData);
       }
       
       // Fallback: se non ci sono dati da BillingInfo, usa quelli di Stripe (backward compatibility)
