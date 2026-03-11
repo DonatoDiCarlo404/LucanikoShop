@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Container,
   Row,
@@ -24,6 +24,8 @@ import AlertModal from '../components/AlertModal';
 const VendorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sellerId = searchParams.get('sellerId'); // ID del venditore da visualizzare (solo admin)
 
   // State
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,14 @@ const VendorDashboard = () => {
     }
   }, [user, navigate]);
 
+  // Helper function: Costruisce query params per admin che visualizza un venditore
+  const getVendorQueryParams = () => {
+    if (user?.role === 'admin' && sellerId) {
+      return `?vendorId=${sellerId}`;
+    }
+    return '';
+  };
+
   // Carica dati dashboard
   useEffect(() => {
     if (user && (user.role === 'seller' || user.role === 'admin')) {
@@ -90,7 +100,7 @@ const VendorDashboard = () => {
       loadCategories();
       loadNotifications();
     }
-  }, [user]);
+  }, [user, sellerId]); // Ricarica se cambia il venditore visualizzato
 
   // Polling notifiche ogni 30 secondi
   useEffect(() => {
@@ -122,7 +132,8 @@ const VendorDashboard = () => {
       setError('');
 
       // Carica ordini ricevuti
-      const ordersRes = await fetch(`${API_URL}/orders/vendor/received`, {
+      const queryParams = getVendorQueryParams();
+      const ordersRes = await fetch(`${API_URL}/orders/vendor/received${queryParams}`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -136,7 +147,7 @@ const VendorDashboard = () => {
       setOrders(ordersData);
 
       // Carica statistiche
-      const statsRes = await fetch(`${API_URL}/orders/vendor/stats`, {
+      const statsRes = await fetch(`${API_URL}/orders/vendor/stats${queryParams}`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -150,7 +161,7 @@ const VendorDashboard = () => {
       setStats(statsData);
 
       // Carica prodotti del venditore
-      const productsRes = await fetch(`${API_URL}/products/seller/my-products`, {
+      const productsRes = await fetch(`${API_URL}/products/seller/my-products${queryParams}`, {
         headers: {
           Authorization: `Bearer ${user.token}`
         }
@@ -178,12 +189,12 @@ const VendorDashboard = () => {
     try {
       setLoadingEarnings(true);
 
-      // Carica riepilogo earnings
-      const earningsData = await getEarningsSummary(user.token);
+      // Carica riepilogo earnings (passa sellerId se admin visualizza altro venditore)
+      const earningsData = await getEarningsSummary(user.token, sellerId);
       setEarnings(earningsData);
 
-      // Carica vendite in attesa
-      const pendingData = await getSalesPending(user.token);
+      // Carica vendite in attesa (passa sellerId se admin visualizza altro venditore)
+      const pendingData = await getSalesPending(user.token, sellerId);
       setPendingSales(pendingData);
 
       // Carica storico pagamenti ricevuti (Fase 5.4)
@@ -201,7 +212,12 @@ const VendorDashboard = () => {
   const loadPaidPayouts = async () => {
     try {
       setLoadingPayouts(true);
-      const payoutsData = await getVendorPayouts(user.token, { status: 'paid', limit: 50 });
+      const params = { status: 'paid', limit: 50 };
+      // Aggiungi vendorId se admin visualizza altro venditore
+      if (user?.role === 'admin' && sellerId) {
+        params.vendorId = sellerId;
+      }
+      const payoutsData = await getVendorPayouts(user.token, params);
       setPaidPayouts(payoutsData.payouts || []);
     } catch (err) {
       console.error('Errore caricamento payouts:', err);

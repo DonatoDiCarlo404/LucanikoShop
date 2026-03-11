@@ -41,6 +41,23 @@ const AdminPaymentControl = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
+  // All Sales
+  const [allSales, setAllSales] = useState([]);
+  const [loadingAllSales, setLoadingAllSales] = useState(false);
+  const [allSalesPagination, setAllSalesPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalSales: 0
+  });
+  const [salesFilters, setSalesFilters] = useState({
+    vendorId: '',
+    startDate: '',
+    endDate: '',
+    month: '',
+    page: 1,
+    limit: 50
+  });
+
   // Filtri
   const [filters, setFilters] = useState({
     vendorId: '',
@@ -137,7 +154,8 @@ const AdminPaymentControl = () => {
         fetchStatistics(), 
         fetchVendorsList(), 
         fetchPendingPayouts(),
-        fetchAnalytics()
+        fetchAnalytics(),
+        fetchAllSales()
       ]);
       setLoading(false);
     };
@@ -157,6 +175,13 @@ const AdminPaymentControl = () => {
       fetchTransferLog();
     }
   }, [transferFilters]);
+
+  // Ricarica all sales quando cambiano i filtri
+  useEffect(() => {
+    if (!loading) {
+      fetchAllSales();
+    }
+  }, [salesFilters]);
 
   // Fetch Analytics
   const fetchAnalytics = async () => {
@@ -182,6 +207,46 @@ const AdminPaymentControl = () => {
       toast.error(err.message || 'Errore nel caricamento analytics');
     } finally {
       setLoadingAnalytics(false);
+    }
+  };
+
+  // Fetch All Sales
+  const fetchAllSales = async () => {
+    try {
+      setLoadingAllSales(true);
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams();
+      if (salesFilters.vendorId) params.append('vendorId', salesFilters.vendorId);
+      if (salesFilters.startDate) params.append('startDate', salesFilters.startDate);
+      if (salesFilters.endDate) params.append('endDate', salesFilters.endDate);
+      if (salesFilters.month) params.append('month', salesFilters.month);
+      params.append('page', salesFilters.page);
+      params.append('limit', salesFilters.limit);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/admin/payments/all-sales?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle vendite');
+      }
+
+      const data = await response.json();
+      setAllSales(data.sales);
+      setAllSalesPagination({
+        currentPage: data.pagination.currentPage,
+        totalPages: data.pagination.totalPages,
+        totalSales: data.pagination.totalSales
+      });
+    } catch (err) {
+      console.error('Errore fetch all sales:', err);
+      toast.error(err.message || 'Errore nel caricamento delle vendite');
+    } finally {
+      setLoadingAllSales(false);
     }
   };
 
@@ -1193,6 +1258,217 @@ const AdminPaymentControl = () => {
             </>
           ) : (
             <Alert variant="warning">Errore nel caricamento delle analytics</Alert>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Tabella Tutte le Vendite */}
+      <Card className="mt-4">
+        <Card.Header>
+          <h5 className="mb-0">
+            <i className="bi bi-receipt me-2"></i>
+            Tutte le Vendite
+          </h5>
+        </Card.Header>
+        <Card.Body>
+          {/* Filtri Vendite */}
+          <Row className="mb-3">
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Venditore</Form.Label>
+                <Form.Select
+                  value={salesFilters.vendorId}
+                  onChange={(e) => setSalesFilters({...salesFilters, vendorId: e.target.value, page: 1})}
+                >
+                  <option value="">Tutti i venditori</option>
+                  {vendorsList.map(vendor => (
+                    <option key={vendor._id} value={vendor._id}>
+                      {vendor.name}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>Mese</Form.Label>
+                <Form.Control
+                  type="month"
+                  value={salesFilters.month}
+                  onChange={(e) => setSalesFilters({
+                    ...salesFilters, 
+                    month: e.target.value, 
+                    startDate: '', 
+                    endDate: '',
+                    page: 1
+                  })}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>Data Inizio</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={salesFilters.startDate}
+                  onChange={(e) => setSalesFilters({...salesFilters, startDate: e.target.value, month: '', page: 1})}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>Data Fine</Form.Label>
+                <Form.Control
+                  type="date"
+                  value={salesFilters.endDate}
+                  onChange={(e) => setSalesFilters({...salesFilters, endDate: e.target.value, month: '', page: 1})}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3} className="d-flex align-items-end">
+              <Button
+                variant="outline-secondary"
+                onClick={() => setSalesFilters({
+                  vendorId: '',
+                  startDate: '',
+                  endDate: '',
+                  month: '',
+                  page: 1,
+                  limit: 50
+                })}
+                className="w-100"
+              >
+                <i className="bi bi-arrow-clockwise me-2"></i>
+                Reset
+              </Button>
+            </Col>
+          </Row>
+
+          {loadingAllSales ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2">Caricamento vendite...</p>
+            </div>
+          ) : allSales.length === 0 ? (
+            <Alert variant="info">
+              <i className="bi bi-info-circle me-2"></i>
+              Nessuna vendita trovata con i filtri selezionati.
+            </Alert>
+          ) : (
+            <>
+              <Alert variant="info" className="mb-3">
+                <i className="bi bi-info-circle me-2"></i>
+                Trovate <strong>{allSalesPagination.totalSales}</strong> vendite
+              </Alert>
+
+              <Table striped bordered hover responsive>
+                <thead>
+                  <tr>
+                    <th>ID Ordine</th>
+                    <th>Data</th>
+                    <th>Prodotto</th>
+                    <th>Qtà</th>
+                    <th>Prezzo</th>
+                    <th>Totale</th>
+                    <th>Venditore</th>
+                    <th>Importo Netto</th>
+                    <th>Stripe Fee</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allSales.map((sale, index) => (
+                    <tr key={`${sale.orderId}-${sale.productId}-${index}`}>
+                      <td>
+                        <small className="text-muted">{sale.orderNumber}</small>
+                      </td>
+                      <td>
+                        <small>{new Date(sale.saleDate).toLocaleDateString('it-IT', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</small>
+                      </td>
+                      <td>
+                        <strong>{sale.productName}</strong>
+                      </td>
+                      <td className="text-center">
+                        <Badge bg="secondary">{sale.productQuantity}</Badge>
+                      </td>
+                      <td className="text-end">€{sale.productPrice.toFixed(2)}</td>
+                      <td className="text-end">
+                        <strong>€{sale.productTotal.toFixed(2)}</strong>
+                      </td>
+                      <td>
+                        <div>
+                          <strong>{sale.vendorName}</strong>
+                          {sale.vendorEmail && (
+                            <>
+                              <br />
+                              <small className="text-muted">{sale.vendorEmail}</small>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="text-end">
+                        <span className="text-success">
+                          <strong>€{sale.vendorNetAmount.toFixed(2)}</strong>
+                        </span>
+                      </td>
+                      <td className="text-end text-danger">
+                        <small>€{sale.stripeFee.toFixed(2)}</small>
+                      </td>
+                      <td>
+                        <Badge bg={
+                          sale.orderStatus === 'delivered' ? 'success' :
+                          sale.orderStatus === 'processing' ? 'info' :
+                          sale.orderStatus === 'cancelled' ? 'danger' :
+                          'warning'
+                        }>
+                          {sale.orderStatus}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+
+              {/* Paginazione */}
+              {allSalesPagination.totalPages > 1 && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div>
+                    Pagina {allSalesPagination.currentPage} di {allSalesPagination.totalPages}
+                  </div>
+                  <div>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={allSalesPagination.currentPage === 1}
+                      onClick={() => setSalesFilters({
+                        ...salesFilters,
+                        page: allSalesPagination.currentPage - 1
+                      })}
+                      className="me-2"
+                    >
+                      <i className="bi bi-chevron-left"></i> Precedente
+                    </Button>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      disabled={allSalesPagination.currentPage === allSalesPagination.totalPages}
+                      onClick={() => setSalesFilters({
+                        ...salesFilters,
+                        page: allSalesPagination.currentPage + 1
+                      })}
+                    >
+                      Successiva <i className="bi bi-chevron-right"></i>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </Card.Body>
       </Card>

@@ -5,8 +5,9 @@ import { API_URL } from './api';
  */
 
 // Ottieni riepilogo earnings
-export const getEarningsSummary = async (token) => {
-  const response = await fetch(`${API_URL}/vendor/earnings/summary`, {
+export const getEarningsSummary = async (token, vendorId = null) => {
+  const queryParams = vendorId ? `?vendorId=${vendorId}` : '';
+  const response = await fetch(`${API_URL}/vendor/earnings/summary${queryParams}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -25,6 +26,7 @@ export const getEarningsSummary = async (token) => {
 export const getVendorPayouts = async (token, params = {}) => {
   const queryParams = new URLSearchParams();
   
+  if (params.vendorId) queryParams.append('vendorId', params.vendorId); // Per admin
   if (params.page) queryParams.append('page', params.page);
   if (params.limit) queryParams.append('limit', params.limit);
   if (params.status) queryParams.append('status', params.status);
@@ -49,8 +51,9 @@ export const getVendorPayouts = async (token, params = {}) => {
 };
 
 // Ottieni vendite in attesa di pagamento
-export const getSalesPending = async (token) => {
-  const response = await fetch(`${API_URL}/vendor/earnings/sales-pending`, {
+export const getSalesPending = async (token, vendorId = null) => {
+  const queryParams = vendorId ? `?vendorId=${vendorId}` : '';
+  const response = await fetch(`${API_URL}/vendor/earnings/sales-pending${queryParams}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

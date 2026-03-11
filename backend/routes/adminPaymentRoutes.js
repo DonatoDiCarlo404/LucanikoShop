@@ -15,7 +15,8 @@ import {
   payNow,
   retryTransfer,
   markAsPaid,
-  getAnalytics
+  getAnalytics,
+  getAllSales
 } from '../controllers/adminPaymentController.js';
 
 const router = express.Router();
@@ -64,5 +65,10 @@ router.post('/mark-paid/:payoutId', protect, paymentLimiter, validatePayoutId, v
 // @desc    Ottieni analytics pagamenti (grafici e statistiche)
 // @access  Private/Admin
 router.get('/analytics', protect, getAnalytics);
+
+// @route   GET /api/admin/payments/all-sales
+// @desc    Ottieni tutte le vendite (elenco completo ordini e prodotti venduti)
+// @access  Private/Admin
+router.get('/all-sales', protect, validateAdminPaymentFilters, getAllSales);
 
 export default router;

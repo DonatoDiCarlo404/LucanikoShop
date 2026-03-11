@@ -312,6 +312,14 @@ const VendorProfile = () => {
     }
   }, [profileData]);
 
+  // Helper: Naviga alla dashboard venditore con sellerId se admin sta visualizzando un venditore
+  const navigateToVendorDashboard = () => {
+    const dashboardUrl = (user?.role === 'admin' && sellerId) 
+      ? `/vendor/dashboard?sellerId=${sellerId}` 
+      : '/vendor/dashboard';
+    navigate(dashboardUrl);
+  };
+
   // Carica documenti PDF del venditore
   const loadVendorDocuments = async () => {
     try {
@@ -3116,7 +3124,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                 </Table>
               )}
               <div className="text-center mt-3">
-                <Button variant="outline-primary" onClick={() => navigate('/vendor/dashboard')}>
+                <Button variant="outline-primary" onClick={navigateToVendorDashboard}>
                   Vedi Tutti gli Ordini
                 </Button>
               </div>
@@ -3137,7 +3145,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                       <Button variant="primary" onClick={() => navigate('/products/new')}>
                         + Nuovo Prodotto
                       </Button>
-                      <Button variant="outline-primary" className="ms-2" onClick={() => navigate('/vendor/dashboard')}>
+                      <Button variant="outline-primary" className="ms-2" onClick={navigateToVendorDashboard}>
                         Visualizza Tutti
                       </Button>
                     </Card.Body>
@@ -3159,7 +3167,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     <Card.Body>
                       <h5>📋 Ordini Ricevuti</h5>
                       <p className="text-muted">Visualizza e gestisci gli ordini</p>
-                      <Button variant="info" onClick={() => navigate('/vendor/dashboard')}>
+                      <Button variant="info" onClick={navigateToVendorDashboard}>
                         Vedi Ordini
                       </Button>
                     </Card.Body>
@@ -3170,7 +3178,7 @@ Con la conferma dell'ordine, l'Acquirente dichiara di aver letto e accettato le 
                     <Card.Body>
                       <h5>📊 Statistiche Dettagliate</h5>
                       <p className="text-muted">Analizza le performance del tuo negozio</p>
-                      <Button variant="warning" onClick={() => navigate('/vendor/dashboard')}>
+                      <Button variant="warning" onClick={navigateToVendorDashboard}>
                         Dashboard Completa
                       </Button>
                     </Card.Body>

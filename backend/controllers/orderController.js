@@ -112,7 +112,10 @@ export const getVendorOrders = async (req, res) => {
             return res.status(403).json({ message: 'Accesso negato' });
         }
 
-        const sellerId = req.user.role === 'admin' ? req.query.sellerId : req.user._id;
+        // Supporta sia sellerId che vendorId per compatibilità
+        const sellerId = req.user.role === 'admin' 
+            ? (req.query.sellerId || req.query.vendorId) 
+            : req.user._id;
 
         // Trova ordini che contengono prodotti del venditore
         const orders = await Order.find({ 'items.seller': sellerId })
@@ -138,7 +141,10 @@ export const getVendorStats = async (req, res) => {
             return res.status(403).json({ message: 'Accesso negato' });
         }
 
-        const sellerId = req.user.role === 'admin' ? req.query.sellerId : req.user._id;
+        // Supporta sia sellerId che vendorId per compatibilità
+        const sellerId = req.user.role === 'admin' 
+            ? (req.query.sellerId || req.query.vendorId) 
+            : req.user._id;
 
         // Trova ordini che contengono prodotti del venditore
         const orders = await Order.find({ 

@@ -6,7 +6,10 @@ import VendorPayout from '../models/VendorPayout.js';
 // @access  Private (solo venditori)
 export const getEarningsSummary = async (req, res) => {
   try {
-    const vendorId = req.user._id;
+    // Supporta vendorId per admin che visualizza un venditore specifico
+    const vendorId = (req.user.role === 'admin' && req.query.vendorId) 
+      ? req.query.vendorId 
+      : req.user._id;
 
     // Verifica che l'utente sia un venditore
     if (!['vendor', 'seller', 'admin'].includes(req.user.role)) {
@@ -41,7 +44,10 @@ export const getEarningsSummary = async (req, res) => {
 // @access  Private (solo venditori)
 export const getVendorPayouts = async (req, res) => {
   try {
-    const vendorId = req.user._id;
+    // Supporta vendorId per admin che visualizza un venditore specifico
+    const vendorId = (req.user.role === 'admin' && req.query.vendorId) 
+      ? req.query.vendorId 
+      : req.user._id;
 
     // Verifica che l'utente sia un venditore
     if (!['vendor', 'seller', 'admin'].includes(req.user.role)) {
@@ -104,7 +110,10 @@ export const getVendorPayouts = async (req, res) => {
 // @access  Private (solo venditori)
 export const getSalesPending = async (req, res) => {
   try {
-    const vendorId = req.user._id;
+    // Supporta vendorId per admin che visualizza un venditore specifico
+    const vendorId = (req.user.role === 'admin' && req.query.vendorId) 
+      ? req.query.vendorId 
+      : req.user._id;
 
     // Verifica che l'utente sia un venditore
     if (!['vendor', 'seller', 'admin'].includes(req.user.role)) {

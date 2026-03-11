@@ -516,7 +516,12 @@ export const addProductImage = async (req, res) => {
 // @access  Private (seller)
 export const getMyProducts = async (req, res) => {
   try {
-    const products = await Product.find({ seller: req.user._id })
+    // Supporta vendorId per admin che visualizza prodotti di un venditore specifico
+    const sellerId = (req.user.role === 'admin' && req.query.vendorId) 
+      ? req.query.vendorId 
+      : req.user._id;
+
+    const products = await Product.find({ seller: sellerId })
       .populate('category', 'name')
       .populate('subcategory', 'name')
       .populate('seller', 'businessName name slug')

@@ -1,5 +1,6 @@
 import VendorPayout from '../models/VendorPayout.js';
 import User from '../models/User.js';
+import Order from '../models/Order.js';
 
 /**
  * @desc    Ottieni tutti i VendorPayout pending pronti per pagamento (>14 giorni)
@@ -808,19 +809,37 @@ export const getAnalytics = async (req, res) => {
     const monthlyVolume = await VendorPayout.aggregate([
       {
         $match: {
-          status: 'paid',
-          paymentDate: { $gte: startDate },
-          $or: [
-            { isRefundDebt: { $exists: false } },
-            { isRefundDebt: false }
+          $and: [
+            // Escludi debiti
+            {
+              $or: [
+                { isRefundDebt: { $exists: false } },
+                { isRefundDebt: false }
+              ]
+            },
+            // Filtra per data e status
+            {
+              $or: [
+                // Per paid: usa paymentDate
+                { status: 'paid', paymentDate: { $gte: startDate } },
+                // Per pending/processing: usa saleDate
+                { status: { $in: ['pending', 'processing'] }, saleDate: { $gte: startDate } }
+              ]
+            }
           ]
+        }
+      },
+      {
+        $addFields: {
+          // Usa paymentDate se esiste, altrimenti saleDate
+          effectiveDate: { $ifNull: ['$paymentDate', '$saleDate'] }
         }
       },
       {
         $group: {
           _id: {
-            year: { $year: '$paymentDate' },
-            month: { $month: '$paymentDate' }
+            year: { $year: '$effectiveDate' },
+            month: { $month: '$effectiveDate' }
           },
           totalAmount: { $sum: '$amount' },
           totalStripeFee: { $sum: '$stripeFee' },
@@ -847,7 +866,7 @@ export const getAnalytics = async (req, res) => {
     const topVendors = await VendorPayout.aggregate([
       {
         $match: {
-          status: 'paid',
+          status: { $in: ['paid', 'pending', 'processing'] }, // Includi tutti gli earnings
           $or: [
             { isRefundDebt: { $exists: false } },
             { isRefundDebt: false }
@@ -893,7 +912,7 @@ export const getAnalytics = async (req, res) => {
     const totalFees = await VendorPayout.aggregate([
       {
         $match: {
-          status: 'paid',
+          status: { $in: ['paid', 'pending', 'processing'] }, // Includi tutti
           $or: [
             { isRefundDebt: { $exists: false } },
             { isRefundDebt: false }
@@ -953,6 +972,156 @@ export const getAnalytics = async (req, res) => {
     res.status(500).json({ 
       message: 'Errore nel recupero delle analytics',
       error: error.message 
+    });
+  }
+};
+
+/**
+ * @desc    Ottieni tutte le vendite (da ordini + VendorPayouts)
+ * @route   GET /api/admin/payments/all-sales
+ * @access  Private/Admin
+ */
+export const getAllSales = async (req, res) => {
+  try {
+    // Verifica che l'utente sia admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Accesso negato: solo admin possono accedere' });
+    }
+
+    // Parametri di paginazione
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    // Costruisci filtri
+    const filters = {
+      isPaid: true, // Solo ordini pagati
+      status: { $ne: 'cancelled' }, // Escludi ordini cancellati
+      'vendorEarnings.0': { $exists: true } // Ha vendite di venditori
+    };
+
+    // Filtro per venditore specifico
+    if (req.query.vendorId) {
+      filters['vendorEarnings.vendorId'] = req.query.vendorId;
+    }
+
+    // Filtro per range di date
+    if (req.query.startDate || req.query.endDate) {
+      filters.paidAt = {};
+      if (req.query.startDate) {
+        filters.paidAt.$gte = new Date(req.query.startDate);
+      }
+      if (req.query.endDate) {
+        const endDate = new Date(req.query.endDate);
+        endDate.setHours(23, 59, 59, 999); // Fine giornata
+        filters.paidAt.$lte = endDate;
+      }
+    }
+
+    // Filtro per mese specifico (YYYY-MM)
+    if (req.query.month) {
+      const [year, month] = req.query.month.split('-').map(Number);
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+      filters.paidAt = { $gte: startOfMonth, $lte: endOfMonth };
+    }
+
+    // Query ordini con popolazione
+    const orders = await Order.find(filters)
+      .populate('items.seller', 'businessName companyName name email')
+      .populate('items.product', 'title')
+      .sort('-paidAt')
+      .skip(skip)
+      .limit(limit);
+
+    // Conta totale per paginazione
+    const total = await Order.countDocuments(filters);
+
+    // Trasforma gli ordini in righe di vendita (una riga per ogni item di ogni venditore)
+    const salesData = [];
+    
+    for (const order of orders) {
+      // Per ogni ordine, estrai le vendite per venditore
+      order.items.forEach(item => {
+        // Se c'è un filtro venditore, salta gli item di altri venditori
+        if (req.query.vendorId && item.seller && item.seller._id.toString() !== req.query.vendorId) {
+          return;
+        }
+
+        // Trova gli earnings di questo venditore per questo ordine
+        const earning = order.vendorEarnings?.find(
+          e => e.vendorId.toString() === item.seller?._id.toString()
+        );
+
+        // Trova il corrispondente VendorPayout (se esiste)
+        // Non lo facciamo in questa query per performance, ma potremmo aggiungerlo se necessario
+
+        salesData.push({
+          orderId: order._id,
+          orderNumber: order.orderNumber || `ORD-${order._id.toString().slice(-8)}`,
+          saleDate: order.paidAt || order.createdAt,
+          productId: item.product?._id,
+          productName: item.product?.title || item.name || 'N/A',
+          productQuantity: item.quantity,
+          productPrice: item.price,
+          productTotal: item.price * item.quantity,
+          vendorId: item.seller?._id,
+          vendorName: item.seller?.businessName || item.seller?.companyName || item.seller?.name || 'N/A',
+          vendorEmail: item.seller?.email,
+          vendorNetAmount: earning?.netAmount || 0,
+          stripeFee: earning?.stripeFee || 0,
+          transferFee: earning?.transferFee || 0,
+          paymentMethod: order.paymentMethod,
+          deliveryType: order.deliveryType,
+          orderStatus: order.status || 'N/A',
+          isGuestOrder: order.isGuestOrder || false
+        });
+      });
+    }
+
+    // Calcola statistiche
+    const totalAmount = salesData.reduce((sum, sale) => sum + sale.productTotal, 0);
+    const totalVendorEarnings = salesData.reduce((sum, sale) => sum + sale.vendorNetAmount, 0);
+    const totalFees = salesData.reduce((sum, sale) => sum + sale.stripeFee + sale.transferFee, 0);
+
+    // Raggruppa per mese per statistiche mensili
+    const salesByMonth = {};
+    salesData.forEach(sale => {
+      const monthKey = new Date(sale.saleDate).toISOString().slice(0, 7); // YYYY-MM
+      if (!salesByMonth[monthKey]) {
+        salesByMonth[monthKey] = {
+          count: 0,
+          totalAmount: 0,
+          totalEarnings: 0
+        };
+      }
+      salesByMonth[monthKey].count++;
+      salesByMonth[monthKey].totalAmount += sale.productTotal;
+      salesByMonth[monthKey].totalEarnings += sale.vendorNetAmount;
+    });
+
+    res.json({
+      sales: salesData,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalOrders: total,
+        totalSales: salesData.length,
+        hasMore: skip + orders.length < total
+      },
+      summary: {
+        totalAmount,
+        totalVendorEarnings,
+        totalFees,
+        salesByMonth
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [ADMIN] Errore getAllSales:', error);
+    res.status(500).json({
+      message: 'Errore nel recupero delle vendite',
+      error: error.message
     });
   }
 };

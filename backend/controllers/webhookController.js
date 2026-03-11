@@ -550,125 +550,90 @@ export const handleStripeWebhook = async (req, res) => {
     }
   }
 
-  // ========== GESTIONE TRANSFER.PAID - TRASFERIMENTO COMPLETATO ==========
-  if (event.type === 'transfer.paid') {
-    console.log('💸 [WEBHOOK] Processando transfer.paid - Transfer completato');
-    const transfer = event.data.object;
-    console.log('📋 [WEBHOOK] Transfer ID:', transfer.id);
-    console.log('📋 [WEBHOOK] Importo:', transfer.amount / 100, 'EUR');
-    console.log('📋 [WEBHOOK] Destinazione:', transfer.destination);
-
-    try {
-      // Trova il VendorPayout associato a questo transfer
-      const payout = await VendorPayout.findOne({ stripeTransferId: transfer.id });
-
-      if (!payout) {
-        console.log('⚠️ [WEBHOOK] VendorPayout non trovato per transfer:', transfer.id);
-        // Non è un errore critico - potrebbe essere un transfer manuale
-        return res.json({ received: true });
-      }
-
-      console.log('✅ [WEBHOOK] VendorPayout trovato:', payout._id);
-      console.log('📊 [WEBHOOK] Status attuale:', payout.status);
-
-      // Aggiorna status del payout a 'paid'
-      payout.status = 'paid';
-      payout.paymentDate = new Date();
-      await payout.save();
-
-      console.log('✅ [WEBHOOK] VendorPayout aggiornato a "paid"');
-
-      // Aggiorna statistiche del venditore: sposta da pendingEarnings a paidEarnings
-      const vendor = await User.findById(payout.vendorId);
-      
-      if (vendor) {
-        console.log('👤 [WEBHOOK] Venditore trovato:', vendor.email);
-        console.log('📊 [WEBHOOK] Prima - Pending: €' + vendor.pendingEarnings?.toFixed(2) + ', Paid: €' + vendor.paidEarnings?.toFixed(2));
-
-        vendor.pendingEarnings = Math.max(0, (vendor.pendingEarnings || 0) - payout.amount);
-        vendor.paidEarnings = (vendor.paidEarnings || 0) + payout.amount;
-        await vendor.save();
-
-        console.log('📊 [WEBHOOK] Dopo - Pending: €' + vendor.pendingEarnings.toFixed(2) + ', Paid: €' + vendor.paidEarnings.toFixed(2));
-        console.log('✅ [WEBHOOK] Statistiche venditore aggiornate automaticamente!');
-
-        // Crea notifica per il venditore
-        try {
-          await Notification.create({
-            userId: vendor._id,
-            type: 'payment_received',
-            message: `💰 Pagamento ricevuto! €${payout.amount.toFixed(2)} sono stati trasferiti sul tuo account Stripe Connect.`,
-            data: {
-              payoutId: payout._id,
-              amount: payout.amount,
-              transferId: transfer.id
-            }
-          });
-          console.log('✅ [WEBHOOK] Notifica creata per il venditore');
-        } catch (notifError) {
-          console.error('❌ [WEBHOOK] Errore creazione notifica:', notifError.message);
-        }
-      } else {
-        console.error('⚠️ [WEBHOOK] Venditore non trovato:', payout.vendorId);
-      }
-
-    } catch (error) {
-      console.error('❌ [WEBHOOK] Errore processando transfer.paid:', error);
-      // Non bloccare il webhook
-    }
-  }
-
   // ========== GESTIONE PAYOUT.PAID - PAYOUT STRIPE CONNECT COMPLETATO ==========
+  // Questo evento si attiva quando i soldi arrivono EFFETTIVAMENTE nel conto Stripe Connect del venditore
   if (event.type === 'payout.paid') {
-    console.log('💳 [WEBHOOK] Processando payout.paid - Payout completato nel conto del venditore');
+    console.log('💳 [WEBHOOK] Processando payout.paid - Payout completato');
     const stripePayout = event.data.object;
     console.log('📋 [WEBHOOK] Payout ID:', stripePayout.id);
-    console.log('📋 [WEBHOOK] Importo:', stripePayout.amount / 100, 'EUR');
-    console.log('📋 [WEBHOOK] Status:', stripePayout.status);
+    console.log('📋 [WEBHOOK] Importo:', (stripePayout.amount / 100).toFixed(2), 'EUR');
+    console.log('📋 [WEBHOOK] Destinazione (Connect Account):', stripePayout.destination || 'N/A');
+    console.log('📋 [WEBHOOK] Arrival date:', stripePayout.arrival_date);
 
     try {
-      // Trova tutti i VendorPayout associati a questo payout Stripe
-      // Nota: Stripe payout può contenere multipli transfer
+      // Trova il venditore tramite l'account Stripe Connect
+      // Nota: payout.paid viene emesso nel contesto dell'account Connect, 
+      // quindi possiamo cercare i payout per data/importo o usare metadata se disponibile
+      
+      // Strategia: Trova tutti i VendorPayout in processing che potrebbero appartenere a questo payout
+      // basandoci sulla finestra temporale e che hanno transfer ID
+      const threeDaysAgo = new Date(stripePayout.created * 1000 - 3 * 24 * 60 * 60 * 1000);
+      
       const payouts = await VendorPayout.find({ 
-        stripeTransferId: { $exists: true },
-        status: { $in: ['processing', 'pending'] }
+        stripeTransferId: { $exists: true, $ne: null },
+        status: { $in: ['processing'] },
+        createdAt: { $gte: threeDaysAgo }
       });
 
-      console.log('📊 [WEBHOOK] Trovati ' + payouts.length + ' payout da verificare');
+      console.log('📊 [WEBHOOK] Trovati ' + payouts.length + ' payout recenti in processing');
+
+      let updatedCount = 0;
 
       for (const payout of payouts) {
-        // Verifica se questo transfer appartiene al payout Stripe completato
         try {
+          // Recupera il transfer per verificare se appartiene al Connect account corretto
           const transfer = await stripe.transfers.retrieve(payout.stripeTransferId);
           
-          // Se il transfer è parte di questo payout e il payout è paid
-          if (transfer && stripePayout.status === 'paid') {
-            console.log('✅ [WEBHOOK] Transfer ' + transfer.id + ' confermato come pagato');
+          // Verifica se il transfer è verso lo stesso account del payout
+          if (transfer && transfer.destination) {
+            console.log('🔍 [WEBHOOK] Verificando transfer ' + transfer.id + ' → ' + transfer.destination);
 
-            // Aggiorna status del payout a 'paid'
-            payout.status = 'paid';
-            payout.paymentDate = new Date();
-            await payout.save();
-
-            // Aggiorna statistiche del venditore
+            // Recupera il venditore
             const vendor = await User.findById(payout.vendorId);
             
-            if (vendor) {
-              console.log('👤 [WEBHOOK] Aggiornamento venditore:', vendor.email);
+            if (vendor && vendor.stripeConnectAccountId === transfer.destination) {
+              console.log('✅ [WEBHOOK] Match trovato per venditore: ' + vendor.email);
+
+              // Aggiorna status del payout a 'paid'
+              payout.status = 'paid';
+              payout.paymentDate = new Date(stripePayout.arrival_date * 1000);
+              await payout.save();
+
+              // Aggiorna statistiche del venditore
+              console.log('📊 [WEBHOOK] Prima - Pending: €' + (vendor.pendingEarnings || 0).toFixed(2) + ', Paid: €' + (vendor.paidEarnings || 0).toFixed(2));
               
               vendor.pendingEarnings = Math.max(0, (vendor.pendingEarnings || 0) - payout.amount);
               vendor.paidEarnings = (vendor.paidEarnings || 0) + payout.amount;
               await vendor.save();
 
-              console.log('✅ [WEBHOOK] Earnings aggiornati - Pending: €' + vendor.pendingEarnings.toFixed(2) + ', Paid: €' + vendor.paidEarnings.toFixed(2));
+              console.log('📊 [WEBHOOK] Dopo - Pending: €' + vendor.pendingEarnings.toFixed(2) + ', Paid: €' + vendor.paidEarnings.toFixed(2));
+
+              // Crea notifica per il venditore
+              try {
+                await Notification.create({
+                  userId: vendor._id,
+                  type: 'payment_received',
+                  message: `💰 Pagamento completato! €${payout.amount.toFixed(2)} sono stati trasferiti sul tuo account.`,
+                  data: {
+                    payoutId: payout._id,
+                    amount: payout.amount,
+                    stripePayoutId: stripePayout.id
+                  }
+                });
+                console.log('✅ [WEBHOOK] Notifica inviata al venditore');
+              } catch (notifError) {
+                console.error('❌ [WEBHOOK] Errore creazione notifica:', notifError.message);
+              }
+
+              updatedCount++;
             }
           }
         } catch (transferError) {
-          console.log('⚠️ [WEBHOOK] Transfer ' + payout.stripeTransferId + ' non verificabile:', transferError.message);
+          console.log('⚠️ [WEBHOOK] Transfer ' + payout.stripeTransferId + ' non recuperabile:', transferError.message);
         }
       }
 
-      console.log('✅ [WEBHOOK] Processamento payout.paid completato');
+      console.log('✅ [WEBHOOK] Processamento completato: ' + updatedCount + ' payout aggiornati a "paid"');
 
     } catch (error) {
       console.error('❌ [WEBHOOK] Errore processando payout.paid:', error);
