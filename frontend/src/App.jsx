@@ -84,6 +84,29 @@ function AppContent() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // ⚡ PERFORMANCE: Prefetch route critiche dopo il caricamento iniziale
+  useEffect(() => {
+    const prefetchRoutes = () => {
+      // Usa requestIdleCallback se disponibile per evitare di bloccare l'UI
+      const scheduleImport = (importFn) => {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => importFn(), { timeout: 2000 });
+        } else {
+          setTimeout(() => importFn(), 100);
+        }
+      };
+
+      // Precarica i componenti più visitati tramite dynamic import
+      scheduleImport(() => import('./pages/Cart'));
+      scheduleImport(() => import('./pages/ProductDetail'));
+      scheduleImport(() => import('./pages/ShopPage'));
+    };
+
+    // Attendi 2 secondi dopo il mount iniziale
+    const timer = setTimeout(prefetchRoutes, 2000);
+    return () => clearTimeout(timer);
+  }, []); // Esegui solo al mount
+
   // Pagine dove NON mostrare il carosello
   const hideCarouselPaths = ['/login', '/register', '/cart', '/categories', '/products/new'];
   const shouldShowCarousel = !hideCarouselPaths.includes(location.pathname) && !location.pathname.startsWith('/products/edit/');

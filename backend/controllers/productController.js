@@ -100,6 +100,7 @@ export const getProducts = async (req, res) => {
     if (useRandom && seed) {
       // Ordinamento pseudo-random ma consistente basato sul seed
       products = await Product.find(query)
+        .select('-description -customAttributes -attributes -tags')
         .populate('seller', 'name businessName email')
         .populate('category', 'name')
         .populate('subcategory', 'name')
@@ -166,7 +167,11 @@ export const getProducts = async (req, res) => {
           $project: {
             'seller.password': 0,
             'seller.paymentMethods': 0,
-            'seller.role': 0
+            'seller.role': 0,
+            'description': 0,
+            'customAttributes': 0,
+            'attributes': 0,
+            'tags': 0
           }
         }
       ];
@@ -175,6 +180,7 @@ export const getProducts = async (req, res) => {
     } else {
       // Ordinamento classico
       products = await Product.find(query)
+        .select('-description -customAttributes -attributes -tags')
         .populate('seller', 'name businessName email slug')
         .populate('category', 'name')
         .populate('subcategory', 'name')
@@ -595,7 +601,7 @@ export const getSuggestedProducts = async (req, res) => {
     const allProducts = await Product.find(query)
       .populate('seller', 'businessName name slug')
       .populate('category', 'name')
-      .select('name description price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage discountAmount discountType unit isActive variants originalPrice ivaPercent seller hasVariants')
+      .select('name price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage discountAmount discountType unit isActive variants originalPrice ivaPercent seller hasVariants')
       .limit(fetchLimit);
 
     // Randomizza i risultati usando Fisher-Yates shuffle
@@ -661,7 +667,6 @@ export const getOtherCategoriesProducts = async (req, res) => {
       {
         $project: {
           name: 1,
-          description: 1,
           price: 1,
           images: 1,
           category: { _id: 1, name: 1 },

@@ -483,7 +483,7 @@ const ProductDetail = () => {
                         alt={`${product.name} - ${index + 1}`}
                         style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
                         loading={index === 0 ? 'eager' : 'lazy'}
-                        fetchpriority={index === 0 ? 'high' : 'low'}
+                        fetchPriority={index === 0 ? 'high' : 'low'}
                         decoding="async"
                       />
                     </Carousel.Item>

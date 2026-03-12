@@ -205,22 +205,23 @@ const ProductCard = ({ product, fromShop }) => {
         >
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
-              {/* Skeleton loader durante il caricamento */}
+              {/* Skeleton loader solo per prima immagine e se non ancora caricata */}
               {!imageLoaded && idx === 0 && (
                 <div
                   style={{
                     height: '280px',
-                    backgroundColor: '#f0f0f0',
+                    backgroundColor: '#f8f9fa',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     position: 'absolute',
                     width: '100%',
                     top: 0,
-                    left: 0
+                    left: 0,
+                    zIndex: 1
                   }}
                 >
-                  <div className="spinner-border text-secondary" role="status" style={{ width: '2rem', height: '2rem' }}>
+                  <div className="spinner-border text-primary" role="status" style={{ width: '1.5rem', height: '1.5rem', opacity: 0.5 }}>
                     <span className="visually-hidden">Caricamento...</span>
                   </div>
                 </div>
@@ -229,19 +230,19 @@ const ProductCard = ({ product, fromShop }) => {
               <img
                 src={CloudinaryPresets.productCard(img.url)}
                 srcSet={`
-                  ${CloudinaryPresets.productCardMobile(img.url)} 250w,
+                  ${CloudinaryPresets.productCardMobile(img.url)} 280w,
                   ${CloudinaryPresets.productCard(img.url)} 500w
                 `}
                 sizes="(max-width: 576px) 180px, 280px"
                 alt={product.name}
                 className="product-card-img"
                 loading={idx === 0 ? 'eager' : 'lazy'}
-                fetchpriority={idx === 0 && isVisible ? 'high' : 'low'}
+                fetchPriority={idx === 0 ? 'high' : 'auto'}
                 decoding="async"
                 onLoad={() => idx === 0 && setImageLoaded(true)}
                 style={{
-                  opacity: imageLoaded || idx > 0 ? 1 : 0,
-                  transition: 'opacity 0.3s ease'
+                  opacity: imageLoaded || idx > 0 ? 1 : 0.3,
+                  transition: 'opacity 0.2s ease-in-out'
                 }}
               />
             </Carousel.Item>
