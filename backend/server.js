@@ -154,6 +154,59 @@ app.use(passport.initialize());
 // 📊 Logging HTTP requests
 app.use(httpLogger);
 
+// 🩺 Health check endpoint per monitoraggio produzione
+app.get('/api/health', async (req, res) => {
+  try {
+    const mongoStatus = mongoose.connection.readyState;
+    const mongoStates = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
+
+    // Statistiche connection pool MongoDB
+    const poolStats = mongoose.connection?.client?.topology?.s?.pool || {};
+    
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: Math.round(process.uptime()),
+      mongodb: {
+        status: mongoStates[mongoStatus],
+        readyState: mongoStatus,
+        pool: {
+          totalConnections: poolStats.totalConnectionCount || 0,
+          availableConnections: poolStats.availableConnectionCount || 0,
+          pendingRequests: poolStats.waitQueueSize || 0,
+        }
+      },
+      redis: {
+        available: isRedisAvailable(),
+        status: isRedisAvailable() ? 'connected' : 'disconnected'
+      },
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB',
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB'
+      }
+    };
+
+    // Se MongoDB non è connesso, ritorna 503
+    if (mongoStatus !== 1) {
+      health.status = 'degraded';
+      return res.status(503).json(health);
+    }
+
+    res.json(health);
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      message: error.message 
+    });
+  }
+});
+
 // Routes
 
 app.use('/api/auth', authRoutes);
@@ -185,8 +238,19 @@ app.use('/api/sitemap', sitemapRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/cookie-consent', cookieConsentRoutes);
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
+// MongoDB Connection con configurazione ottimizzata per produzione
+mongoose.connect(process.env.MONGODB_URI, {
+  // Connection pool ottimizzato per Railway (limitato a 512MB RAM)
+  maxPoolSize: 10,        // Max 10 connessioni concorrenti (default 100 è troppo)
+  minPoolSize: 2,         // Mantieni sempre 2 connessioni pronte
+  serverSelectionTimeoutMS: 5000,   // Timeout selezione server: 5 secondi
+  socketTimeoutMS: 45000,            // Timeout socket: 45 secondi
+  family: 4,              // Usa IPv4, evita timeout IPv6
+  // Heartbeat per mantenere connessioni alive
+  heartbeatFrequencyMS: 10000,
+  // Max tempo inattività prima di chiudere connessione
+  maxIdleTimeMS: 30000
+})
   .then(async () => {
     console.log('✅ Connesso a MongoDB');
     

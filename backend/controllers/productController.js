@@ -29,8 +29,12 @@ const parseNumericValue = (value) => {
 // @route   GET /api/products
 // @access  Public
 export const getProducts = async (req, res) => {
+  const startTime = Date.now();
+  const timers = {};
+  
   try {
     const { search, category, subcategory, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
+    timers.start = 0;
 
     // Costruisci query - mostra tutti i prodotti (isActive gestito nel frontend)
     let query = {};
@@ -43,6 +47,7 @@ export const getProducts = async (req, res) => {
     // Filtro categoria - cerca per nome e usa l'ObjectId
     if (category) {
       const categoryDoc = await Category.findOne({ name: category });
+      timers.categoryLookup = Date.now() - startTime;
       if (categoryDoc) {
         query.category = categoryDoc._id;
       } else {
@@ -95,6 +100,7 @@ export const getProducts = async (req, res) => {
 
     let products;
     const total = await Product.countDocuments(query);
+    timers.countDocuments = Date.now() - startTime;
 
     // Se ordinamento random CON seed, usa un ordinamento consistente
     if (useRandom && seed) {
@@ -125,6 +131,7 @@ export const getProducts = async (req, res) => {
 
       // Applica skip e limit manualmente
       products = products.slice(skip, skip + Number(limit));
+      timers.productQuery = Date.now() - startTime;
     }
     // Se ordinamento random SENZA seed, usa aggregation con $sample
     else if (useRandom) {
@@ -177,6 +184,7 @@ export const getProducts = async (req, res) => {
       ];
 
       products = await Product.aggregate(pipeline);
+      timers.productQuery = Date.now() - startTime;
     } else {
       // Ordinamento classico
       products = await Product.find(query)
@@ -187,6 +195,19 @@ export const getProducts = async (req, res) => {
         .limit(Number(limit))
         .skip(skip)
         .sort(sortOptions);
+      timers.productQuery = Date.now() - startTime;
+    }
+
+    timers.total = Date.now() - startTime;
+    
+    // Log performance in production
+    if (process.env.NODE_ENV === 'production') {
+      console.log('⏱️ [PERFORMANCE] getProducts:', {
+        timers,
+        query: { category, page, limit, sortBy },
+        totalProducts: total,
+        returnedProducts: products.length
+      });
     }
 
     res.json({
@@ -196,6 +217,7 @@ export const getProducts = async (req, res) => {
       total,
     });
   } catch (error) {
+    console.error('❌ [ERROR] getProducts:', error.message, 'Time:', Date.now() - startTime, 'ms');
     res.status(500).json({ message: error.message });
   }
 };
