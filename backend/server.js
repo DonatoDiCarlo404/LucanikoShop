@@ -6,7 +6,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
 import compression from 'compression';
-import { connectRedis } from './config/redis.js';
+import { connectRedis, isRedisAvailable } from './config/redis.js';
 import authRoutes from './routes/authRoutes.js';
 import passport from './config/passport.js';
 import uploadRoutes from './routes/uploadRoutes.js';
