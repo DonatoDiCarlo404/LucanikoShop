@@ -482,7 +482,9 @@ const ProductDetail = () => {
                         sizes="(max-width: 768px) 400px, (max-width: 1200px) 800px, 1200px"
                         alt={`${product.name} - ${index + 1}`}
                         style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
-                        loading="lazy"
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        fetchpriority={index === 0 ? 'high' : 'low'}
+                        decoding="async"
                       />
                     </Carousel.Item>
                   ))}

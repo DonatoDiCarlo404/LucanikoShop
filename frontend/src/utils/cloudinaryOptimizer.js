@@ -107,10 +107,18 @@ export const CloudinaryPresets = {
 
   // Card prodotto mobile (300x300)
   productCardMobile: (url) => optimizeCloudinaryUrl(url, {
-    width: 300,
-    height: 300,
+    width: 250,
+    height: 250,
     crop: 'limit',
-    quality: 'auto:good'
+    quality: 'auto:low' // Ridotta qualità per mobile
+  }),
+
+  // Card prodotto ultra-light per primo caricamento (220x220)
+  productCardLight: (url) => optimizeCloudinaryUrl(url, {
+    width: 220,
+    height: 220,
+    crop: 'limit',
+    quality: 'auto:eco' // Minima qualità per velocità massima
   }),
 
   // Dettaglio prodotto (800x800)

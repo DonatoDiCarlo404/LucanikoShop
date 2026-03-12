@@ -195,6 +195,7 @@ const OtherCategoriesCarousel = ({ excludeCategory, title = '🌟 Scopri anche a
                     sizes="(max-width: 576px) 150px, 200px"
                     alt={product.name}
                     loading="lazy"
+                    decoding="async"
                     style={{ height: '180px', objectFit: 'cover' }}
                   />
                 ) : (

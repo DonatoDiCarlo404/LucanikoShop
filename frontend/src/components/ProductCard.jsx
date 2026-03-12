@@ -28,6 +28,8 @@ const ProductCard = ({ product, fromShop }) => {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [carouselActive, setCarouselActive] = useState(false);
   const cardRef = useRef(null);
 
   // Intersection Observer per animazione scroll
@@ -199,19 +201,48 @@ const ProductCard = ({ product, fromShop }) => {
           indicators={false}
           controls={product.images.length > 1}
           className="product-card-carousel"
+          onSlide={() => setCarouselActive(true)}
         >
           {product.images.map((img, idx) => (
             <Carousel.Item key={idx}>
+              {/* Skeleton loader durante il caricamento */}
+              {!imageLoaded && idx === 0 && (
+                <div
+                  style={{
+                    height: '280px',
+                    backgroundColor: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    width: '100%',
+                    top: 0,
+                    left: 0
+                  }}
+                >
+                  <div className="spinner-border text-secondary" role="status" style={{ width: '2rem', height: '2rem' }}>
+                    <span className="visually-hidden">Caricamento...</span>
+                  </div>
+                </div>
+              )}
+              
               <img
                 src={CloudinaryPresets.productCard(img.url)}
                 srcSet={`
-                  ${CloudinaryPresets.productCardMobile(img.url)} 300w,
+                  ${CloudinaryPresets.productCardMobile(img.url)} 250w,
                   ${CloudinaryPresets.productCard(img.url)} 500w
                 `}
                 sizes="(max-width: 576px) 180px, 280px"
                 alt={product.name}
                 className="product-card-img"
-                loading="lazy"
+                loading={idx === 0 ? 'eager' : 'lazy'}
+                fetchpriority={idx === 0 && isVisible ? 'high' : 'low'}
+                decoding="async"
+                onLoad={() => idx === 0 && setImageLoaded(true)}
+                style={{
+                  opacity: imageLoaded || idx > 0 ? 1 : 0,
+                  transition: 'opacity 0.3s ease'
+                }}
               />
             </Carousel.Item>
           ))}

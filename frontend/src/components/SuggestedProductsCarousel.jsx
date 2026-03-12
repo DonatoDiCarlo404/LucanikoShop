@@ -233,6 +233,7 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
                     sizes="(max-width: 576px) 200px, 300px"
                     alt={product.name}
                     loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <div className="no-image">
