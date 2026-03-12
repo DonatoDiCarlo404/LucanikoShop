@@ -70,6 +70,11 @@ const Products = () => {
     }
   }, [category, subcategory, sortBy, page, resetTrigger, isInitialized]);
 
+  // Scroll automatico all'inizio quando cambia pagina
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page]);
+
   const loadCategories = async () => {
     try {
       const response = await fetch(`${API_URL}/categories/main`);
@@ -586,7 +591,7 @@ const Products = () => {
             <Button
                 variant="outline-primary"
                 disabled={page === 1}
-                onClick={() => { window.scrollTo(0, 0); setPage(page - 1); }}
+                onClick={() => setPage(page - 1)}
                 className="pagination-btn"
             >
               ← Precedente
@@ -597,7 +602,7 @@ const Products = () => {
             <Button
                 variant="outline-primary"
                 disabled={page >= pages}
-                onClick={() => { window.scrollTo(0, 0); setPage(page + 1); }}
+                onClick={() => setPage(page + 1)}
                 className="pagination-btn"
             >
               Successiva →

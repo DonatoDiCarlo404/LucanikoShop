@@ -3,9 +3,11 @@ import './ProductCard.css';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
+import { useCart } from '../context/CartContext';
 import { wishlistAPI } from '../services/api';
 import { useState, useEffect, useRef } from 'react';
 import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
+import { toast } from 'react-toastify';
 
 const ProductCard = ({ product, fromShop }) => {
     // Calcola prezzo minimo e stock totale se ci sono varianti
@@ -22,6 +24,7 @@ const ProductCard = ({ product, fromShop }) => {
     }
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -83,6 +86,31 @@ const ProductCard = ({ product, fromShop }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuickAddToCart = (e) => {
+    e.stopPropagation();
+    
+    // Se ha varianti, naviga alla pagina di dettaglio
+    if (product.hasVariants && product.variants?.length > 0) {
+      navigate(`/products/${product._id}`, fromShop ? { state: { fromShop } } : undefined);
+      return;
+    }
+    
+    // Altrimenti, aggiungi direttamente al carrello
+    const hasStock = (typeof product.stock === 'number' && product.stock > 0) || totalVariantStock > 0;
+    const isAvailable = hasStock && product.isActive;
+    
+    if (!isAvailable) {
+      toast.error('Prodotto non disponibile');
+      return;
+    }
+    
+    addToCart(product);
+    toast.success(`✅ ${product.name} aggiunto al carrello!`, {
+      position: "top-right",
+      autoClose: 2000,
+    });
   };
 
   return (
@@ -206,10 +234,6 @@ const ProductCard = ({ product, fromShop }) => {
         <Card.Title
           className="product-card-title"
           style={{
-            fontSize: '1rem',
-            height: '20px',
-            overflow: 'hidden',
-            marginBottom: 4,
             fontWeight: 700,
             color: '#004b75'
           }}
@@ -245,6 +269,46 @@ const ProductCard = ({ product, fromShop }) => {
         </div>
 
         <div className="mt-auto">
+          {/* Icona carrello quick add - posizionata sopra prezzo/badge */}
+          <div className="d-flex justify-content-end mb-2">
+            <span
+              className="quick-add-cart-icon"
+              onClick={handleQuickAddToCart}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleQuickAddToCart(e);
+                }
+              }}
+              title={product.hasVariants ? 'Vedi varianti' : 'Aggiungi al carrello'}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                backgroundColor: '#004b75',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                fontSize: '0.9rem'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#00bf63';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#004b75';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <i className="bi bi-cart-plus"></i>
+            </span>
+          </div>
+          
           <div className="d-flex justify-content-between align-items-center">
             <div>
               {product.hasActiveDiscount && product.originalPrice ? (

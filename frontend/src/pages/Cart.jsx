@@ -550,13 +550,71 @@ const Cart = () => {
                   <Col md={2}>
                     <Form.Group>
                       <Form.Label className="small">Quantità</Form.Label>
+                      
+                      {/* Desktop: input classico */}
                       <Form.Control
                         type="number"
                         min="1"
                         max={item.stock}
                         value={item.quantity}
                         onChange={(e) => updateQuantity(item._id, parseInt(e.target.value))}
+                        className="d-none d-md-block"
                       />
+                      
+                      {/* Mobile: pulsanti + e - */}
+                      <div className="d-flex d-md-none align-items-center justify-content-center gap-2">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => updateQuantity(item._id, Math.max(1, item.quantity - 1))}
+                          disabled={item.quantity <= 1}
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%',
+                            borderColor: '#004b75',
+                            color: '#004b75',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem'
+                          }}
+                        >
+                          <i className="bi bi-dash"></i>
+                        </Button>
+                        <span style={{ 
+                          minWidth: '35px', 
+                          textAlign: 'center',
+                          fontWeight: 700,
+                          fontSize: '1.1rem',
+                          color: '#004b75'
+                        }}>
+                          {item.quantity}
+                        </span>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          onClick={() => updateQuantity(item._id, Math.min(item.stock, item.quantity + 1))}
+                          disabled={item.quantity >= item.stock}
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%',
+                            borderColor: '#00bf63',
+                            color: '#00bf63',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem'
+                          }}
+                        >
+                          <i className="bi bi-plus"></i>
+                        </Button>
+                      </div>
                     </Form.Group>
                   </Col>
 
@@ -909,7 +967,25 @@ const Cart = () => {
                       : ''
                   }
                 >
-                  {isCheckingOut ? 'Caricamento...' : 'Procedi all\'acquisto (Na cos r iurn!)'}
+                  {isCheckingOut ? (
+                    'Caricamento...'
+                  ) : (
+                    <>
+                      {/* Desktop: tutto su una riga */}
+                      <span className="d-none d-md-inline">
+                        Procedi all'acquisto (Na cos r iurn!)
+                      </span>
+                      
+                      {/* Mobile: testo su due righe */}
+                      <div className="d-flex d-md-none flex-column align-items-center" style={{ 
+                        fontSize: '0.95rem',
+                        lineHeight: '1.4'
+                      }}>
+                        <span style={{ marginBottom: '3px', fontSize: '1.2rem' }}>Procedi all'acquisto</span>
+                        <span style={{ fontSize: '0.9em' }}>(Na cos r iurn!)</span>
+                      </div>
+                    </>
+                  )}
                 </Button>
                 <Button variant="outline-secondary" onClick={() => navigate('/products')}>
                   ← Continua lo shopping

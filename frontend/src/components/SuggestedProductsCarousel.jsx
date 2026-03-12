@@ -48,23 +48,36 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
     }
 
     try {
+      const requestBody = {
+        cartItems: cartItems.map(item => ({
+          _id: item._id,
+          category: item.category?._id || item.category,
+          seller: item.seller?._id || item.seller
+        })),
+        sameVendor,
+        limit: 8
+      };
+
+      console.log('🔍 [SUGGESTED CAROUSEL] Richiesta prodotti suggeriti:', {
+        sameVendor,
+        cartItems: requestBody.cartItems
+      });
+
       const response = await fetch(`${API_URL}/products/suggested`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          cartItems: cartItems.map(item => ({
-            _id: item._id,
-            category: item.category?._id || item.category,
-            seller: item.seller?._id || item.seller
-          })),
-          sameVendor,
-          limit: 8
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
+      
+      console.log('✅ [SUGGESTED CAROUSEL] Prodotti ricevuti:', {
+        sameVendor,
+        count: data.products?.length || 0,
+        products: data.products?.map(p => ({ name: p.name, vendor: p.seller?.businessName }))
+      });
       
       if (response.ok) {
         setProducts(data.products || []);

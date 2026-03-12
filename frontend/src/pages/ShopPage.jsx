@@ -56,6 +56,11 @@ const ShopPage = () => {
     setPage(1);
   }, [searchTerm, selectedSubcategory]);
 
+  // Scroll automatico all'inizio quando cambia pagina
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page]);
+
   const loadShopData = async () => {
     try {
       setLoading(true);
@@ -546,7 +551,7 @@ const ShopPage = () => {
                   <Button
                     variant="outline-primary"
                     disabled={page === 1}
-                    onClick={() => { window.scrollTo(0, 0); setPage(page - 1); }}
+                    onClick={() => setPage(page - 1)}
                     className="pagination-btn"
                   >
                     ← Precedente
@@ -557,7 +562,7 @@ const ShopPage = () => {
                   <Button
                     variant="outline-primary"
                     disabled={page >= totalPages}
-                    onClick={() => { window.scrollTo(0, 0); setPage(page + 1); }}
+                    onClick={() => setPage(page + 1)}
                     className="pagination-btn"
                   >
                     Successiva →
