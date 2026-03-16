@@ -6,7 +6,8 @@ import cloudinary from '../config/cloudinary.js';
 // @access  Public
 export const getEvents = async (req, res) => {
   try {
-    const events = await Event.find({ status: 'active' });
+    const events = await Event.find({ status: 'active' })
+      .lean(); // ⚡ Converti a plain object per performance
     // Sort by first date in eventDates array
     events.sort((a, b) => {
       const dateA = a.eventDates && a.eventDates.length > 0 ? new Date(a.eventDates[0]) : new Date(0);
@@ -25,7 +26,8 @@ export const getEvents = async (req, res) => {
 // @access  Private/Admin
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find();
+    const events = await Event.find()
+      .lean(); // ⚡ Converti a plain object per performance
     // Sort by first date in eventDates array
     events.sort((a, b) => {
       const dateA = a.eventDates && a.eventDates.length > 0 ? new Date(a.eventDates[0]) : new Date(0);

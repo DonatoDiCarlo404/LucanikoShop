@@ -701,6 +701,73 @@ export const handleStripeWebhook = async (req, res) => {
         // Non bloccare il webhook se le notifiche falliscono
       }
 
+      // Crea recensioni automatiche per ordini guest
+      if (isGuestOrder) {
+        console.log('⭐ [WEBHOOK] Creazione recensioni automatiche per ordine guest...');
+        try {
+          const reviewPromises = [];
+          
+          for (const item of order.items) {
+            // Evita recensioni duplicate - controlla se esiste già una recensione automatica per questo prodotto e ordine
+            const existingReview = await Review.findOne({
+              product: item.product,
+              guestOrderId: order._id,
+              isAutomatic: true
+            });
+
+            if (!existingReview) {
+              const reviewPromise = Review.create({
+                product: item.product,
+                rating: 5,
+                comment: 'Recensione automatica da acquisto verificato',
+                isVerified: true,
+                isAutomatic: true,
+                guestOrderId: order._id,
+                helpful: 0
+              }).catch(err => {
+                console.error(`❌ [WEBHOOK] Errore creazione recensione automatica per prodotto ${item.product}:`, err.message);
+              });
+
+              reviewPromises.push(reviewPromise);
+            } else {
+              console.log(`ℹ️ [WEBHOOK] Recensione automatica già esistente per prodotto ${item.product}`);
+            }
+          }
+
+          const createdReviews = await Promise.all(reviewPromises);
+          const successfulReviews = createdReviews.filter(r => r !== undefined);
+          console.log(`✅ [WEBHOOK] Create ${successfulReviews.length} recensioni automatiche per ordine guest`);
+          
+          // Aggiorna rating e numReviews dei prodotti
+          if (successfulReviews.length > 0) {
+            console.log('🔄 [WEBHOOK] Aggiornamento rating prodotti...');
+            for (const review of successfulReviews) {
+              try {
+                const product = await Product.findById(review.product);
+                if (product) {
+                  const allReviews = await Review.find({ product: review.product });
+                  const numReviews = allReviews.length;
+                  const avgRating = numReviews > 0 
+                    ? allReviews.reduce((acc, r) => acc + r.rating, 0) / numReviews 
+                    : 0;
+                  
+                  product.rating = avgRating;
+                  product.numReviews = numReviews;
+                  await product.save();
+                  
+                  console.log(`  ✅ ${product.name}: rating ${avgRating.toFixed(1)}, ${numReviews} recensioni`);
+                }
+              } catch (updateError) {
+                console.error(`❌ [WEBHOOK] Errore aggiornamento rating prodotto ${review.product}:`, updateError.message);
+              }
+            }
+          }
+        } catch (reviewError) {
+          console.error('❌ [WEBHOOK] Errore creazione recensioni automatiche:', reviewError);
+          // Non bloccare il webhook se le recensioni automatiche falliscono
+        }
+      }
+
     } catch (error) {
       console.error('❌ Errore creazione ordine:', error);
       return res.status(500).send('Errore creazione ordine');

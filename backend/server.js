@@ -45,6 +45,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import adminPaymentRoutes from './routes/adminPaymentRoutes.js';
 import stripeMonitoringRoutes from './routes/stripeMonitoringRoutes.js';
 import cookieConsentRoutes from './routes/cookieConsentRoutes.js';
+import aggregateRoutes from './routes/aggregateRoutes.js'; // ⚡ PERFORMANCE: Endpoint aggregati
 import { updateExpiredDiscounts } from './utils/discountUtils.js';
 import cron from 'node-cron';
 import { processVendorPayouts } from './jobs/processVendorPayouts.js';
@@ -74,11 +75,27 @@ app.use(compression({
   }
 }));
 
-// Serve i PDF vendor caricati
-app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs')));
+// ⚡ PERFORMANCE: Serve risorse statiche con cache aggressiva
+// Cache 1 anno per documenti vendor (immutabili una volta caricati)
+app.use('/uploads/vendor_docs', express.static(path.join(process.cwd(), 'uploads', 'vendor_docs'), {
+  maxAge: '365d', // Cache 1 anno
+  immutable: true, // Browser non ri-valida (max performance)
+  setHeaders: (res, path) => {
+    // Cache-Control già gestito da maxAge, aggiungiamo solo headers di sicurezza
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  }
+}));
 
-// Serve robots.txt per bloccare l'indicizzazione dell'API
-app.use(express.static(path.join(process.cwd(), 'public')));
+// Cache 1 giorno per file pubblici (robots.txt, ecc.)
+app.use(express.static(path.join(process.cwd(), 'public'), {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    // robots.txt non deve essere cachato troppo a lungo
+    if (path.endsWith('robots.txt')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 ora
+    }
+  }
+}));
 
 const PORT = process.env.PORT || 5000;
 
@@ -148,7 +165,18 @@ import { renewExpiredSubscriptions } from './utils/subscriptionUtils.js';
 // 🔒 SECURITY: Ridotto payload limit da 50MB a 10MB per prevenire attacchi DoS
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(helmet());
+
+// ⚡ SECURITY + PERFORMANCE: Helmet con HSTS per forzare HTTPS
+app.use(helmet({
+  hsts: {
+    maxAge: 31536000, // 1 anno
+    includeSubDomains: true,
+    preload: true
+  },
+  contentSecurityPolicy: false, // Gestito separatamente se necessario
+  crossOriginEmbedderPolicy: false // Permetti embedding Cloudinary/Stripe
+}));
+
 app.use(passport.initialize());
 
 // 📊 Logging HTTP requests
@@ -208,6 +236,9 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Routes
+
+// ⚡ PERFORMANCE: Aggregate routes (combinano più chiamate in una)
+app.use('/api/aggregate', aggregateRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);

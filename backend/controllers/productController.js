@@ -164,7 +164,8 @@ export const getProducts = async (req, res) => {
         .populate('subcategory', 'name')
         .limit(Number(limit))
         .skip(skip)
-        .sort(sortOptions);
+        .sort(sortOptions)
+        .lean(); // ⚡ Converti a plain object per performance
       timers.productQuery = Date.now() - startTime;
     }
 
@@ -594,7 +595,8 @@ export const getSuggestedProducts = async (req, res) => {
       .populate('seller', 'businessName name slug')
       .populate('category', 'name')
       .select('name price images category subcategory stock rating numReviews hasActiveDiscount discountedPrice discountPercentage discountAmount discountType unit isActive variants originalPrice ivaPercent seller hasVariants')
-      .limit(fetchLimit);
+      .limit(fetchLimit)
+      .lean(); // ⚡ Converti a plain object per performance
 
     // Randomizza i risultati usando Fisher-Yates shuffle
     const shuffled = [...allProducts];

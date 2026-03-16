@@ -499,10 +499,8 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// ⚡ PERFORMANCE: Indice per ricerche rapide su email (unique già definito sopra)
-userSchema.index({ email: 1 }, { unique: true });
-
 // Indice per query su ruolo e stato approvazione
+// NOTA: L'indice unique su email è già creato automaticamente dalla definizione del campo
 userSchema.index({ role: 1, isApproved: 1 });
 
 // Hash della password prima di salvare

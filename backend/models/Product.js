@@ -216,19 +216,7 @@ productSchema.virtual('currentPrice').get(function() {
 
 // Metodo per applicare uno sconto al prodotto
 productSchema.methods.applyDiscount = function(discount) {
-  console.log('🟢 [PRODUCT.applyDiscount] Inizio applicazione sconto:', {
-    productId: this._id,
-    productName: this.name,
-    discountId: discount._id,
-    discountName: discount.name,
-    isValidNow: discount.isValidNow(),
-    startDate: discount.startDate,
-    endDate: discount.endDate,
-    now: new Date()
-  });
-
   if (!discount || !discount.isValidNow()) {
-    console.log('⚠️ [PRODUCT.applyDiscount] Sconto non valido, rimosso');
     this.removeDiscount();
     return;
   }
@@ -251,7 +239,6 @@ productSchema.methods.applyDiscount = function(discount) {
 
   // Applica sconto anche alle varianti se presenti
   if (this.hasVariants && this.variants && this.variants.length > 0) {
-    console.log('🟢 [PRODUCT.applyDiscount] Applicazione sconto alle varianti:', this.variants.length);
     this.variants.forEach(variant => {
       if (variant.price != null && variant.price > 0) {
         // Salva il prezzo originale se non già salvato
@@ -260,19 +247,9 @@ productSchema.methods.applyDiscount = function(discount) {
         }
         // Calcola il prezzo scontato per la variante
         variant.discountedPrice = discount.calculateDiscountedPrice(variant.price);
-        console.log('🟢 [PRODUCT.applyDiscount] Variante scontata:', {
-          originalPrice: variant.originalPrice,
-          discountedPrice: variant.discountedPrice
-        });
       }
     });
   }
-
-  console.log('✅ [PRODUCT.applyDiscount] Sconto applicato con successo:', {
-    originalPrice: this.originalPrice,
-    discountedPrice: this.discountedPrice,
-    hasActiveDiscount: this.hasActiveDiscount
-  });
 };
 
 // Metodo per rimuovere lo sconto

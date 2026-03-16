@@ -6,7 +6,9 @@ import cloudinary from '../config/cloudinary.js';
 // @access  Public
 export const getExperiences = async (req, res) => {
   try {
-    const experiences = await Experience.find({ status: 'active' }).sort({ createdAt: -1 });
+    const experiences = await Experience.find({ status: 'active' })
+      .sort({ createdAt: -1 })
+      .lean(); // ⚡ Converti a plain object per performance
     res.json(experiences);
   } catch (error) {
     console.error('Errore recupero esperienze:', error);
@@ -19,7 +21,9 @@ export const getExperiences = async (req, res) => {
 // @access  Private/Admin
 export const getAllExperiences = async (req, res) => {
   try {
-    const experiences = await Experience.find().sort({ createdAt: -1 });
+    const experiences = await Experience.find()
+      .sort({ createdAt: -1 })
+      .lean(); // ⚡ Converti a plain object per performance
     res.json(experiences);
   } catch (error) {
     console.error('Errore recupero esperienze (admin):', error);

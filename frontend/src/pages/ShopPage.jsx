@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Modal, Form, ListGroup } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/authContext';
-import { API_URL } from '../services/api';
+import { API_URL, aggregateAPI } from '../services/api';
 import AlertModal from '../components/AlertModal';
 
 const ShopPage = () => {
@@ -66,11 +66,8 @@ const ShopPage = () => {
       setLoading(true);
       setError('');
 
-      const res = await fetch(`${API_URL}/vendors/${sellerId}`);
-      if (!res.ok) {
-        throw new Error('Negozio non trovato');
-      }
-      const data = await res.json();
+      // ⚡ PERFORMANCE: Una sola chiamata invece di 2 (vendor + products)
+      const data = await aggregateAPI.getShopPageData(sellerId);
       setShopData(data);
     } catch (err) {
       setError(err.message);
@@ -123,20 +120,23 @@ const ShopPage = () => {
     
     try {
       setReviewsLoading(true);
-      const reviewsPromises = shopData.products.map(async (product) => {
-        try {
-          const res = await fetch(`${API_URL}/reviews/${product._id}`);
-          if (!res.ok) return [];
-          const data = await res.json();
-          return data.map(review => ({ ...review, productName: product.name, productId: product._id }));
-        } catch (err) {
-          console.error(`Errore caricamento recensioni prodotto ${product._id}:`, err);
-          return [];
-        }
+      
+      // ⚡ PERFORMANCE: Una sola chiamata per tutte le reviews invece di N chiamate
+      const productIds = shopData.products.map(p => p._id);
+      const { reviews: reviewsByProduct } = await aggregateAPI.getBatchReviews(productIds);
+      
+      // Converti l'oggetto in array e aggiungi metadata prodotto
+      const allReviewsFlat = [];
+      Object.keys(reviewsByProduct).forEach(productId => {
+        const product = shopData.products.find(p => p._id === productId);
+        const productReviews = reviewsByProduct[productId].map(review => ({
+          ...review,
+          productName: product?.name || '',
+          productId
+        }));
+        allReviewsFlat.push(...productReviews);
       });
       
-      const reviewsArrays = await Promise.all(reviewsPromises);
-      const allReviewsFlat = reviewsArrays.flat();
       // Ordina per data, più recenti prima
       allReviewsFlat.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setAllReviews(allReviewsFlat);
@@ -639,11 +639,37 @@ const ShopPage = () => {
                       {'☆'.repeat(5 - r.rating)}
                     </span>
 
-                    <strong className="ms-2">{r.user?.name?.split(' ')[0]}</strong>
+                    <strong className="ms-2">{r.user?.name?.split(' ')[0] || 'Cliente'}</strong>
 
                     <small className="text-muted ms-2">
                       {new Date(r.createdAt).toLocaleDateString()}
                     </small>
+
+                    {r.isAutomatic && (
+                      <span 
+                        className="ms-2 badge" 
+                        style={{ 
+                          backgroundColor: '#17a2b8', 
+                          color: 'white',
+                          fontSize: '0.7rem'
+                        }}
+                      >
+                        ✓ Acquisto Verificato
+                      </span>
+                    )}
+
+                    {r.isVerified && !r.isAutomatic && (
+                      <span 
+                        className="ms-2 badge" 
+                        style={{ 
+                          backgroundColor: '#28a745', 
+                          color: 'white',
+                          fontSize: '0.7rem'
+                        }}
+                      >
+                        ✓ Acquisto Verificato
+                      </span>
+                    )}
                   </div>
 
                   <div className="mb-1">{r.comment}</div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react'; // ⚡ PERFORMANCE: memo
 import { Card, Spinner, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, wishlistAPI } from '../services/api';
@@ -308,4 +308,5 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
   );
 };
 
-export default SuggestedProductsCarousel;
+// ⚡ PERFORMANCE: Memoizza per evitare re-render inutili
+export default memo(SuggestedProductsCarousel);

@@ -36,9 +36,17 @@ const cache = (duration = 300, keyGenerator = null) => {
       res.json = (data) => {
         // Salva in cache solo se la risposta è 200
         if (res.statusCode === 200 && data) {
-          redisClient.setEx(cacheKey, duration, JSON.stringify(data))
-            .then(() => console.log(`💾 Salvato in cache: ${cacheKey} (${duration}s)`))
-            .catch(err => console.error('Errore salvataggio cache:', err));
+          const jsonData = JSON.stringify(data);
+          const sizeInMB = Buffer.byteLength(jsonData) / (1024 * 1024);
+          
+          // LIMIT: Non salvare in cache se supera 8MB (lasciando margine dal limite di 10MB)
+          if (sizeInMB > 8) {
+            console.warn(`⚠️ Cache SKIPPED: ${cacheKey} è troppo grande (${sizeInMB.toFixed(2)}MB > 8MB)`);
+          } else {
+            redisClient.setEx(cacheKey, duration, jsonData)
+              .then(() => console.log(`💾 Salvato in cache: ${cacheKey} (${sizeInMB.toFixed(2)}MB, ${duration}s)`))
+              .catch(err => console.error('Errore salvataggio cache:', err));
+          }
         }
         return originalJson(data);
       };

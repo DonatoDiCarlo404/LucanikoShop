@@ -891,11 +891,37 @@ const ProductDetail = () => {
                       {'☆'.repeat(5 - r.rating)}
                     </span>
 
-                    <strong className="ms-2">{r.user?.name?.split(' ')[0]}</strong>
+                    <strong className="ms-2">{r.user?.name?.split(' ')[0] || 'Cliente'}</strong>
 
                     <small className="text-muted ms-2">
                       {new Date(r.createdAt).toLocaleDateString()}
                     </small>
+
+                    {r.isAutomatic && (
+                      <span 
+                        className="ms-2 badge" 
+                        style={{ 
+                          backgroundColor: '#17a2b8', 
+                          color: 'white',
+                          fontSize: '0.7rem'
+                        }}
+                      >
+                        ✓ Acquisto Verificato
+                      </span>
+                    )}
+
+                    {r.isVerified && !r.isAutomatic && (
+                      <span 
+                        className="ms-2 badge" 
+                        style={{ 
+                          backgroundColor: '#28a745', 
+                          color: 'white',
+                          fontSize: '0.7rem'
+                        }}
+                      >
+                        ✓ Acquisto Verificato
+                      </span>
+                    )}
                   </div>
 
                   <div>{r.comment}</div>

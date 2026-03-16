@@ -10,11 +10,11 @@ const reviewSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: false // Non obbligatorio per recensioni automatiche guest
     },
     name: {
       type: String,
-      required: true
+      required: false // Non obbligatorio per recensioni automatiche
     },
     rating: {
       type: Number,
@@ -35,6 +35,15 @@ const reviewSchema = new mongoose.Schema(
       type: Boolean,
       default: false // True se l'utente ha effettivamente acquistato il prodotto
     },
+    isAutomatic: {
+      type: Boolean,
+      default: false // True se è una recensione automatica generata dal sistema (ordini guest)
+    },
+    guestOrderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      required: false // Collegamento all'ordine guest per recensioni automatiche
+    },
     helpful: {
       type: Number,
       default: 0 // Contatore "utile" per la recensione
@@ -49,8 +58,26 @@ const reviewSchema = new mongoose.Schema(
 reviewSchema.index({ product: 1, createdAt: -1 });
 reviewSchema.index({ user: 1 });
 
-// Indice composto per evitare recensioni duplicate dello stesso utente sullo stesso prodotto
-reviewSchema.index({ product: 1, user: 1 }, { unique: true });
+// Indice unique per  recensioni utenti registrati (non guest)
+reviewSchema.index(
+  { product: 1, user: 1 }, 
+  { 
+    unique: true,
+    partialFilterExpression: { user: { $exists: true, $type: 'objectId' } }
+  }
+);
+
+// Indice unique per recensioni automatiche guest (usa guestOrderId)
+reviewSchema.index(
+  { product: 1, guestOrderId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      isAutomatic: true,
+      guestOrderId: { $exists: true, $type: 'objectId' }
+    }
+  }
+);
 
 const Review = mongoose.model('Review', reviewSchema);
 

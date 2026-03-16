@@ -116,27 +116,13 @@ const AdminDashboard = () => {
       setLoading(true);
       setError('');
       
-      const [statsData, pendingData, allData] = await Promise.all([
-        adminAPI.getStats(user.token),
-        adminAPI.getPendingSellers(user.token),
-        adminAPI.getAllSellers(user.token),
-      ]);
+      // ⚡ PERFORMANCE: Una sola chiamata invece di 3+ (stats + sellers + docs)
+      const data = await adminAPI.getDashboardData(user.token);
 
-      setStats(statsData);
-      setPendingSellers(pendingData.sellers);
-      setAllSellers(allData.sellers);
-      // Carica la lista dei documenti per ogni venditore
-      const docs = {};
-      for (const seller of allData.sellers) {
-        try {
-          // Chiamata API per ottenere lista file PDF per venditore
-          const res = await adminAPI.getVendorDocuments(seller._id, user.token);
-          docs[seller._id] = res.files || [];
-        } catch {
-          docs[seller._id] = [];
-        }
-      }
-      setVendorDocs(docs);
+      setStats(data.stats);
+      setPendingSellers(data.pendingSellers.sellers);
+      setAllSellers(data.allSellers.sellers);
+      setVendorDocs(data.vendorDocs);
     } catch (err) {
       setError(err.message);
     } finally {

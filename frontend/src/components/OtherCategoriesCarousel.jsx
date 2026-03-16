@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react'; // ⚡ PERFORMANCE: memo
 import { Card, Spinner, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, wishlistAPI } from '../services/api';
@@ -299,4 +299,4 @@ const OtherCategoriesCarousel = ({ excludeCategory, title = '🌟 Scopri anche a
   );
 };
 
-export default OtherCategoriesCarousel;
+export default memo(OtherCategoriesCarousel);

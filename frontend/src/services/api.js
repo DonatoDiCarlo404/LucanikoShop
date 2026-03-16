@@ -214,7 +214,17 @@ export const uploadAPI = {
 
 // Admin API
 export const adminAPI = {
-    // Ottieni lista documenti PDF per venditore
+  // ⚡ PERFORMANCE: Endpoint aggregato dashboard (stats + sellers + docs in 1 chiamata)
+  getDashboardData: async (token) => {
+    const response = await fetch(`${API_URL}/aggregate/admin-dashboard`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    return handleResponse(response);
+  },
+
+  // Ottieni lista documenti PDF per venditore
     getVendorDocuments: async (vendorId, token) => {
       const response = await fetch(`${API_URL}/upload/vendor/${vendorId}/list`, {
         headers: {
@@ -638,6 +648,27 @@ export const eventAPI = {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
+    });
+    return handleResponse(response);
+  },
+};
+
+// ⚡ PERFORMANCE: Aggregate API - Endpoint che combinano più chiamate in una
+export const aggregateAPI = {
+  // Get dati completi shop (vendor + products in 1 chiamata)
+  getShopPageData: async (idOrSlug) => {
+    const response = await fetch(`${API_URL}/aggregate/shop/${idOrSlug}`);
+    return handleResponse(response);
+  },
+
+  // Get reviews per batch di prodotti (tutte le reviews in 1 chiamata)
+  getBatchReviews: async (productIds) => {
+    const response = await fetch(`${API_URL}/aggregate/reviews-batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productIds }),
     });
     return handleResponse(response);
   },

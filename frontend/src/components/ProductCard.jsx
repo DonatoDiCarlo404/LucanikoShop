@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 import { wishlistAPI } from '../services/api';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react'; // ⚡ PERFORMANCE: memo
 import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 import { toast } from 'react-toastify';
 
@@ -415,5 +415,10 @@ ProductCard.propTypes = {
   }).isRequired,
 };
 
-export default ProductCard;
+// ⚡ PERFORMANCE: Memoizza per evitare re-render inutili
+// Re-render solo se cambia product._id o fromShop
+export default memo(ProductCard, (prevProps, nextProps) => {
+  return prevProps.product._id === nextProps.product._id &&
+         prevProps.fromShop?.sellerId === nextProps.fromShop?.sellerId;
+});
 

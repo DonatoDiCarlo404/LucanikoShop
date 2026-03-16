@@ -664,6 +664,32 @@ const BuyerProfile = () => {
                               <small className="text-muted">
                                 {new Date(review.createdAt).toLocaleDateString()}
                               </small>
+                              
+                              {review.isAutomatic && (
+                                <span 
+                                  className="ms-2 badge" 
+                                  style={{ 
+                                    backgroundColor: '#17a2b8', 
+                                    color: 'white',
+                                    fontSize: '0.65rem'
+                                  }}
+                                >
+                                  ✓ Acquisto Verificato
+                                </span>
+                              )}
+
+                              {review.isVerified && !review.isAutomatic && (
+                                <span 
+                                  className="ms-2 badge" 
+                                  style={{ 
+                                    backgroundColor: '#28a745', 
+                                    color: 'white',
+                                    fontSize: '0.65rem'
+                                  }}
+                                >
+                                  ✓ Acquisto Verificato
+                                </span>
+                              )}
                             </div>
                             <Button
                               size="sm"

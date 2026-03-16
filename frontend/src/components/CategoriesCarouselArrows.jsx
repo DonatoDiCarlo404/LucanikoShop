@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react'; // ⚡ PERFORMANCE: memo
 import { Card, Container, Carousel } from 'react-bootstrap';
 import './CategoriesCarousel.css';
 
@@ -146,4 +146,5 @@ const CategoriesCarouselArrows = () => {
   );
 };
 
-export default CategoriesCarouselArrows;
+// ⚡ PERFORMANCE: Memoizza per evitare re-render inutili
+export default memo(CategoriesCarouselArrows);
