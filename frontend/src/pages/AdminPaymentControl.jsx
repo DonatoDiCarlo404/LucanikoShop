@@ -1219,42 +1219,6 @@ const AdminPaymentControl = () => {
                   )}
                 </Card.Body>
               </Card>
-
-              {/* Dettaglio Commissioni Piattaforma */}
-              <Card>
-                <Card.Header>
-                  <h6 className="mb-0">
-                    <i className="bi bi-cash-coin me-2"></i>
-                    Commissioni Piattaforma (Fee Transfer)
-                  </h6>
-                </Card.Header>
-                <Card.Body>
-                  <Row>
-                    <Col md={4}>
-                      <div className="text-center p-3 bg-light rounded">
-                        <small className="text-muted d-block">Totale Commissioni Incassate</small>
-                        <h4 className="text-success mb-0">€{analytics.platformCommissions.totalCommissionsCollected.toFixed(2)}</h4>
-                      </div>
-                    </Col>
-                    <Col md={4}>
-                      <div className="text-center p-3 bg-light rounded">
-                        <small className="text-muted d-block">Media per Transfer</small>
-                        <h4 className="text-primary mb-0">€{analytics.platformCommissions.averageCommissionPerTransfer.toFixed(2)}</h4>
-                      </div>
-                    </Col>
-                    <Col md={4}>
-                      <div className="text-center p-3 bg-light rounded">
-                        <small className="text-muted d-block">Totale Transfer Effettuati</small>
-                        <h4 className="text-info mb-0">{analytics.platformCommissions.totalTransfers}</h4>
-                      </div>
-                    </Col>
-                  </Row>
-                  <Alert variant="info" className="mt-3 mb-0">
-                    <i className="bi bi-info-circle me-2"></i>
-                    <strong>Info:</strong> La piattaforma incassa €{analytics.platformCommissions.transferFeePerTransaction.toFixed(2)} per ogni transfer Stripe Connect effettuato.
-                  </Alert>
-                </Card.Body>
-              </Card>
             </>
           ) : (
             <Alert variant="warning">Errore nel caricamento delle analytics</Alert>

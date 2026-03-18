@@ -79,9 +79,25 @@ export const handleStripeWebhook = async (req, res) => {
 
       console.log('✅ [WEBHOOK] Procedo con creazione ordine');
       
-      // Recupera i dati del carrello dai metadata
-      const cartItemsData = JSON.parse(session.metadata.cartItems)
-      console.log('🛒 [WEBHOOK] Cart items:', cartItemsData.length, 'prodotti');
+      // SUPPORTO CHUNK: Leggi cartItems da chunk multipli (supporto carrelli illimitati)
+      let cartItemsData = [];
+      if (session.metadata.cartItems_count) {
+        // Nuovo formato con chunk
+        const chunkCount = parseInt(session.metadata.cartItems_count);
+        console.log(`📦 [WEBHOOK] Caricamento ${chunkCount} chunk di prodotti`);
+        for (let i = 0; i < chunkCount; i++) {
+          const chunkData = JSON.parse(session.metadata[`cartItems_${i}`]);
+          cartItemsData = cartItemsData.concat(chunkData);
+        }
+        console.log(`📦 [WEBHOOK] Totale prodotti caricati: ${cartItemsData.length}`);
+      } else if (session.metadata.cartItems) {
+        // Vecchio formato (backward compatibility)
+        cartItemsData = JSON.parse(session.metadata.cartItems);
+        console.log(`📦 [WEBHOOK] Caricamento formato legacy: ${cartItemsData.length} prodotti`);
+      } else {
+        console.error('❌ [WEBHOOK] Nessun dato cartItems trovato nei metadata');
+        return res.status(400).send('Dati carrello mancanti nei metadata');
+      }
 
       // SECURITY FIX: Recupera prodotti completi dal database con seller
       const orderItems = [];
@@ -92,10 +108,10 @@ export const handleStripeWebhook = async (req, res) => {
           continue;
         }
 
-        // SECURITY FIX: Usa seller dal database, non dai metadata
+        // SECURITY FIX: Usa seller e nome dal database, non dai metadata
         orderItems.push({
           product: item.productId,
-          name: item.name,
+          name: product.name, // <-- Recuperato dal DB invece che dai metadata
           quantity: item.quantity,
           price: item.price,
           seller: product.seller._id, // <-- Dal database!

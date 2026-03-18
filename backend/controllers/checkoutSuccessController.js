@@ -241,17 +241,27 @@ export const handleCheckoutSuccess = async (req, res) => {
       }
 
       if (recipientEmail) {
-        const productsList = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
-        const totalAmount = `€${order.totalPrice.toFixed(2)}`;
-        const shippingAddress = `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}`;
+        // Prepara dati ordine completi per email (ALLINEATO AL WEBHOOK)
+        const orderDataForEmail = {
+          products: order.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          itemsPrice: order.itemsPrice,
+          shippingPrice: order.shippingPrice,
+          totalPrice: order.totalPrice,
+          billingAddress: order.billingAddress,
+          shippingAddress: order.shippingAddress,
+          deliveryType: order.deliveryType,
+          pickupAddress: order.pickupAddress
+        };
         
         await sendOrderConfirmationEmail(
           recipientEmail, 
           recipientName, 
           order._id.toString(), 
-          productsList, 
-          totalAmount, 
-          shippingAddress
+          orderDataForEmail
         );
         console.log(`✅ [SUCCESS] Email inviata a: ${recipientEmail}`);
       } else {
@@ -284,22 +294,32 @@ export const handleCheckoutSuccess = async (req, res) => {
           continue;
         }
 
-        const vendorProductsList = vendorItems.map(item => `${item.name} (x${item.quantity})`).join(', ');
         const vendorTotalAmount = vendorItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const companyName = vendor.businessName || vendor.companyName || vendor.name;
         const customerName = isGuestOrder ? (session.customer_details?.name || 'Cliente Guest') : (buyerUser?.name || 'Cliente');
-        const billingShippingData = order.deliveryType === 'pickup' 
-          ? `Ritiro in negozio: ${order.pickupAddress?.city || 'N/A'}`
-          : `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}, ${order.shippingAddress.country}`;
+        
+        // Prepara dati ordine completi per email venditore (ALLINEATO AL WEBHOOK)
+        const orderDataForVendor = {
+          products: vendorItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          itemsPrice: vendorTotalAmount,
+          shippingPrice: order.shippingPrice, // Include spedizione totale (TODO: dividere proporzionalmente se necessario)
+          totalPrice: vendorTotalAmount + order.shippingPrice,
+          customerName: customerName,
+          billingAddress: order.billingAddress,
+          shippingAddress: order.shippingAddress,
+          deliveryType: order.deliveryType,
+          pickupAddress: order.pickupAddress
+        };
 
         const emailPromise = sendNewOrderToVendorEmail(
           vendor.email,
           companyName,
           order._id.toString(),
-          vendorProductsList,
-          `€${vendorTotalAmount.toFixed(2)}`,
-          customerName,
-          billingShippingData
+          orderDataForVendor
         ).catch(err => {
           console.error(`❌ [SUCCESS] Errore invio email a venditore ${vendor.email}:`, err.message);
         });

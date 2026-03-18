@@ -115,7 +115,7 @@ const Negozi = () => {
             <input
               type="text"
               className="form-control"
-              placeholder="Cerca negozio per nome o Città..."
+              placeholder="Cerca negozio per nome o città..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={{ fontSize: 16, padding: '0.5rem 0.75rem', border: 'none', boxShadow: 'none' }}
