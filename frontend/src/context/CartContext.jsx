@@ -26,6 +26,73 @@ export const CartProvider = ({ children }) => {
     return user ? `cart_${user._id}` : 'cart_guest';
   };
 
+  // Pulizia iniziale dello storage (eseguita una sola volta all'avvio)
+  useEffect(() => {
+    try {
+      // Pulisci vecchi carrelli di altri utenti
+      const currentCartKey = getCartKey();
+      let removedCount = 0;
+      const keysToRemove = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('cart_') && key !== currentCartKey) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        removedCount++;
+      });
+      
+      if (removedCount > 0) {
+        console.log(`🧹 [CartContext] Pulizia iniziale: rimossi ${removedCount} carrelli vecchi`);
+      }
+    } catch (error) {
+      console.error('🔴 [CartContext] Errore durante pulizia iniziale:', error);
+    }
+  }, [user?._id]); // Riesegui quando cambia utente
+
+  // Utility: Serializza carrello per salvarlo in modo leggero
+  const serializeCartForStorage = (items) => {
+    return items.map(item => ({
+      _id: item._id,
+      name: item.name,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      discountedPrice: item.discountedPrice,
+      hasActiveDiscount: item.hasActiveDiscount,
+      discountPercentage: item.discountPercentage,
+      discountType: item.discountType,
+      discountAmount: item.discountAmount,
+      quantity: item.quantity,
+      stock: item.stock,
+      unit: item.unit,
+      // Categoria (può essere stringa o oggetto)
+      category: typeof item.category === 'string' 
+        ? item.category 
+        : (item.category?.name || item.category?._id || null),
+      // Salva solo l'ultima immagine (quella principale mostrata)
+      images: item.images && item.images.length > 0 
+        ? [{
+            url: item.images[item.images.length - 1]?.url || item.images[0].url,
+            public_id: item.images[item.images.length - 1]?.public_id || item.images[0].public_id
+          }]
+        : [],
+      // Dati seller minimali
+      seller: item.seller ? {
+        _id: item.seller._id,
+        businessName: item.seller.businessName || item.seller.name
+      } : null,
+      // Variante selezionata (se presente)
+      selectedVariantSku: item.selectedVariantSku || null,
+      selectedVariantAttributes: item.selectedVariantAttributes || null,
+      variantPrice: item.variantPrice || null,
+      hasVariants: item.hasVariants || false
+    }));
+  };
+
   // Utility: Pulisce vecchi carrelli dal localStorage se pieno
   const cleanupOldCarts = () => {
     try {
@@ -63,7 +130,20 @@ export const CartProvider = ({ children }) => {
         const parsedCart = JSON.parse(savedCart);
         // Validazione base: assicurati che sia un array
         if (Array.isArray(parsedCart)) {
-          setCartItems(parsedCart);
+          // Verifica dimensione del carrello salvato
+          const sizeKB = (savedCart.length / 1024).toFixed(2);
+          console.log(`📦 [CartContext] Caricato carrello: ${parsedCart.length} prodotti, dimensione: ${sizeKB} KB`);
+          
+          // Se il carrello è troppo grande (>500KB), è probabilmente un vecchio formato
+          // Mantieni solo i dati essenziali
+          if (savedCart.length > 500 * 1024) {
+            console.warn('⚠️ [CartContext] Carrello troppo grande, migrazione in corso...');
+            const lightCart = serializeCartForStorage(parsedCart);
+            localStorage.setItem(cartKey, JSON.stringify(lightCart));
+            setCartItems(lightCart);
+          } else {
+            setCartItems(parsedCart);
+          }
         } else {
           console.warn('⚠️ [CartContext] Dati carrello non validi, reset carrello');
           setCartItems([]);
@@ -85,7 +165,15 @@ export const CartProvider = ({ children }) => {
     if (isLoaded) {
       try {
         const cartKey = getCartKey();
-        localStorage.setItem(cartKey, JSON.stringify(cartItems));
+        // Serializza il carrello in versione leggera
+        const lightCart = serializeCartForStorage(cartItems);
+        const cartJSON = JSON.stringify(lightCart);
+        
+        // Log dimensione per debug
+        const sizeKB = (cartJSON.length / 1024).toFixed(2);
+        console.log(`💾 [CartContext] Salvando ${cartItems.length} prodotti, dimensione: ${sizeKB} KB`);
+        
+        localStorage.setItem(cartKey, cartJSON);
       } catch (error) {
         // Se localStorage è pieno, prova a pulire vecchi carrelli
         if (error.name === 'QuotaExceededError') {
@@ -96,7 +184,8 @@ export const CartProvider = ({ children }) => {
             // Riprova dopo la pulizia
             try {
               const cartKey = getCartKey();
-              localStorage.setItem(cartKey, JSON.stringify(cartItems));
+              const lightCart = serializeCartForStorage(cartItems);
+              localStorage.setItem(cartKey, JSON.stringify(lightCart));
               console.log('✅ [CartContext] Carrello salvato dopo pulizia');
               if (!storageWarningShown) {
                 toast.info('Pulizia automatica completata. Il carrello è stato salvato.', {

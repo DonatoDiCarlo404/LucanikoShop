@@ -60,7 +60,27 @@ export const handleCheckoutSuccess = async (req, res) => {
     const userId = session.metadata.userId;
     const guestEmail = session.metadata.guestEmail || session.customer_details?.email;
     const isGuestOrder = !userId || userId === 'guest';
-    const cartItemsData = JSON.parse(session.metadata.cartItems);
+    
+    // SUPPORTO CHUNK: Leggi cartItems da chunk multipli (supporto carrelli illimitati)
+    let cartItemsData = [];
+    if (session.metadata.cartItems_count) {
+      // Nuovo formato con chunk
+      const chunkCount = parseInt(session.metadata.cartItems_count);
+      console.log(`📦 [SUCCESS] Caricamento ${chunkCount} chunk di prodotti`);
+      for (let i = 0; i < chunkCount; i++) {
+        const chunkData = JSON.parse(session.metadata[`cartItems_${i}`]);
+        cartItemsData = cartItemsData.concat(chunkData);
+      }
+      console.log(`📦 [SUCCESS] Totale prodotti caricati: ${cartItemsData.length}`);
+    } else if (session.metadata.cartItems) {
+      // Vecchio formato (backward compatibility)
+      cartItemsData = JSON.parse(session.metadata.cartItems);
+      console.log(`📦 [SUCCESS] Caricamento formato legacy: ${cartItemsData.length} prodotti`);
+    } else {
+      console.error('❌ [SUCCESS] Nessun dato cartItems trovato nei metadata');
+      return res.status(400).json({ message: 'Dati carrello mancanti' });
+    }
+    
     const shippingCost = parseFloat(session.metadata.shippingCost || '0');
     const discountAmount = parseFloat(session.metadata.discountAmount || '0');
     const appliedCouponId = session.metadata.appliedCouponId || null;
@@ -78,10 +98,10 @@ export const handleCheckoutSuccess = async (req, res) => {
       
       productsMap[item.productId] = product;
       
-      // SECURITY FIX: Usa seller dal database, non dai metadata
+      // SECURITY FIX: Usa seller e nome dal database, non dai metadata
       orderItems.push({
         product: product._id,
-        name: item.name,
+        name: product.name, // <-- Recuperato dal DB invece che dai metadata
         quantity: item.quantity,
         price: item.price,
         seller: product.seller._id, // <-- Dal database!

@@ -214,7 +214,25 @@ export const createCheckoutSession = async (req, res) => {
             console.log('👤 [CHECKOUT] req.user._id.toString():', req.user._id.toString());
         }
         
+        // SOLUZIONE DEFINITIVA: Spezza cartItems in chunk da max 450 caratteri per rispettare limite Stripe 500
+        // Questo permette carrelli ILLIMITATI (fino a 50 chiavi metadata Stripe = 200 prodotti max)
+        const cartItemsCompact = cartItems.map(item => ({
+            productId: item._id,
+            sellerId: productsWithSeller[item._id], // <-- Dal database!
+            quantity: item.quantity,
+            price: item.price,
+        }));
+        
+        const chunkSize = 4; // ~425 caratteri per chunk (sotto il limite di 500)
+        const chunks = [];
+        for (let i = 0; i < cartItemsCompact.length; i += chunkSize) {
+            chunks.push(cartItemsCompact.slice(i, i + chunkSize));
+        }
+        
+        console.log(`📦 [CHECKOUT] Prodotti divisi in ${chunks.length} chunk (4 prodotti/chunk)`);
+        
         // Costruisci metadata con billingData suddiviso in campi separati per evitare limite 500 caratteri
+        // OPTIMIZATION: NON salvare nomi prodotti (possono superare 500 char), recuperali dal DB
         const metadata = {
             userId: req.user ? req.user._id.toString() : 'guest',
             guestEmail: guestEmail || '',
@@ -230,43 +248,45 @@ export const createCheckoutSession = async (req, res) => {
             appliedCouponCode: appliedCoupon?.couponCode || '',
             appliedCouponId: appliedCoupon?._id?.toString() || '',
             discountAmount: discountAmount ? discountAmount.toString() : '0',
-            // SECURITY FIX: Usa sellerId dal database, non dal frontend
-            cartItems: JSON.stringify(cartItems.map(item => ({
-                productId: item._id,
-                sellerId: productsWithSeller[item._id], // <-- Dal database!
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-            }))),
         };
+
+        // Salva numero di chunk e i chunk individuali
+        metadata.cartItems_count = chunks.length.toString();
+        chunks.forEach((chunk, index) => {
+            metadata[`cartItems_${index}`] = JSON.stringify(chunk);
+        });
+
 
         // Aggiungi dati di fatturazione come campi separati (evita limite 500 caratteri Stripe)
         if (billingData) {
-            metadata.billing_buyerType = billingData.buyerType || '';
-            metadata.billing_nome = billingData.nome || '';
-            metadata.billing_cognome = billingData.cognome || '';
-            metadata.billing_codiceFiscale = billingData.codiceFiscale || '';
-            metadata.billing_ragioneSociale = billingData.ragioneSociale || '';
-            metadata.billing_partitaIVA = billingData.partitaIVA || '';
-            metadata.billing_pecSdi = billingData.pecSdi || '';
-            metadata.billing_indirizzo = billingData.indirizzo || '';
-            metadata.billing_cap = billingData.cap || '';
-            metadata.billing_citta = billingData.citta || '';
-            metadata.billing_provincia = billingData.provincia || '';
-            metadata.billing_nazione = billingData.nazione || '';
-            metadata.billing_telefono = billingData.telefono || '';
-            metadata.billing_email = billingData.email || '';
+            // Tronca campi se superano 500 caratteri (limite Stripe per metadata)
+            const truncate = (str, maxLen = 500) => str && str.length > maxLen ? str.substring(0, maxLen) : (str || '');
+            
+            metadata.billing_buyerType = truncate(billingData.buyerType);
+            metadata.billing_nome = truncate(billingData.nome);
+            metadata.billing_cognome = truncate(billingData.cognome);
+            metadata.billing_codiceFiscale = truncate(billingData.codiceFiscale);
+            metadata.billing_ragioneSociale = truncate(billingData.ragioneSociale);
+            metadata.billing_partitaIVA = truncate(billingData.partitaIVA);
+            metadata.billing_pecSdi = truncate(billingData.pecSdi);
+            metadata.billing_indirizzo = truncate(billingData.indirizzo);
+            metadata.billing_cap = truncate(billingData.cap);
+            metadata.billing_citta = truncate(billingData.citta);
+            metadata.billing_provincia = truncate(billingData.provincia);
+            metadata.billing_nazione = truncate(billingData.nazione);
+            metadata.billing_telefono = truncate(billingData.telefono);
+            metadata.billing_email = truncate(billingData.email);
             metadata.billing_useAltShipping = billingData.useAltShipping ? 'true' : 'false';
             // Dati indirizzo alternativo (se presente)
             if (billingData.useAltShipping) {
-                metadata.billing_altDestinatario = billingData.altDestinatario || '';
-                metadata.billing_altIndirizzo = billingData.altIndirizzo || '';
-                metadata.billing_altCap = billingData.altCap || '';
-                metadata.billing_altCitta = billingData.altCitta || '';
-                metadata.billing_altProvincia = billingData.altProvincia || '';
-                metadata.billing_altNazione = billingData.altNazione || billingData.nazione || 'Italia'; // Fallback su nazione principale
-                metadata.billing_altTelefono = billingData.altTelefono || '';
-                metadata.billing_altEmail = billingData.altEmail || '';
+                metadata.billing_altDestinatario = truncate(billingData.altDestinatario);
+                metadata.billing_altIndirizzo = truncate(billingData.altIndirizzo);
+                metadata.billing_altCap = truncate(billingData.altCap);
+                metadata.billing_altCitta = truncate(billingData.altCitta);
+                metadata.billing_altProvincia = truncate(billingData.altProvincia);
+                metadata.billing_altNazione = truncate(billingData.altNazione || billingData.nazione || 'Italia');
+                metadata.billing_altTelefono = truncate(billingData.altTelefono);
+                metadata.billing_altEmail = truncate(billingData.altEmail);
             }
         }
 
@@ -289,11 +309,13 @@ export const createCheckoutSession = async (req, res) => {
         // La spedizione viene gestita dai metadata billing_* campi
         // Tutti i dati necessari (fatturazione, spedizione, pickup) sono già nei metadata
         
+        // Log diagnostico dimensione metadata chunks
         console.log('📦 [CHECKOUT] Metadata preparati:', {
             userId: sessionOptions.metadata.userId,
             isGuest: sessionOptions.metadata.userId === 'guest',
             deliveryType: deliveryType,
-            itemsCount: cartItems.length
+            itemsCount: cartItems.length,
+            chunksCount: chunks.length
         });
 
         // Se c'è uno sconto, crea un Coupon Stripe al volo e applicalo
