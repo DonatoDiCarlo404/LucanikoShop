@@ -48,6 +48,14 @@ const orderSchema = new mongoose.Schema(
         ivaPercent: {
           type: Number,
           default: 22
+        },
+        selectedVariantSku: {
+          type: String,
+          required: false
+        },
+        selectedVariantAttributes: {
+          type: Object,
+          required: false
         }
       }
     ],

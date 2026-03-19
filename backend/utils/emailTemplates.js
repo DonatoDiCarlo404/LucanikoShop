@@ -2,14 +2,28 @@ import sgMail from '../config/sendgrid.js';
 
 // Email nuovo ordine ricevuto (venditore)
 export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderNumber, orderData, loginLink = 'https://www.lucanikoshop.it/login') => {
-  // Costruisci lista prodotti con quantità
-  const productsListHtml = orderData.products.map(p => 
-    `<li>${p.name} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`
-  ).join('');
+  // Costruisci lista prodotti con quantità e varianti
+  const productsListHtml = orderData.products.map(p => {
+    let variantText = '';
+    if (p.selectedVariantAttributes) {
+      const variantDetails = Object.entries(p.selectedVariantAttributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+      variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
+    }
+    return `<li>${p.name}${variantText} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`;
+  }).join('');
   
-  const productsListText = orderData.products.map(p => 
-    `- ${p.name} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`
-  ).join('\n');
+  const productsListText = orderData.products.map(p => {
+    let variantText = '';
+    if (p.selectedVariantAttributes) {
+      const variantDetails = Object.entries(p.selectedVariantAttributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+      variantText = ` (${variantDetails})`;
+    }
+    return `- ${p.name}${variantText} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`;
+  }).join('\n');
 
   // Formatta prezzi
   const itemsPrice = `€${Number(orderData.itemsPrice).toFixed(2)}`;
@@ -102,14 +116,28 @@ Il team Lucaniko<br><br>
 
 // Email di conferma ordine acquirente
 export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumber, orderData) => {
-  // Costruisci lista prodotti con quantità
-  const productsListHtml = orderData.products.map(p => 
-    `<li>${p.name} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`
-  ).join('');
+  // Costruisci lista prodotti con quantità e varianti
+  const productsListHtml = orderData.products.map(p => {
+    let variantText = '';
+    if (p.selectedVariantAttributes) {
+      const variantDetails = Object.entries(p.selectedVariantAttributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+      variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
+    }
+    return `<li>${p.name}${variantText} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`;
+  }).join('');
   
-  const productsListText = orderData.products.map(p => 
-    `- ${p.name} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`
-  ).join('\n');
+  const productsListText = orderData.products.map(p => {
+    let variantText = '';
+    if (p.selectedVariantAttributes) {
+      const variantDetails = Object.entries(p.selectedVariantAttributes)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+      variantText = ` (${variantDetails})`;
+    }
+    return `- ${p.name}${variantText} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`;
+  }).join('\n');
 
   // Formatta prezzi
   const itemsPrice = `€${Number(orderData.itemsPrice).toFixed(2)}`;

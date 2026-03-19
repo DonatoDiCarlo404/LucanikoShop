@@ -134,7 +134,16 @@ const OrderDetail = () => {
                               loading="lazy"
                             />
                           )}
-                          <span>{item.name}</span>
+                          <div>
+                            <span>{item.name}</span>
+                            {item.selectedVariantAttributes && (
+                              <div style={{ fontSize: '0.85em', color: '#666' }}>
+                                {Object.entries(item.selectedVariantAttributes)
+                                  .map(([key, value]) => `${key}: ${value}`)
+                                  .join(', ')}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td>{item.quantity}</td>

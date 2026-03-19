@@ -639,11 +639,20 @@ const VendorDashboard = () => {
                                     const userId = user._id;
                                     return (sellerId && userId && sellerId.toString() === userId.toString()) || user.role === 'admin';
                                   })
-                                  .map((item, idx) => (
-                                    <div key={idx}>
-                                      <small>{item.name} x{item.quantity}</small>
-                                    </div>
-                                  ))}
+                                  .map((item, idx) => {
+                                    let variantText = '';
+                                    if (item.selectedVariantAttributes) {
+                                      const variantDetails = Object.entries(item.selectedVariantAttributes)
+                                        .map(([key, value]) => `${key}: ${value}`)
+                                        .join(', ');
+                                      variantText = ` (${variantDetails})`;
+                                    }
+                                    return (
+                                      <div key={idx}>
+                                        <small>{item.name}{variantText} x{item.quantity}</small>
+                                      </div>
+                                    );
+                                  })}
                               </td>
                               <td>€{calculateVendorTotal(order)}</td>
                               <td>{getStatusBadge(order.status)}</td>

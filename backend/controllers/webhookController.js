@@ -116,6 +116,8 @@ export const handleStripeWebhook = async (req, res) => {
           price: item.price,
           seller: product.seller._id, // <-- Dal database!
           ivaPercent: product.ivaPercent || 22,
+          selectedVariantSku: item.selectedVariantSku || undefined,
+          selectedVariantAttributes: item.selectedVariantAttributes || undefined,
         });
       }
 
@@ -616,7 +618,9 @@ export const handleStripeWebhook = async (req, res) => {
             products: order.items.map(item => ({
               name: item.name,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
+              selectedVariantSku: item.selectedVariantSku,
+              selectedVariantAttributes: item.selectedVariantAttributes
             })),
             itemsPrice: order.itemsPrice,
             shippingPrice: order.shippingPrice || 0,
@@ -673,7 +677,9 @@ export const handleStripeWebhook = async (req, res) => {
             products: vendorItems.map(item => ({
               name: item.name,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
+              selectedVariantSku: item.selectedVariantSku,
+              selectedVariantAttributes: item.selectedVariantAttributes
             })),
             itemsPrice: vendorTotalAmount,
             shippingPrice: vendorShippingCost,

@@ -221,6 +221,8 @@ export const createCheckoutSession = async (req, res) => {
             sellerId: productsWithSeller[item._id], // <-- Dal database!
             quantity: item.quantity,
             price: item.price,
+            selectedVariantSku: item.selectedVariantSku || null,
+            selectedVariantAttributes: item.selectedVariantAttributes || null,
         }));
         
         const chunkSize = 4; // ~425 caratteri per chunk (sotto il limite di 500)
@@ -248,6 +250,8 @@ export const createCheckoutSession = async (req, res) => {
             appliedCouponCode: appliedCoupon?.couponCode || '',
             appliedCouponId: appliedCoupon?._id?.toString() || '',
             discountAmount: discountAmount ? discountAmount.toString() : '0',
+            // Salva info ritiro in negozio se presente
+            pickupInfo: pickupInfo ? JSON.stringify(pickupInfo) : '',
         };
 
         // Salva numero di chunk e i chunk individuali
