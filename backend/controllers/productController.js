@@ -556,7 +556,13 @@ export const getSuggestedProducts = async (req, res) => {
 
     // Estrai categorie e venditori dal carrello
     const categoryIds = [...new Set(cartItems.map(item => item.category?.toString() || item.category))].filter(Boolean);
-    const vendorIds = [...new Set(cartItems.map(item => item.seller?._id?.toString() || item.seller?.toString() || item.seller))].filter(Boolean);
+    const vendorIds = [...new Set(cartItems.map(item => {
+      // Gestisci tutti i casi: seller può essere un ObjectId, un oggetto con _id, o una stringa
+      if (typeof item.seller === 'string') return item.seller;
+      if (item.seller?._id) return item.seller._id.toString();
+      if (item.seller) return item.seller.toString();
+      return null;
+    }))].filter(Boolean);
     const productIds = cartItems.map(item => item._id?.toString() || item._id).filter(Boolean);
 
     console.log('🔍 [SUGGESTED] cartItems ricevuti:', cartItems);
