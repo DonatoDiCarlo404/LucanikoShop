@@ -641,9 +641,9 @@ const VendorDashboard = () => {
                                   })
                                   .map((item, idx) => {
                                     let variantText = '';
-                                    if (item.selectedVariantAttributes) {
-                                      const variantDetails = Object.entries(item.selectedVariantAttributes)
-                                        .map(([key, value]) => `${key}: ${value}`)
+                                    if (item.selectedVariantAttributes && Array.isArray(item.selectedVariantAttributes) && item.selectedVariantAttributes.length > 0) {
+                                      const variantDetails = item.selectedVariantAttributes
+                                        .map(attr => `${attr.key}: ${attr.value}`)
                                         .join(', ');
                                       variantText = ` (${variantDetails})`;
                                     }

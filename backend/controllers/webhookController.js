@@ -109,6 +109,20 @@ export const handleStripeWebhook = async (req, res) => {
         }
 
         // SECURITY FIX: Usa seller e nome dal database, non dai metadata
+        // Decompatta varianti dal formato compatto dei metadata
+        const variantSku = item.vSku || item.selectedVariantSku || undefined;
+        let variantAttributes = undefined;
+        
+        // Decompatta vAttrs (formato compatto) in selectedVariantAttributes
+        if (item.vAttrs && Array.isArray(item.vAttrs)) {
+          variantAttributes = item.vAttrs.map(attr => ({
+            key: attr.k,
+            value: attr.v
+          }));
+        } else if (item.selectedVariantAttributes) {
+          variantAttributes = item.selectedVariantAttributes;
+        }
+        
         orderItems.push({
           product: item.productId,
           name: product.name, // <-- Recuperato dal DB invece che dai metadata
@@ -116,8 +130,8 @@ export const handleStripeWebhook = async (req, res) => {
           price: item.price,
           seller: product.seller._id, // <-- Dal database!
           ivaPercent: product.ivaPercent || 22,
-          selectedVariantSku: item.selectedVariantSku || undefined,
-          selectedVariantAttributes: item.selectedVariantAttributes || undefined,
+          selectedVariantSku: variantSku,
+          selectedVariantAttributes: variantAttributes,
         });
       }
 

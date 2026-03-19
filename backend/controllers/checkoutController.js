@@ -216,22 +216,37 @@ export const createCheckoutSession = async (req, res) => {
         
         // SOLUZIONE DEFINITIVA: Spezza cartItems in chunk da max 450 caratteri per rispettare limite Stripe 500
         // Questo permette carrelli ILLIMITATI (fino a 50 chiavi metadata Stripe = 200 prodotti max)
-        const cartItemsCompact = cartItems.map(item => ({
-            productId: item._id,
-            sellerId: productsWithSeller[item._id], // <-- Dal database!
-            quantity: item.quantity,
-            price: item.price,
-            selectedVariantSku: item.selectedVariantSku || null,
-            selectedVariantAttributes: item.selectedVariantAttributes || null,
-        }));
+        const cartItemsCompact = cartItems.map(item => {
+            const compactItem = {
+                productId: item._id,
+                sellerId: productsWithSeller[item._id], // <-- Dal database!
+                quantity: item.quantity,
+                price: item.price,
+            };
+            
+            // Aggiungi varianti solo se presenti, in formato COMPATTO
+            if (item.selectedVariantSku) {
+                compactItem.vSku = item.selectedVariantSku;
+            }
+            
+            // Compatta selectedVariantAttributes rimuovendo campi superflui (_id, id)
+            if (item.selectedVariantAttributes && Array.isArray(item.selectedVariantAttributes) && item.selectedVariantAttributes.length > 0) {
+                compactItem.vAttrs = item.selectedVariantAttributes.map(attr => ({
+                    k: attr.key,
+                    v: attr.value
+                }));
+            }
+            
+            return compactItem;
+        });
         
-        const chunkSize = 4; // ~425 caratteri per chunk (sotto il limite di 500)
+        const chunkSize = 3; // Ridotto da 4 a 3 per sicurezza con varianti
         const chunks = [];
         for (let i = 0; i < cartItemsCompact.length; i += chunkSize) {
             chunks.push(cartItemsCompact.slice(i, i + chunkSize));
         }
         
-        console.log(`📦 [CHECKOUT] Prodotti divisi in ${chunks.length} chunk (4 prodotti/chunk)`);
+        console.log(`📦 [CHECKOUT] Prodotti divisi in ${chunks.length} chunk (${chunkSize} prodotti/chunk)`);
         
         // Costruisci metadata con billingData suddiviso in campi separati per evitare limite 500 caratteri
         // OPTIMIZATION: NON salvare nomi prodotti (possono superare 500 char), recuperali dal DB

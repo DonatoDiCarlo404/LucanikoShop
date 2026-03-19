@@ -136,10 +136,10 @@ const OrderDetail = () => {
                           )}
                           <div>
                             <span>{item.name}</span>
-                            {item.selectedVariantAttributes && (
+                            {item.selectedVariantAttributes && Array.isArray(item.selectedVariantAttributes) && item.selectedVariantAttributes.length > 0 && (
                               <div style={{ fontSize: '0.85em', color: '#666' }}>
-                                {Object.entries(item.selectedVariantAttributes)
-                                  .map(([key, value]) => `${key}: ${value}`)
+                                {item.selectedVariantAttributes
+                                  .map(attr => `${attr.key}: ${attr.value}`)
                                   .join(', ')}
                               </div>
                             )}

@@ -5,9 +5,9 @@ export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderN
   // Costruisci lista prodotti con quantità e varianti
   const productsListHtml = orderData.products.map(p => {
     let variantText = '';
-    if (p.selectedVariantAttributes) {
-      const variantDetails = Object.entries(p.selectedVariantAttributes)
-        .map(([key, value]) => `${key}: ${value}`)
+    if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
+      const variantDetails = p.selectedVariantAttributes
+        .map(attr => `${attr.key}: ${attr.value}`)
         .join(', ');
       variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
     }
@@ -16,9 +16,9 @@ export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderN
   
   const productsListText = orderData.products.map(p => {
     let variantText = '';
-    if (p.selectedVariantAttributes) {
-      const variantDetails = Object.entries(p.selectedVariantAttributes)
-        .map(([key, value]) => `${key}: ${value}`)
+    if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
+      const variantDetails = p.selectedVariantAttributes
+        .map(attr => `${attr.key}: ${attr.value}`)
         .join(', ');
       variantText = ` (${variantDetails})`;
     }
@@ -119,9 +119,9 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   // Costruisci lista prodotti con quantità e varianti
   const productsListHtml = orderData.products.map(p => {
     let variantText = '';
-    if (p.selectedVariantAttributes) {
-      const variantDetails = Object.entries(p.selectedVariantAttributes)
-        .map(([key, value]) => `${key}: ${value}`)
+    if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
+      const variantDetails = p.selectedVariantAttributes
+        .map(attr => `${attr.key}: ${attr.value}`)
         .join(', ');
       variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
     }
@@ -130,9 +130,9 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   
   const productsListText = orderData.products.map(p => {
     let variantText = '';
-    if (p.selectedVariantAttributes) {
-      const variantDetails = Object.entries(p.selectedVariantAttributes)
-        .map(([key, value]) => `${key}: ${value}`)
+    if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
+      const variantDetails = p.selectedVariantAttributes
+        .map(attr => `${attr.key}: ${attr.value}`)
         .join(', ');
       variantText = ` (${variantDetails})`;
     }
