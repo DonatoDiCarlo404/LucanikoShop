@@ -426,14 +426,18 @@ export const handleStripeWebhook = async (req, res) => {
 
       // CALCOLA EARNINGS VENDITORI E CREA VENDOR PAYOUTS
       console.log('💰 [WEBHOOK] Calcolo earnings venditori...');
+      console.log('💰 [WEBHOOK] Order ID per earnings:', order._id);
       
       // Controlla se earnings già calcolati
       if (order.vendorEarnings && order.vendorEarnings.length > 0) {
         console.log('⏭️  [WEBHOOK] Earnings già calcolati, skippo per evitare duplicati');
       } else {
         try {
+          console.log('🔍 [WEBHOOK] Inizio calcolo vendorEarnings...');
           // Calcola earnings per ogni venditore (include shipping per venditore se disponibile)
           const vendorEarnings = calculateVendorEarnings(order, vendorShippingBreakdown);
+        
+        console.log(`✅ [WEBHOOK] Earnings calcolati: ${vendorEarnings.length} venditori`);
         
         // Salva earnings nell'ordine
         order.vendorEarnings = vendorEarnings;
@@ -477,10 +481,15 @@ export const handleStripeWebhook = async (req, res) => {
                 // STRIPE CONNECT EXPRESS: Transfer automatico se account attivo
                 if (vendor.stripeConnectAccountId && vendor.stripeChargesEnabled && vendor.stripePayoutsEnabled) {
                   console.log(`\n💸 [STRIPE TRANSFER] Inizio transfer automatico a venditore ${earning.vendorId}`);
+                  console.log(`💸 [STRIPE TRANSFER] Account: ${vendor.stripeConnectAccountId}`);
+                  console.log(`💸 [STRIPE TRANSFER] Importo: €${earning.netAmount}`);
+                  console.log(`💸 [STRIPE TRANSFER] VendorPayout ID: ${vendorPayout._id}`);
                   
                   try {
                     // Converti importo in centesimi (Stripe richiede importi interi)
                     const amountInCents = Math.round(earning.netAmount * 100);
+                    
+                    console.log(`💸 [STRIPE TRANSFER] Centesimi: ${amountInCents}`);
                     
                     // Crea transfer verso account Connect venditore
                     const transferParams = {
@@ -500,13 +509,17 @@ export const handleStripeWebhook = async (req, res) => {
                     if (chargeId) {
                       transferParams.source_transaction = chargeId;
                       console.log(`💳 [STRIPE TRANSFER] Usando source_transaction: ${chargeId}`);
+                    } else {
+                      console.log(`⚠️  [STRIPE TRANSFER] Nessun charge ID disponibile`);
                     }
 
+                    console.log(`📤 [STRIPE TRANSFER] Creazione transfer su Stripe...`);
                     const transfer = await stripe.transfers.create(transferParams);
 
                     console.log(`✅ [STRIPE TRANSFER] Transfer completato: ${transfer.id}`);
                     console.log(`   - Importo: €${earning.netAmount.toFixed(2)}`);
                     console.log(`   - Destinazione: ${vendor.stripeConnectAccountId}`);
+                    console.log(`   - Status: ${transfer.status || 'pending'}`);
 
                     // Aggiorna VendorPayout con info transfer
                     vendorPayout.status = 'processing';
@@ -522,24 +535,40 @@ export const handleStripeWebhook = async (req, res) => {
                     console.log(`   - Earnings rimangono in pendingEarnings finché payout completato`);
 
                   } catch (transferError) {
-                    console.error(`❌ [STRIPE TRANSFER] Errore transfer per venditore ${earning.vendorId}:`, transferError);
-                    console.error(`   - Messaggio: ${transferError.message}`);
-                    console.error(`   - Tipo: ${transferError.type}`);
+                    console.error(`❌ [STRIPE TRANSFER] ========== ERRORE TRANSFER CRITICO ==========`);
+                    console.error(`❌ [STRIPE TRANSFER] Venditore: ${earning.vendorId}`);
+                    console.error(`❌ [STRIPE TRANSFER] VendorPayout ID: ${vendorPayout._id}`);
+                    console.error(`❌ [STRIPE TRANSFER] Order ID: ${order._id}`);
+                    console.error(`❌ [STRIPE TRANSFER] Messaggio: ${transferError.message}`);
+                    console.error(`❌ [STRIPE TRANSFER] Tipo: ${transferError.type}`);
+                    console.error(`❌ [STRIPE TRANSFER] Code: ${transferError.code}`);
+                    console.error(`❌ [STRIPE TRANSFER] Stack:`, transferError.stack);
+                    console.error(`❌ [STRIPE TRANSFER] ==================================================`);
                     
                     // Salva errore nel payout ma non bloccare il flusso
                     vendorPayout.status = 'failed';
                     vendorPayout.failureReason = transferError.message;
                     await vendorPayout.save();
+                    
+                    // 🚨 IMPORTANTE: Il payout rimane 'failed' e può essere ritentato con lo script retryPendingPayouts.js
+                    console.log(`⚠️  [STRIPE TRANSFER] Payout salvato come 'failed' - può essere ritentato con retryPendingPayouts.js`);
                   }
                 } else {
-                  console.log(`⚠️ [STRIPE TRANSFER] Venditore ${earning.vendorId} non ha Stripe Connect attivo - transfer manuale richiesto`);
+                  console.log(`⚠️  [STRIPE TRANSFER] ========== TRANSFER SKIPPED ==========`);
+                  console.log(`⚠️  [STRIPE TRANSFER] Venditore ${earning.vendorId} non ha Stripe Connect attivo`);
+                  console.log(`⚠️  [STRIPE TRANSFER] VendorPayout ID: ${vendorPayout._id}`);
+                  console.log(`⚠️  [STRIPE TRANSFER] Order ID: ${order._id}`);
+                  console.log(`⚠️  [STRIPE TRANSFER] Importo: €${earning.netAmount}`);
                   if (!vendor.stripeConnectAccountId) {
-                    console.log(`   - Nessun account Connect creato`);
+                    console.log(`⚠️  [STRIPE TRANSFER] - Nessun account Connect creato`);
                   } else if (!vendor.stripeChargesEnabled || !vendor.stripePayoutsEnabled) {
-                    console.log(`   - Account Connect non completamente attivato`);
-                    console.log(`   - Charges enabled: ${vendor.stripeChargesEnabled}`);
-                    console.log(`   - Payouts enabled: ${vendor.stripePayoutsEnabled}`);
+                    console.log(`⚠️  [STRIPE TRANSFER] - Account Connect non completamente attivato`);
+                    console.log(`⚠️  [STRIPE TRANSFER] - Charges enabled: ${vendor.stripeChargesEnabled}`);
+                    console.log(`⚠️  [STRIPE TRANSFER] - Payouts enabled: ${vendor.stripePayoutsEnabled}`);
                   }
+                  console.log(`⚠️  [STRIPE TRANSFER] Transfer manuale richiesto dall'admin`);
+                  console.log(`⚠️  [STRIPE TRANSFER] Il payout rimane 'pending' per transfer manuale`);
+                  console.log(`⚠️  [STRIPE TRANSFER] ================================================`);
                 }
 
               } else {
@@ -553,8 +582,14 @@ export const handleStripeWebhook = async (req, res) => {
           }
         }
         } catch (earningsError) {
-          console.error('❌ [WEBHOOK] Errore calcolo earnings:', earningsError);
+          console.error('❌ [WEBHOOK] ========== ERRORE CALCOLO EARNINGS CRITICO ==========');
+          console.error('❌ [WEBHOOK] Order ID:', order._id);
+          console.error('❌ [WEBHOOK] Session ID:', session.id);
+          console.error('❌ [WEBHOOK] Messaggio:', earningsError.message);
+          console.error('❌ [WEBHOOK] Stack:', earningsError.stack);
+          console.error('❌ [WEBHOOK] ======================================================');
           // Non bloccare il flusso se il calcolo earnings fallisce
+          // L'ordine è comunque creato, ma i payout dovranno essere creati manualmente
         }
       }
 
@@ -785,7 +820,12 @@ export const handleStripeWebhook = async (req, res) => {
       }
 
     } catch (error) {
-      console.error('❌ Errore creazione ordine:', error);
+      console.error('❌ [WEBHOOK] ================ ERRORE WEBHOOK CRITICO ================');
+      console.error('❌ [WEBHOOK] Session ID:', session?.id || 'N/A');
+      console.error('❌ [WEBHOOK] Messaggio:', error.message);
+      console.error('❌ [WEBHOOK] Stack:', error.stack);
+      console.error('❌ [WEBHOOK] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+      console.error('❌ [WEBHOOK] ================================================================');
       return res.status(500).send('Errore creazione ordine');
     }
   }
