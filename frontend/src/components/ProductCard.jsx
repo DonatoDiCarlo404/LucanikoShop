@@ -272,32 +272,37 @@ const ProductCard = ({ product, fromShop }) => {
         >
           {product.name}
         </Card.Title>
-        {/* Nome azienda creatrice */}
-        {product.seller && (
-          <div className="text-muted small mb-2" style={{ minHeight: 18 }}>
-            {product.seller.businessName || product.seller.name}
-          </div>
-        )}
+        {/* Nome azienda creatrice - altezza fissa per uniformità */}
+        <div 
+          className="text-muted small mb-2 product-card-seller" 
+          style={{ 
+            height: 20,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {product.seller ? (product.seller.businessName || product.seller.name) : '\u00A0'}
+        </div>
 
-        {/* Mostra rating e numero recensioni solo se ci sono recensioni */}
-        <div className="d-flex align-items-center mb-2 justify-content-between" style={{ minHeight: 28 }}>
+        {/* Rating e recensioni - altezza fissa sempre presente */}
+        <div className="d-flex align-items-center mb-2 justify-content-between product-card-rating" style={{ height: 24 }}>
           {product.numReviews > 0 ? (
             <>
-              <span style={{ color: '#FFD700', fontSize: '1.1em', marginRight: 4 }}>
+              <span style={{ color: '#FFD700', fontSize: '1em', marginRight: 4, lineHeight: 1 }}>
                 {'★'.repeat(Math.round(product.rating))}{'☆'.repeat(5 - Math.round(product.rating))}
               </span>
-              <span className="text-muted small" style={{ marginLeft: 4 }}>
+              <span className="text-muted small" style={{ marginLeft: 4, lineHeight: 1 }}>
                 {product.rating ? product.rating.toFixed(1) : '0.0'} ({product.numReviews})
               </span>
             </>
-          ) : null}
+          ) : <span style={{ visibility: 'hidden' }}>{'\u00A0'}</span>}
         </div>
 
-        <div className="d-flex flex-row flex-nowrap gap-2 mb-2 badge-category-row">
+        <div className="d-flex flex-row flex-nowrap gap-2 mb-2 badge-category-row" style={{ height: 22 }}>
           <Badge className="badge-category-product">
             {typeof product.category === 'string' ? product.category : product.category?.name || 'N/A'}
           </Badge>
-          {/* Se ci sono altre categorie, aggiungile qui come altri Badge */}
         </div>
 
         <div className="mt-auto">
@@ -342,13 +347,13 @@ const ProductCard = ({ product, fromShop }) => {
           </div>
           
           <div className="d-flex justify-content-between align-items-center">
-            <div>
+            <div className="d-flex align-items-center gap-2">
               {product.hasActiveDiscount && product.originalPrice ? (
                 <>
                   <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                     €{product.discountedPrice?.toFixed(2) || '0.00'}
                   </h5>
-                  <small className="text-muted" style={{ textDecoration: 'line-through' }}>
+                  <small className="text-muted" style={{ textDecoration: 'line-through', fontSize: '0.85rem' }}>
                     €{product.originalPrice?.toFixed(2) || '0.00'}
                   </small>
                 </>

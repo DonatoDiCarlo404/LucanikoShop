@@ -157,8 +157,7 @@
 .product-card-title {
   margin-bottom: 0.4rem !important;
   font-size: 0.9rem !important;
-  height: auto !important;
-  max-height: 42px !important;
+  height: 42px !important;
   line-height: 1.3 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
@@ -166,6 +165,26 @@
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+}
+
+/* Nome venditore - altezza fissa */
+.product-card-seller {
+  height: 20px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Rating - altezza fissa */
+.product-card-rating {
+  height: 24px !important;
+  min-height: 24px !important;
+}
+
+/* Badge categoria - overflow controllato */
+.badge-category-row {
+  height: 22px !important;
+  overflow: hidden !important;
 }
 
 @media (max-width: 576px) {
@@ -198,16 +217,17 @@
   
   .badge-category-row {
     width: 100%;
-    overflow-x: visible;
+    overflow: hidden;
+    height: 20px !important;
   }
   .badge-category-product {
-    font-size: 0.75rem !important;
-    padding: 0.25em 0.5em !important;
+    font-size: 0.7rem !important;
+    padding: 0.2em 0.4em !important;
     white-space: nowrap;
     word-break: keep-all;
     line-height: 1.1;
     min-width: 0;
-    max-width: 100px;
+    max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
@@ -215,8 +235,23 @@
   }
   .product-card-title {
     font-size: 0.85rem !important;
-    max-height: 38px !important;
+    height: 38px !important;
   }
+  
+  .product-card-seller {
+    height: 18px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .product-card-rating {
+    height: 22px !important;
+    min-height: 22px !important;
+  }
+  
+  .product-card-rating span {
+    font-size: 0.9em !important;
+  }
+  
   .product-card-img + .card-body {
     padding-top: 0.5rem !important;
     padding-bottom: 0.5rem !important;
