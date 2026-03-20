@@ -48,15 +48,9 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
     }
 
     try {
-      // DEBUG: Log dettagliato del prodotto originale
-      console.log('🔎 [DEBUG] cartItems originali ricevuti:', cartItems);
-      console.log('🔎 [DEBUG] seller del primo item:', cartItems[0]?.seller);
-      console.log('🔎 [DEBUG] tipo seller:', typeof cartItems[0]?.seller);
-      console.log('🔎 [DEBUG] seller._id:', cartItems[0]?.seller?._id);
-      
-      // Costruisci cartItems mappati con controllo esplicito del seller
+      // Costruisci cartItems mappati con estrazione esplicita e robusta di seller e category
       const mappedCartItems = cartItems.map(item => {
-        // Estrai sellerId in modo esplicito
+        // Estrai sellerId in modo esplicito gestendo tutti i casi
         let sellerId = null;
         if (item.seller) {
           if (typeof item.seller === 'string') {
@@ -80,8 +74,6 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
           }
         }
         
-        console.log('🔧 [MAP] Item:', item.name, 'Seller estratto:', sellerId, 'Category estratta:', categoryId);
-        
         return {
           _id: item._id,
           category: categoryId,
@@ -90,16 +82,9 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
       });
       
       // Filtra item che non hanno seller (sicurezza)
-      const validCartItems = mappedCartItems.filter(item => {
-        if (!item.seller) {
-          console.warn('⚠️ [FILTER] Item senza seller rimosso:', item);
-          return false;
-        }
-        return true;
-      });
+      const validCartItems = mappedCartItems.filter(item => item.seller);
       
       if (validCartItems.length === 0) {
-        console.error('❌ Nessun item valido con seller trovato!');
         setLoading(false);
         return;
       }
@@ -110,11 +95,6 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
         limit: 8
       };
 
-      console.log('🔍 [SUGGESTED CAROUSEL] Richiesta prodotti suggeriti:', {
-        sameVendor,
-        cartItems: requestBody.cartItems
-      });
-
       const response = await fetch(`${API_URL}/products/suggested`, {
         method: 'POST',
         headers: {
@@ -124,12 +104,6 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
       });
 
       const data = await response.json();
-      
-      console.log('✅ [SUGGESTED CAROUSEL] Prodotti ricevuti:', {
-        sameVendor,
-        count: data.products?.length || 0,
-        products: data.products?.map(p => ({ name: p.name, vendor: p.seller?.businessName }))
-      });
       
       if (response.ok) {
         setProducts(data.products || []);

@@ -565,13 +565,8 @@ export const getSuggestedProducts = async (req, res) => {
     }))].filter(Boolean);
     const productIds = cartItems.map(item => item._id?.toString() || item._id).filter(Boolean);
 
-    console.log('🔍 [SUGGESTED] cartItems ricevuti:', cartItems);
-    console.log('🔍 [SUGGESTED] vendorIds estratti:', vendorIds);
-    console.log('🔍 [SUGGESTED] sameVendor:', sameVendor);
-
     // Se non ci sono venditori validi, restituisci array vuoto
     if (vendorIds.length === 0) {
-      console.log('⚠️ [SUGGESTED] Nessun vendorId trovato, ritorno array vuoto');
       return res.json({ products: [] });
     }
 
