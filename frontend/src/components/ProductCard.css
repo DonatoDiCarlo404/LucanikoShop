@@ -235,9 +235,14 @@
   }
   .product-card-title {
     font-size: 0.85rem !important;
-    height: 36px !important;
+    height: 34px !important;
     line-height: 1.2 !important;
-    word-break: break-word !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   
   .product-card-seller {

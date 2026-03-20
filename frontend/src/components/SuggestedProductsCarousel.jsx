@@ -48,12 +48,64 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
     }
 
     try {
-      const requestBody = {
-        cartItems: cartItems.map(item => ({
+      // DEBUG: Log dettagliato del prodotto originale
+      console.log('🔎 [DEBUG] cartItems originali ricevuti:', cartItems);
+      console.log('🔎 [DEBUG] seller del primo item:', cartItems[0]?.seller);
+      console.log('🔎 [DEBUG] tipo seller:', typeof cartItems[0]?.seller);
+      console.log('🔎 [DEBUG] seller._id:', cartItems[0]?.seller?._id);
+      
+      // Costruisci cartItems mappati con controllo esplicito del seller
+      const mappedCartItems = cartItems.map(item => {
+        // Estrai sellerId in modo esplicito
+        let sellerId = null;
+        if (item.seller) {
+          if (typeof item.seller === 'string') {
+            sellerId = item.seller;
+          } else if (item.seller._id) {
+            sellerId = typeof item.seller._id === 'string' 
+              ? item.seller._id 
+              : item.seller._id.toString();
+          }
+        }
+        
+        // Estrai categoryId in modo esplicito
+        let categoryId = null;
+        if (item.category) {
+          if (typeof item.category === 'string') {
+            categoryId = item.category;
+          } else if (item.category._id) {
+            categoryId = typeof item.category._id === 'string'
+              ? item.category._id
+              : item.category._id.toString();
+          }
+        }
+        
+        console.log('🔧 [MAP] Item:', item.name, 'Seller estratto:', sellerId, 'Category estratta:', categoryId);
+        
+        return {
           _id: item._id,
-          category: item.category?._id || item.category,
-          seller: item.seller?._id || item.seller
-        })),
+          category: categoryId,
+          seller: sellerId
+        };
+      });
+      
+      // Filtra item che non hanno seller (sicurezza)
+      const validCartItems = mappedCartItems.filter(item => {
+        if (!item.seller) {
+          console.warn('⚠️ [FILTER] Item senza seller rimosso:', item);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validCartItems.length === 0) {
+        console.error('❌ Nessun item valido con seller trovato!');
+        setLoading(false);
+        return;
+      }
+      
+      const requestBody = {
+        cartItems: validCartItems,
         sameVendor,
         limit: 8
       };

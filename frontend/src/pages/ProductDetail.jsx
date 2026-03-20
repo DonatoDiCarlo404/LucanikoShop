@@ -89,6 +89,13 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       const data = await productsAPI.getById(id);
+      
+      // DEBUG: Log dettagliato del prodotto ricevuto
+      console.log('📦 [PRODUCT DETAIL] Prodotto caricato:', data);
+      console.log('🏢 [PRODUCT DETAIL] Seller:', data.seller);
+      console.log('🏢 [PRODUCT DETAIL] Seller._id:', data.seller?._id);
+      console.log('🏢 [PRODUCT DETAIL] Seller.businessName:', data.seller?.businessName);
+      
       setProduct(data);
       setError('');
     } catch (err) {
