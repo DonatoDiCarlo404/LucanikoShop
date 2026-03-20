@@ -270,7 +270,7 @@ const ShopPage = () => {
               )}
               <div className="mb-2">
                 <small className="text-muted">
-                  Membro dal {new Date(vendor.memberSince).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
+                  Membro dal {new Date(vendor.createdAt).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}
                 </small>
               </div>
               {/* CONTATTI PUBBLICI */}

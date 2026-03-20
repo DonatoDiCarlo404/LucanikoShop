@@ -235,7 +235,9 @@
   }
   .product-card-title {
     font-size: 0.85rem !important;
-    height: 38px !important;
+    height: 36px !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
   }
   
   .product-card-seller {

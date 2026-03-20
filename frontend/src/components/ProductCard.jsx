@@ -282,7 +282,7 @@ const ProductCard = ({ product, fromShop }) => {
             whiteSpace: 'nowrap'
           }}
         >
-          {product.seller ? (product.seller.businessName || product.seller.name) : '\u00A0'}
+          {fromShop?.shopName || (product.seller ? (product.seller.businessName || product.seller.name) : '\u00A0')}
         </div>
 
         {/* Rating e recensioni - altezza fissa sempre presente */}
