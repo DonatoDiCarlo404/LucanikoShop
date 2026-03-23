@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Product, Category } from '../models/index.js';
 import CategoryAttribute from '../models/CategoryAttribute.js';
 import cloudinary from '../config/cloudinary.js';
@@ -570,23 +571,28 @@ export const getSuggestedProducts = async (req, res) => {
       return res.json({ products: [] });
     }
 
+    // Converti gli ID in ObjectId per query MongoDB robusta
+    const vendorObjectIds = vendorIds.map(id => new mongoose.Types.ObjectId(id));
+    const categoryObjectIds = categoryIds.filter(id => id).map(id => new mongoose.Types.ObjectId(id));
+    const productObjectIds = productIds.map(id => new mongoose.Types.ObjectId(id));
+
     // Costruisci query base
     let query = {
-      _id: { $nin: productIds }, // Escludi prodotti già nel carrello
+      _id: { $nin: productObjectIds }, // Escludi prodotti già nel carrello
       isActive: true // Solo prodotti attivi
     };
 
     // Se cerchiamo prodotti dello stesso venditore
     if (sameVendor) {
-      query.seller = { $in: vendorIds };
+      query.seller = { $in: vendorObjectIds };
     } else {
       // Prodotti di altri venditori
-      query.seller = { $nin: vendorIds };
+      query.seller = { $nin: vendorObjectIds };
     }
 
     // Filtra per categorie simili
-    if (categoryIds.length > 0 && categoryIds[0]) {
-      query.category = { $in: categoryIds };
+    if (categoryObjectIds.length > 0) {
+      query.category = { $in: categoryObjectIds };
     }
 
     // Recupera prodotti suggeriti (prendi più risultati per poi randomizzarli)

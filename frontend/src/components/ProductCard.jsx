@@ -5,23 +5,11 @@ import PropTypes from 'prop-types';
 import { useAuth } from '../context/authContext';
 import { useCart } from '../context/CartContext';
 import { wishlistAPI } from '../services/api';
-import { useState, useEffect, useRef, memo } from 'react'; // ⚡ PERFORMANCE: memo
+import { useState, useEffect, useRef, memo, useMemo } from 'react'; // ⚡ PERFORMANCE: memo
 import { CloudinaryPresets } from '../utils/cloudinaryOptimizer';
 import { toast } from 'react-toastify';
 
 const ProductCard = ({ product, fromShop }) => {
-    // Calcola prezzo minimo e stock totale se ci sono varianti
-    let minVariantPrice = null;
-    let totalVariantStock = 0;
-    if (Array.isArray(product.variants) && product.variants.length > 0) {
-      minVariantPrice = product.variants
-        .filter(v => typeof v.price === 'number')
-        .reduce((min, v) => v.price < min ? v.price : min, Infinity);
-      if (!isFinite(minVariantPrice)) minVariantPrice = null;
-      totalVariantStock = product.variants
-        .filter(v => typeof v.stock === 'number')
-        .reduce((sum, v) => sum + v.stock, 0);
-    }
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToCart } = useCart();
@@ -31,6 +19,21 @@ const ProductCard = ({ product, fromShop }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [carouselActive, setCarouselActive] = useState(false);
   const cardRef = useRef(null);
+
+  // Calcola prezzo minimo e stock totale se ci sono varianti usando useMemo
+  const { minVariantPrice, totalVariantStock } = useMemo(() => {
+    if (!Array.isArray(product.variants) || product.variants.length === 0) {
+      return { minVariantPrice: null, totalVariantStock: 0 };
+    }
+    
+    const prices = product.variants.filter(v => typeof v.price === 'number').map(v => v.price);
+    const stocks = product.variants.filter(v => typeof v.stock === 'number').map(v => v.stock);
+    
+    return {
+      minVariantPrice: prices.length > 0 ? Math.min(...prices) : null,
+      totalVariantStock: stocks.reduce((sum, stock) => sum + stock, 0)
+    };
+  }, [product.variants]);
 
   // Intersection Observer per animazione scroll
   useEffect(() => {
@@ -357,17 +360,17 @@ const ProductCard = ({ product, fromShop }) => {
                     €{product.originalPrice?.toFixed(2) || '0.00'}
                   </small>
                 </>
+              ) : (product.hasVariants || minVariantPrice !== null) ? (
+                <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
+                  {minVariantPrice !== null ? `da €${minVariantPrice.toFixed(2)}` : 'Prezzo su varianti'}
+                </h5>
               ) : typeof product.price === 'number' ? (
                 <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
                   €{product.price.toFixed(2)}
                 </h5>
-              ) : minVariantPrice !== null ? (
-                <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
-                  da €{minVariantPrice.toFixed(2)}
-                </h5>
               ) : (
                 <h5 className="text-muted mb-0">
-                  <small>Prezzo su varianti</small>
+                  <small>Prezzo non disponibile</small>
                 </h5>
               )}
             </div>
