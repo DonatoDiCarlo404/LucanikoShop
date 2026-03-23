@@ -89,7 +89,9 @@ export const CartProvider = ({ children }) => {
       selectedVariantSku: item.selectedVariantSku || null,
       selectedVariantAttributes: item.selectedVariantAttributes || null,
       variantPrice: item.variantPrice || null,
-      hasVariants: item.hasVariants || false
+      hasVariants: item.hasVariants || false,
+      // Stock (usa quello della variante se presente, altrimenti quello del prodotto)
+      stock: item.stock || 0
     }));
   };
 

@@ -313,7 +313,8 @@ const ProductDetail = () => {
       ...(product.hasVariants && selectedVariant ? {
         selectedVariantSku: selectedVariant.sku,
         selectedVariantAttributes: selectedVariant.attributes,
-        variantPrice: selectedVariant.price
+        variantPrice: selectedVariant.price,
+        stock: selectedVariant.stock  // Usa lo stock della variante selezionata
       } : {})
     };
     
@@ -362,7 +363,8 @@ const ProductDetail = () => {
       ...(product.hasVariants && selectedVariant ? {
         selectedVariantSku: selectedVariant.sku,
         selectedVariantAttributes: selectedVariant.attributes,
-        variantPrice: selectedVariant.price
+        variantPrice: selectedVariant.price,
+        stock: selectedVariant.stock  // Usa lo stock della variante selezionata
       } : {})
     };
     

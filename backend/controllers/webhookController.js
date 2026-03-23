@@ -418,15 +418,15 @@ export const handleStripeWebhook = async (req, res) => {
           }
 
           // Se il prodotto ha varianti, aggiorna lo stock della variante specifica
-          if (item.selectedVariant && product.variants && product.variants.length > 0) {
-            const variantIndex = product.variants.findIndex(v => v._id.toString() === item.selectedVariant);
+          if (item.selectedVariantSku && product.variants && product.variants.length > 0) {
+            const variantIndex = product.variants.findIndex(v => v.sku === item.selectedVariantSku);
             if (variantIndex !== -1) {
               const oldStock = product.variants[variantIndex].stock;
               product.variants[variantIndex].stock = Math.max(0, oldStock - item.quantity);
               await product.save();
-              console.log(`✅ [WEBHOOK] Stock variante aggiornato: ${product.name} - Variante ${variantIndex} da ${oldStock} a ${product.variants[variantIndex].stock}`);
+              console.log(`✅ [WEBHOOK] Stock variante aggiornato: ${product.name} - SKU ${item.selectedVariantSku} da ${oldStock} a ${product.variants[variantIndex].stock}`);
             } else {
-              console.error(`⚠️ [WEBHOOK] Variante ${item.selectedVariant} non trovata nel prodotto ${product.name}`);
+              console.error(`⚠️ [WEBHOOK] Variante SKU ${item.selectedVariantSku} non trovata nel prodotto ${product.name}`);
             }
           } else {
             // Prodotto senza varianti, aggiorna lo stock principale
