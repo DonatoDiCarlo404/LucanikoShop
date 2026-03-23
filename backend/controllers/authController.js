@@ -313,23 +313,46 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const isDev = process.env.NODE_ENV !== 'production';
+
+    if (isDev) console.log('🔐 [LOGIN] Tentativo di login per email:', email);
 
     // Trova l'utente e includi la password
     const user = await User.findOne({ email }).select('+password');
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
+    if (!user) {
+      if (isDev) console.log('❌ [LOGIN] Email NON trovata nel database:', email);
+      return res.status(401).json({ message: 'Email o password non validi' });
+    }
+
+    if (isDev) {
+      console.log('✅ [LOGIN] Email trovata. Utente:', {
+        id: user._id,
         email: user.email,
         role: user.role,
-        isApproved: user.isApproved,
-        token: generateToken(user._id)
+        hasPassword: !!user.password
       });
-    } else {
-      res.status(401).json({ message: 'Email o password non validi' });
     }
+
+    const isPasswordMatch = await user.matchPassword(password);
+    
+    if (!isPasswordMatch) {
+      if (isDev) console.log('❌ [LOGIN] Password NON corrisponde per utente:', user.email);
+      return res.status(401).json({ message: 'Email o password non validi' });
+    }
+
+    if (isDev) console.log('✅ [LOGIN] Password corretta. Login riuscito per:', user.email);
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isApproved: user.isApproved,
+      token: generateToken(user._id)
+    });
   } catch (error) {
+    console.error('💥 [LOGIN] Errore durante login:', error);
     res.status(500).json({ message: error.message });
   }
 };

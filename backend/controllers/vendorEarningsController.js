@@ -17,15 +17,34 @@ export const getEarningsSummary = async (req, res) => {
     }
 
     // Ottieni dati venditore
-    const vendor = await User.findById(vendorId).select('totalEarnings pendingEarnings paidEarnings debtBalance');
+    const vendor = await User.findById(vendorId).select('totalEarnings paidEarnings debtBalance');
 
     if (!vendor) {
       return res.status(404).json({ message: 'Venditore non trovato' });
     }
 
+    // CALCOLA pendingEarnings dai VendorPayout reali invece di usare il campo User.pendingEarnings
+    // Questo mostra l'importo netto che il venditore riceverà effettivamente (dopo commissioni Stripe)
+    // Include solo payouts 'pending' e 'processing' degli ULTIMI 14 GIORNI
+    // Esclude payouts più vecchi che potrebbero essere failed o stuck
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const pendingPayouts = await VendorPayout.find({
+      vendorId,
+      status: { $in: ['pending', 'processing'] },
+      saleDate: { $gte: fourteenDaysAgo }, // Solo ultimi 14 giorni
+      $or: [
+        { isRefundDebt: { $exists: false } },
+        { isRefundDebt: false }
+      ]
+    });
+
+    const calculatedPendingEarnings = pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0);
+
     res.json({
       totalEarnings: vendor.totalEarnings || 0,
-      pendingEarnings: vendor.pendingEarnings || 0,
+      pendingEarnings: calculatedPendingEarnings, // Calcolato dai VendorPayout (importo netto)
       paidEarnings: vendor.paidEarnings || 0,
       debtBalance: vendor.debtBalance || 0 // Debiti attivi da rimborsi post-pagamento
     });

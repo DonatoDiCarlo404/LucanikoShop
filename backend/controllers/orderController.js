@@ -121,7 +121,7 @@ export const getVendorOrders = async (req, res) => {
         const orders = await Order.find({ 'items.seller': sellerId })
             .populate('buyer', 'name email')
             .populate('items.seller', 'name businessName')
-            .populate('items.product', 'name images')
+            .populate('items.product', 'name images customAttributes')
             .sort({ createdAt: -1 });
 
         res.status(200).json(orders);

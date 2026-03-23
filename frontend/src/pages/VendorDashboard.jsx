@@ -17,7 +17,7 @@ import {
 } from 'react-bootstrap';
 import { useAuth } from '../context/authContext';
 import { API_URL } from '../services/api';
-import { getEarningsSummary, getSalesPending, getVendorPayouts } from '../services/earningsService';
+import { getEarningsSummary } from '../services/earningsService';
 import { getNotifications, markNotificationAsRead } from '../services/notificationService';
 import AlertModal from '../components/AlertModal';
 
@@ -36,14 +36,9 @@ const VendorDashboard = () => {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
 
-  // State per earnings (nuova sezione Fase 5.2)
+  // State per earnings
   const [earnings, setEarnings] = useState(null);
-  const [pendingSales, setPendingSales] = useState(null);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
-
-  // State per storico pagamenti (Fase 5.4)
-  const [paidPayouts, setPaidPayouts] = useState([]);
-  const [loadingPayouts, setLoadingPayouts] = useState(false);
 
   // State per notifiche (Fase 5.5)
   const [notifications, setNotifications] = useState([]);
@@ -184,7 +179,7 @@ const VendorDashboard = () => {
     }
   };
 
-  // Carica dati earnings (Fase 5.2)
+  // Carica dati earnings
   const loadEarningsData = async () => {
     try {
       setLoadingEarnings(true);
@@ -193,36 +188,11 @@ const VendorDashboard = () => {
       const earningsData = await getEarningsSummary(user.token, sellerId);
       setEarnings(earningsData);
 
-      // Carica vendite in attesa (passa sellerId se admin visualizza altro venditore)
-      const pendingData = await getSalesPending(user.token, sellerId);
-      setPendingSales(pendingData);
-
-      // Carica storico pagamenti ricevuti (Fase 5.4)
-      await loadPaidPayouts();
-
     } catch (err) {
       console.error('Errore caricamento earnings:', err);
       // Non blocchiamo la dashboard per errori earnings
     } finally {
       setLoadingEarnings(false);
-    }
-  };
-
-  // Carica storico pagamenti ricevuti (Fase 5.4)
-  const loadPaidPayouts = async () => {
-    try {
-      setLoadingPayouts(true);
-      const params = { status: 'paid', limit: 50 };
-      // Aggiungi vendorId se admin visualizza altro venditore
-      if (user?.role === 'admin' && sellerId) {
-        params.vendorId = sellerId;
-      }
-      const payoutsData = await getVendorPayouts(user.token, params);
-      setPaidPayouts(payoutsData.payouts || []);
-    } catch (err) {
-      console.error('Errore caricamento payouts:', err);
-    } finally {
-      setLoadingPayouts(false);
     }
   };
 
@@ -332,6 +302,43 @@ const VendorDashboard = () => {
     }
   };
 
+  // Traduce i codici delle varianti (custom_xxx/opt_xxx) in nomi leggibili
+  const getVariantDisplayText = (item, selectedVariantAttributes) => {
+    if (!selectedVariantAttributes || !Array.isArray(selectedVariantAttributes) || selectedVariantAttributes.length === 0) {
+      return '';
+    }
+
+    // item.product è già popolato dal backend con customAttributes
+    const product = item.product;
+
+    // Se non troviamo customAttributes, mostra i codici originali
+    if (!product || !product.customAttributes || product.customAttributes.length === 0) {
+      return selectedVariantAttributes
+        .map(attr => `${attr.key}: ${attr.value}`)
+        .join(', ');
+    }
+
+    // Traduciamo i codici in nomi leggibili
+    const translatedVariants = selectedVariantAttributes.map(selectedAttr => {
+      // Trova l'attributo nel prodotto usando il codice key
+      const attribute = product.customAttributes.find(attr => attr.key === selectedAttr.key);
+      
+      if (!attribute) {
+        return `${selectedAttr.key}: ${selectedAttr.value}`;
+      }
+
+      // Trova l'opzione usando il codice value (le options hanno { label, value } non { key, value })
+      const option = attribute.options?.find(opt => opt.value === selectedAttr.value);
+      
+      const attributeName = attribute.name || selectedAttr.key;
+      const optionName = option?.label || selectedAttr.value;  // usa 'label' non 'value'
+      
+      return `${attributeName}: ${optionName}`;
+    });
+
+    return translatedVariants.join(', ');
+  };
+
   // Funzione per ottenere badge colore stato
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -347,11 +354,13 @@ const VendorDashboard = () => {
 
   // Calcola totale ordine per il venditore
   const calculateVendorTotal = (order) => {
+    // Determina quale venditore stiamo visualizzando
+    const currentVendorId = (user.role === 'admin' && sellerId) ? sellerId : user._id;
+    
     return order.items
       .filter(item => {
-        const sellerId = item.seller?._id || item.seller;
-        const userId = user._id;
-        return (sellerId && userId && sellerId.toString() === userId.toString()) || user.role === 'admin';
+        const itemSellerId = item.seller?._id || item.seller;
+        return itemSellerId && currentVendorId && itemSellerId.toString() === currentVendorId.toString();
       })
       .reduce((sum, item) => sum + (item.price * item.quantity), 0)
       .toFixed(2);
@@ -402,9 +411,12 @@ const VendorDashboard = () => {
             {/* Dropdown notifiche */}
             {showNotifications && (
               <Card 
-                className="position-absolute end-0 mt-2 shadow-lg" 
+                className="position-absolute mt-2 shadow-lg" 
                 style={{ 
-                  width: '350px', 
+                  right: 'unset',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 'min(350px, calc(100vw - 2rem))',
                   maxHeight: '400px', 
                   overflowY: 'auto',
                   zIndex: 1000 
@@ -480,7 +492,7 @@ const VendorDashboard = () => {
           <Col md={3} sm={6} className="mb-3">
             <Card className="text-center">
               <Card.Body>
-                <h3 className="text-success">€{stats.totalRevenue.toFixed(2)}</h3>
+                <h3 className="text-success">€{earnings ? earnings.totalEarnings.toFixed(2) : stats.totalRevenue.toFixed(2)}</h3>
                 <p className="text-muted mb-0">Fatturato Totale</p>
               </Card.Body>
             </Card>
@@ -512,60 +524,21 @@ const VendorDashboard = () => {
         </Row>
       )}
 
-      {/* Sezione Guadagni e Pagamenti (Fase 5.2) */}
-      {earnings && (
-        <>
-          <div className="d-flex justify-content-between align-items-center mb-3 mt-4">
-            <h4 style={{ color: '#004b75' }}>💰 Guadagni e Pagamenti</h4>
-            {loadingEarnings && <Spinner animation="border" size="sm" />}
-          </div>
-          
-          <Row className="mb-4">
-            {/* Card Guadagni Totali */}
-            <Col md={4} sm={6} className="mb-3">
-              <Card className="text-center border-success">
-                <Card.Body>
-                  <div className="mb-2">
-                    <i className="bi bi-cash-stack fs-2 text-success"></i>
-                  </div>
-                  <h3 className="text-success mb-1">€{earnings.totalEarnings.toFixed(2)}</h3>
-                  <p className="text-muted mb-0 small">Guadagni Totali</p>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            {/* Card In Attesa di Pagamento */}
-            <Col md={4} sm={6} className="mb-3">
-              <Card className="text-center border-warning">
-                <Card.Body>
-                  <div className="mb-2">
-                    <i className="bi bi-hourglass-split fs-2 text-warning"></i>
-                  </div>
-                  <h3 className="text-warning mb-1">€{earnings.pendingEarnings.toFixed(2)}</h3>
-                  <p className="text-muted mb-0 small">In Attesa di Pagamento</p>
-                  {pendingSales && pendingSales.count > 0 && (
-                    <Badge bg="warning" text="dark" className="mt-2">
-                      {pendingSales.count} {pendingSales.count === 1 ? 'vendita' : 'vendite'} in attesa
-                    </Badge>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-
-            {/* Card Pagamenti Ricevuti */}
-            <Col md={4} sm={6} className="mb-3">
-              <Card className="text-center border-primary">
-                <Card.Body>
-                  <div className="mb-2">
-                    <i className="bi bi-check-circle fs-2 text-primary"></i>
-                  </div>
-                  <h3 className="text-primary mb-1">€{earnings.paidEarnings.toFixed(2)}</h3>
-                  <p className="text-muted mb-0 small">Pagamenti Ricevuti</p>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </>
+      {/* Sezione Guadagni */}
+      {earnings && stats && (
+        <Row className="mb-4 mt-4">
+          <Col md={4} sm={6}>
+            <Card className="text-center border-success">
+              <Card.Body>
+                <div className="mb-2">
+                  <i className="bi bi-cash-stack fs-2 text-success"></i>
+                </div>
+                <h3 className="text-success mb-1">€{stats.totalRevenue.toFixed(2)}</h3>
+                <p className="text-muted mb-0 small">Guadagni Netti</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
       )}
 
       {/* Tabs per ordini e prodotti */}
@@ -635,21 +608,16 @@ const VendorDashboard = () => {
                               <td>
                                 {order.items
                                   .filter(item => {
-                                    const sellerId = item.seller?._id || item.seller;
-                                    const userId = user._id;
-                                    return (sellerId && userId && sellerId.toString() === userId.toString()) || user.role === 'admin';
+                                    // Determina quale venditore stiamo visualizzando
+                                    const currentVendorId = (user.role === 'admin' && sellerId) ? sellerId : user._id;
+                                    const itemSellerId = item.seller?._id || item.seller;
+                                    return itemSellerId && currentVendorId && itemSellerId.toString() === currentVendorId.toString();
                                   })
                                   .map((item, idx) => {
-                                    let variantText = '';
-                                    if (item.selectedVariantAttributes && Array.isArray(item.selectedVariantAttributes) && item.selectedVariantAttributes.length > 0) {
-                                      const variantDetails = item.selectedVariantAttributes
-                                        .map(attr => `${attr.key}: ${attr.value}`)
-                                        .join(', ');
-                                      variantText = ` (${variantDetails})`;
-                                    }
+                                    const variantText = getVariantDisplayText(item, item.selectedVariantAttributes);
                                     return (
                                       <div key={idx}>
-                                        <small>{item.name}{variantText} x{item.quantity}</small>
+                                        <small>{item.name}{variantText ? ` (${variantText})` : ''} x{item.quantity}</small>
                                       </div>
                                     );
                                   })}
@@ -877,127 +845,6 @@ const VendorDashboard = () => {
             </Card>
           </Tab>
         )}
-
-        {/* Tab Storico Pagamenti (Fase 5.4) */}
-        <Tab eventKey="payouts" title={<span style={{color: activeTab === 'payouts' ? '#00bf63' : '#004b75'}}>💸 Storico Pagamenti</span>}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Pagamenti Ricevuti</h5>
-              {paidPayouts.length > 0 && (
-                <Button 
-                  variant="outline-success" 
-                  size="sm"
-                  onClick={() => {
-                    // Prepara dati CSV
-                    const csvContent = [
-                      ['Data Vendita', 'Data Pagamento', 'Ordine', 'Importo', 'Fee Stripe', 'Stripe Transfer ID'].join(','),
-                      ...paidPayouts.map(p => [
-                        new Date(p.saleDate).toLocaleDateString('it-IT'),
-                        p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('it-IT') : 'N/A',
-                        p.orderId?.orderNumber || (p.orderId?._id ? p.orderId._id.toString().substring(0, 8) : 'N/A'),
-                        `€${p.amount.toFixed(2)}`,
-                        `€${p.stripeFee.toFixed(2)}`,
-                        p.stripeTransferId || 'N/A'
-                      ].join(','))
-                    ].join('\n');
-                    
-                    // Download CSV
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `pagamenti_ricevuti_${new Date().toISOString().split('T')[0]}.csv`;
-                    link.click();
-                  }}
-                >
-                  <i className="bi bi-download me-2"></i>
-                  Scarica CSV
-                </Button>
-              )}
-            </Card.Header>
-            <Card.Body>
-              {loadingPayouts ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" variant="primary" />
-                  <p className="mt-3 text-muted">Caricamento storico pagamenti...</p>
-                </div>
-              ) : paidPayouts.length === 0 ? (
-                <Alert variant="info" className="text-center">
-                  <i className="bi bi-info-circle me-2"></i>
-                  Nessun pagamento ricevuto ancora. I pagamenti verranno effettuati automaticamente 14 giorni dopo ogni vendita.
-                </Alert>
-              ) : (
-                <>
-                  <div className="mb-3">
-                    <Badge bg="success" className="me-2">
-                      {paidPayouts.length} {paidPayouts.length === 1 ? 'pagamento' : 'pagamenti'} ricevuti
-                    </Badge>
-                    <Badge bg="primary">
-                      Totale: €{paidPayouts.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
-                    </Badge>
-                  </div>
-
-                  <Table responsive hover>
-                    <thead>
-                      <tr>
-                        <th>Data Vendita</th>
-                        <th>Data Pagamento</th>
-                        <th>Ordine</th>
-                        <th>Importo</th>
-                        <th>Fee Stripe</th>
-                        <th>Stripe Transfer ID</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paidPayouts.map((payout) => (
-                        <tr key={payout._id}>
-                          <td>
-                            <small>{new Date(payout.saleDate).toLocaleDateString('it-IT', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}</small>
-                          </td>
-                          <td>
-                            <small className="text-success">
-                              <i className="bi bi-check-circle me-1"></i>
-                              {payout.paymentDate 
-                                ? new Date(payout.paymentDate).toLocaleDateString('it-IT', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                  })
-                                : 'N/A'}
-                            </small>
-                          </td>
-                          <td>
-                            <strong>
-                              #{payout.orderId?.orderNumber || (payout.orderId?._id ? payout.orderId._id.toString().substring(0, 8) : 'N/A')}
-                            </strong>
-                          </td>
-                          <td>
-                            <strong className="text-success">€{payout.amount.toFixed(2)}</strong>
-                          </td>
-                          <td>
-                            <small className="text-muted">€{payout.stripeFee.toFixed(2)}</small>
-                          </td>
-                          <td>
-                            {payout.stripeTransferId ? (
-                              <small className="font-monospace text-primary">
-                                {payout.stripeTransferId.substring(0, 20)}...
-                              </small>
-                            ) : (
-                              <small className="text-muted">-</small>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </>
-              )}
-            </Card.Body>
-          </Card>
-        </Tab>
       </Tabs>
 
       {/* Modal Aggiornamento Stato Ordine */}

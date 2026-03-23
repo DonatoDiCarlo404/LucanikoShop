@@ -51,9 +51,10 @@ async function sendEmailsForOrder(orderId, useProduction = false) {
     // Trasforma l'ordine nel formato che i template email si aspettano
     const orderData = {
       products: order.items.map(item => ({
-        name: item.product?.name || item.name || 'Prodotto sconosciuto',
+        name: item.product?.name || item.name ||'Prodotto sconosciuto',
         quantity: item.quantity,
         price: item.price,
+        selectedVariantAttributes: item.selectedVariantAttributes || []
       })),
       itemsPrice: order.itemsPrice,
       shippingPrice: order.shippingPrice,
@@ -141,6 +142,7 @@ async function sendEmailsForOrder(orderId, useProduction = false) {
           name: item.product?.name || 'Prodotto sconosciuto',
           quantity: item.quantity,
           price: item.price,
+          selectedVariantAttributes: item.selectedVariantAttributes || []
         })),
         itemsPrice: vendorItemsPrice,
         shippingPrice: order.shippingPrice, // Totale spedizione (potremmo dividere proporzionalmente se necessario)

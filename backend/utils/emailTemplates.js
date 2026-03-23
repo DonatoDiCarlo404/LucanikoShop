@@ -1,14 +1,43 @@
 import sgMail from '../config/sendgrid.js';
 
+// Helper: Traduce i codici delle varianti (custom_xxx/opt_xxx) in nomi leggibili
+const translateVariantAttributes = (selectedVariantAttributes, customAttributes) => {
+  if (!selectedVariantAttributes || !Array.isArray(selectedVariantAttributes) || selectedVariantAttributes.length === 0) {
+    return '';
+  }
+  
+  if (!customAttributes || !Array.isArray(customAttributes) || customAttributes.length === 0) {
+    // Fallback: mostra i codici originali
+    return selectedVariantAttributes.map(attr => `${attr.key}: ${attr.value}`).join(', ');
+  }
+
+  const translatedVariants = selectedVariantAttributes.map(selectedAttr => {
+    // Trova l'attributo nel prodotto usando il codice key
+    const attribute = customAttributes.find(attr => attr.key === selectedAttr.key);
+    
+    if (!attribute) {
+      return `${selectedAttr.key}: ${selectedAttr.value}`;
+    }
+
+    // Trova l'opzione usando il codice value (le options hanno { label, value } non { key, value })
+    const option = attribute.options?.find(opt => opt.value === selectedAttr.value);
+    
+    const attributeName = attribute.name || selectedAttr.key;
+    const optionName = option?.label || selectedAttr.value; // usa 'label' non 'value'
+    
+    return `${attributeName}: ${optionName}`;
+  });
+
+  return translatedVariants.join(', ');
+};
+
 // Email nuovo ordine ricevuto (venditore)
 export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderNumber, orderData, loginLink = 'https://www.lucanikoshop.it/login') => {
   // Costruisci lista prodotti con quantità e varianti
   const productsListHtml = orderData.products.map(p => {
     let variantText = '';
     if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
-      const variantDetails = p.selectedVariantAttributes
-        .map(attr => `${attr.key}: ${attr.value}`)
-        .join(', ');
+      const variantDetails = translateVariantAttributes(p.selectedVariantAttributes, p.customAttributes);
       variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
     }
     return `<li>${p.name}${variantText} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`;
@@ -17,9 +46,7 @@ export const sendNewOrderToVendorEmail = async (vendorEmail, companyName, orderN
   const productsListText = orderData.products.map(p => {
     let variantText = '';
     if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
-      const variantDetails = p.selectedVariantAttributes
-        .map(attr => `${attr.key}: ${attr.value}`)
-        .join(', ');
+      const variantDetails = translateVariantAttributes(p.selectedVariantAttributes, p.customAttributes);
       variantText = ` (${variantDetails})`;
     }
     return `- ${p.name}${variantText} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`;
@@ -120,9 +147,7 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   const productsListHtml = orderData.products.map(p => {
     let variantText = '';
     if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
-      const variantDetails = p.selectedVariantAttributes
-        .map(attr => `${attr.key}: ${attr.value}`)
-        .join(', ');
+      const variantDetails = translateVariantAttributes(p.selectedVariantAttributes, p.customAttributes);
       variantText = ` <span style="color: #666; font-size: 0.9em;">(${variantDetails})</span>`;
     }
     return `<li>${p.name}${variantText} - Quantità: <strong>${p.quantity}</strong> - €${Number(p.price).toFixed(2)}</li>`;
@@ -131,9 +156,7 @@ export const sendOrderConfirmationEmail = async (userEmail, userName, orderNumbe
   const productsListText = orderData.products.map(p => {
     let variantText = '';
     if (p.selectedVariantAttributes && Array.isArray(p.selectedVariantAttributes) && p.selectedVariantAttributes.length > 0) {
-      const variantDetails = p.selectedVariantAttributes
-        .map(attr => `${attr.key}: ${attr.value}`)
-        .join(', ');
+      const variantDetails = translateVariantAttributes(p.selectedVariantAttributes, p.customAttributes);
       variantText = ` (${variantDetails})`;
     }
     return `- ${p.name}${variantText} - Quantità: ${p.quantity} - €${Number(p.price).toFixed(2)}`;

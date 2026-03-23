@@ -106,7 +106,8 @@ export const handleCheckoutSuccess = async (req, res) => {
         price: item.price,
         seller: product.seller._id, // <-- Dal database!
         ivaPercent: product.ivaPercent || 22,
-        selectedVariant: item.selectedVariant || null
+        selectedVariant: item.selectedVariant || null,
+        selectedVariantAttributes: item.selectedVariantAttributes || []
       });
     }
 
@@ -243,11 +244,16 @@ export const handleCheckoutSuccess = async (req, res) => {
       if (recipientEmail) {
         // Prepara dati ordine completi per email (ALLINEATO AL WEBHOOK)
         const orderDataForEmail = {
-          products: order.items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-          })),
+          products: order.items.map(item => {
+            const product = productsMap[item.product.toString()];
+            return {
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              selectedVariantAttributes: item.selectedVariantAttributes || [],
+              customAttributes: product?.customAttributes || [] // Per tradurre i codici
+            };
+          }),
           itemsPrice: order.itemsPrice,
           shippingPrice: order.shippingPrice,
           totalPrice: order.totalPrice,
@@ -300,11 +306,16 @@ export const handleCheckoutSuccess = async (req, res) => {
         
         // Prepara dati ordine completi per email venditore (ALLINEATO AL WEBHOOK)
         const orderDataForVendor = {
-          products: vendorItems.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-          })),
+          products: vendorItems.map(item => {
+            const product = productsMap[item.product.toString()];
+            return {
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              selectedVariantAttributes: item.selectedVariantAttributes || [],
+              customAttributes: product?.customAttributes || [] // Per tradurre i codici
+            };
+          }),
           itemsPrice: vendorTotalAmount,
           shippingPrice: order.shippingPrice, // Include spedizione totale (TODO: dividere proporzionalmente se necessario)
           totalPrice: vendorTotalAmount + order.shippingPrice,
