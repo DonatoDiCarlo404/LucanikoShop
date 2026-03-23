@@ -20,7 +20,15 @@ const router = express.Router();
 router.get('/', cache(300), getProducts);
 router.get('/other-categories', cache(300), getOtherCategoriesProducts); // Prodotti di altre categorie
 router.get('/:id', cache(600), getProductById);
-router.post('/suggested', cache(300), getSuggestedProducts); // Nuova route per prodotti suggeriti
+router.post('/suggested', cache(300, (req) => {
+  // Genera chiave cache includendo sameVendor, sellerId e productId dal body
+  const { sameVendor, cartItems } = req.body;
+  const sellerIds = cartItems?.map(item => 
+    item.seller?._id || item.seller
+  ).filter(Boolean).sort().join(',') || 'none';
+  const productId = cartItems?.[0]?._id || 'none';
+  return `cache:/api/products/suggested:sv=${sameVendor}:s=${sellerIds.substring(0, 20)}:p=${productId}`;
+}), getSuggestedProducts); // Nuova route per prodotti suggeriti
 
 // Rotta per contare prodotti in attesa (admin)
 router.get('/pending/count', protect, admin, getPendingProductsCount);
