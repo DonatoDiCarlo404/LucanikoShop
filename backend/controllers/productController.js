@@ -576,6 +576,12 @@ export const getSuggestedProducts = async (req, res) => {
     const categoryObjectIds = categoryIds.filter(id => id).map(id => new mongoose.Types.ObjectId(id));
     const productObjectIds = productIds.map(id => new mongoose.Types.ObjectId(id));
 
+    // Log per debug
+    console.log('🔍 getSuggestedProducts - Debug:');
+    console.log('  sameVendor:', sameVendor);
+    console.log('  vendorIds (string):', vendorIds);
+    console.log('  vendorObjectIds:', vendorObjectIds);
+
     // Costruisci query base
     let query = {
       _id: { $nin: productObjectIds }, // Escludi prodotti già nel carrello
@@ -585,9 +591,11 @@ export const getSuggestedProducts = async (req, res) => {
     // Se cerchiamo prodotti dello stesso venditore
     if (sameVendor) {
       query.seller = { $in: vendorObjectIds };
+      console.log('  Query: prodotti DELLO STESSO venditore (seller $in)');
     } else {
       // Prodotti di altri venditori
       query.seller = { $nin: vendorObjectIds };
+      console.log('  Query: prodotti di ALTRI venditori (seller $nin)');
     }
 
     // Filtra per categorie simili
@@ -614,6 +622,16 @@ export const getSuggestedProducts = async (req, res) => {
 
     // Prendi solo il numero richiesto
     const products = shuffled.slice(0, Number(limit));
+
+    // Log risultati per debug
+    console.log(`  Prodotti trovati: ${allProducts.length}, restituiti: ${products.length}`);
+    if (products.length > 0) {
+      console.log('  Primo prodotto:', {
+        name: products[0].name,
+        seller: products[0].seller?.businessName,
+        sellerId: products[0].seller?._id
+      });
+    }
 
     res.json({ products });
   } catch (error) {
