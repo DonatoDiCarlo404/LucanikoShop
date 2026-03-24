@@ -446,7 +446,13 @@ const ProductDetail = () => {
                       className="d-block w-100"
                       src={variantImages[0]}
                       alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')}`}
-                      style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                      style={{ 
+                        maxHeight: '520px',
+                        width: '100%',
+                        objectFit: 'contain', 
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
+                      }}
                     />
                   </div>
                 );
@@ -460,7 +466,12 @@ const ProductDetail = () => {
                           className="d-block w-100"
                           src={image}
                           alt={`${product.name} - ${selectedVariant.attributes.map(a => a.label || a.value).join(' ')} - ${index + 1}`}
-                          style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                          style={{ 
+                            maxHeight: '520px',
+                            width: '100%',
+                            objectFit: 'contain', 
+                            borderRadius: '8px' 
+                          }}
                         />
                       </Carousel.Item>
                     ))}
@@ -483,7 +494,13 @@ const ProductDetail = () => {
                         `}
                         sizes="(max-width: 768px) 400px, (max-width: 1200px) 800px, 1200px"
                         alt={`${product.name} - ${index + 1}`}
-                        style={{ height: '520px', objectFit: 'cover', borderRadius: '8px' }}
+                        style={{ 
+                          maxHeight: '520px',
+                          width: '100%',
+                          objectFit: 'contain', 
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)' 
+                        }}
                         loading={index === 0 ? 'eager' : 'lazy'}
                         fetchPriority={index === 0 ? 'high' : 'low'}
                         decoding="async"

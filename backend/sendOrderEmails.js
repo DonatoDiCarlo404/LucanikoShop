@@ -54,7 +54,8 @@ async function sendEmailsForOrder(orderId, useProduction = false) {
         name: item.product?.name || item.name ||'Prodotto sconosciuto',
         quantity: item.quantity,
         price: item.price,
-        selectedVariantAttributes: item.selectedVariantAttributes || []
+        selectedVariantAttributes: item.selectedVariantAttributes || [],
+        customAttributes: item.product?.customAttributes || [] // Per tradurre i codici varianti
       })),
       itemsPrice: order.itemsPrice,
       shippingPrice: order.shippingPrice,
@@ -142,7 +143,8 @@ async function sendEmailsForOrder(orderId, useProduction = false) {
           name: item.product?.name || 'Prodotto sconosciuto',
           quantity: item.quantity,
           price: item.price,
-          selectedVariantAttributes: item.selectedVariantAttributes || []
+          selectedVariantAttributes: item.selectedVariantAttributes || [],
+          customAttributes: item.product?.customAttributes || [] // Per tradurre i codici varianti
         })),
         itemsPrice: vendorItemsPrice,
         shippingPrice: order.shippingPrice, // Totale spedizione (potremmo dividere proporzionalmente se necessario)

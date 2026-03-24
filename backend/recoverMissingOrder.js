@@ -67,12 +67,16 @@ async function recoverMissingOrder(sessionId) {
 
     // Recupera prodotti dal database
     const orderItems = [];
+    const productsMap = {};
+    
     for (const item of cartItemsData) {
       const product = await Product.findById(item.productId).populate('seller');
       if (!product) {
         console.error(`⚠️ [RECOVER] Prodotto ${item.productId} non trovato`);
         continue;
       }
+
+      productsMap[item.productId] = product;
 
       orderItems.push({
         product: product._id,
@@ -81,6 +85,8 @@ async function recoverMissingOrder(sessionId) {
         price: item.price,
         seller: product.seller._id,
         ivaPercent: product.ivaPercent || 22,
+        selectedVariantSku: item.selectedVariantSku || null,
+        selectedVariantAttributes: item.selectedVariantAttributes || null,
       });
     }
 
@@ -196,13 +202,39 @@ async function recoverMissingOrder(sessionId) {
     // Invia email
     try {
       const buyerEmail = isGuestOrder ? guestEmail : buyerUser.email;
-      await sendOrderConfirmationEmail(buyerEmail, newOrder);
+      const buyerName = isGuestOrder 
+        ? (newOrder.billingAddress?.firstName || 'Cliente')
+        : (buyerUser?.name || 'Cliente');
+      const orderReference = newOrder.orderNumber || newOrder._id.toString().toUpperCase();
+      
+      // Prepara dati ordine per email buyer
+      const orderDataForEmail = {
+        products: orderItems.map(item => {
+          const product = productsMap[item.product.toString()];
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            selectedVariantAttributes: item.selectedVariantAttributes || [],
+            customAttributes: product?.customAttributes || [] // Per tradurre i codici
+          };
+        }),
+        itemsPrice: newOrder.itemsPrice,
+        shippingPrice: newOrder.shippingPrice,
+        totalPrice: newOrder.totalPrice,
+        billingAddress: newOrder.billingAddress,
+        shippingAddress: newOrder.shippingAddress,
+        deliveryType: newOrder.deliveryType,
+        pickupAddress: newOrder.pickupAddress
+      };
+      
+      await sendOrderConfirmationEmail(buyerEmail, buyerName, orderReference, orderDataForEmail);
       console.log('📧 [RECOVER] Email buyer inviata');
 
       // Email ai venditori
       const vendorGroups = {};
       for (const item of orderItems) {
-        const product = await Product.findById(item.product).populate('seller');
+        const product = productsMap[item.product.toString()];
         const vendorId = product.seller._id.toString();
         if (!vendorGroups[vendorId]) {
           vendorGroups[vendorId] = {
@@ -217,8 +249,32 @@ async function recoverMissingOrder(sessionId) {
       }
 
       for (const vendorGroup of Object.values(vendorGroups)) {
-        await sendNewOrderToVendorEmail(vendorGroup.vendor.email, newOrder, vendorGroup.items);
-        console.log('📧 [RECOVER] Email venditore inviata:', vendorGroup.vendor.email);
+        const vendorEmail = vendorGroup.vendor.email;
+        const companyName = vendorGroup.vendor.businessName || vendorGroup.vendor.companyName || vendorGroup.vendor.name;
+        const customerName = isGuestOrder ? (guestEmail || 'Cliente Guest') : (buyerUser?.name || 'Cliente');
+        const vendorTotalAmount = vendorGroup.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        // Prepara dati ordine per email venditore
+        const orderDataForVendor = {
+          products: vendorGroup.items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            selectedVariantAttributes: item.selectedVariantAttributes || [],
+            customAttributes: item.product?.customAttributes || [] // Per tradurre i codici
+          })),
+          itemsPrice: vendorTotalAmount,
+          shippingPrice: newOrder.shippingPrice,
+          totalPrice: vendorTotalAmount + newOrder.shippingPrice,
+          customerName: customerName,
+          billingAddress: newOrder.billingAddress,
+          shippingAddress: newOrder.shippingAddress,
+          deliveryType: newOrder.deliveryType,
+          pickupAddress: newOrder.pickupAddress
+        };
+        
+        await sendNewOrderToVendorEmail(vendorEmail, companyName, orderReference, orderDataForVendor);
+        console.log('📧 [RECOVER] Email venditore inviata:', vendorEmail);
       }
     } catch (emailError) {
       console.error('⚠️ [RECOVER] Errore invio email:', emailError.message);

@@ -100,6 +100,7 @@ export const handleStripeWebhook = async (req, res) => {
       }
 
       // SECURITY FIX: Recupera prodotti completi dal database con seller
+      const productsMap = {}; // Mappa per accedere ai customAttributes nelle email
       const orderItems = [];
       for (const item of cartItemsData) {
         const product = await Product.findById(item.productId).populate('seller');
@@ -107,6 +108,9 @@ export const handleStripeWebhook = async (req, res) => {
           console.error(`⚠️ [WEBHOOK] Prodotto ${item.productId} non trovato`);
           continue;
         }
+        
+        // Salva product nella mappa per usarlo nelle email
+        productsMap[item.productId] = product;
 
         // SECURITY FIX: Usa seller e nome dal database, non dai metadata
         // Decompatta varianti dal formato compatto dei metadata
@@ -629,13 +633,17 @@ export const handleStripeWebhook = async (req, res) => {
         if (recipientEmail) {
           // Prepara dati ordine completi per email acquirente
           const orderDataForEmail = {
-            products: order.items.map(item => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-              selectedVariantSku: item.selectedVariantSku,
-              selectedVariantAttributes: item.selectedVariantAttributes
-            })),
+            products: order.items.map(item => {
+              const product = productsMap[item.product.toString()];
+              return {
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                selectedVariantSku: item.selectedVariantSku,
+                selectedVariantAttributes: item.selectedVariantAttributes,
+                customAttributes: product?.customAttributes || [] // Per tradurre i codici varianti
+              };
+            }),
             itemsPrice: order.itemsPrice,
             shippingPrice: order.shippingPrice || 0,
             totalPrice: order.totalPrice,
@@ -688,13 +696,17 @@ export const handleStripeWebhook = async (req, res) => {
           
           // Prepara dati ordine completi per email venditore
           const orderDataForVendor = {
-            products: vendorItems.map(item => ({
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-              selectedVariantSku: item.selectedVariantSku,
-              selectedVariantAttributes: item.selectedVariantAttributes
-            })),
+            products: vendorItems.map(item => {
+              const product = productsMap[item.product.toString()];
+              return {
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                selectedVariantSku: item.selectedVariantSku,
+                selectedVariantAttributes: item.selectedVariantAttributes,
+                customAttributes: product?.customAttributes || [] // Per tradurre i codici varianti
+              };
+            }),
             itemsPrice: vendorTotalAmount,
             shippingPrice: vendorShippingCost,
             totalPrice: vendorTotalAmount + vendorShippingCost,

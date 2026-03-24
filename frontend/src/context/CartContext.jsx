@@ -67,7 +67,6 @@ export const CartProvider = ({ children }) => {
       discountType: item.discountType,
       discountAmount: item.discountAmount,
       quantity: item.quantity,
-      stock: item.stock,
       unit: item.unit,
       // Categoria (può essere stringa o oggetto)
       category: typeof item.category === 'string' 
