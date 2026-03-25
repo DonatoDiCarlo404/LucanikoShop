@@ -196,18 +196,31 @@ const productSchema = new mongoose.Schema(
 // Indici per ricerca full-text
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
-// Indici per filtri e ordinamento
+// ⚡ CRITICAL: Indici per filtri di visibilità (usati in TUTTE le query pubbliche)
+productSchema.index({ isActive: 1 });
+productSchema.index({ isVisible: 1 });
+productSchema.index({ isActive: 1, isVisible: 1 }); // Compound per entrambi i filtri
+
+// ⚡ PERFORMANCE: Compound index per query pubbliche più comuni
+// Filtra prodotti attivi + visibili + per categoria (query più frequente)
+productSchema.index({ isActive: 1, isVisible: 1, category: 1, createdAt: -1 });
+
+// ⚡ PERFORMANCE: Query prodotti con sottocategoria
+productSchema.index({ isActive: 1, isVisible: 1, category: 1, subcategory: 1 });
+
+// Indici per filtri singoli e ordinamento
 productSchema.index({ category: 1, price: 1 });
+productSchema.index({ subcategory: 1 }); // Filtro per sottocategoria
 productSchema.index({ seller: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ hasActiveDiscount: 1 });
 
-// ⚡ PERFORMANCE: Compound index per filtri comuni (categoria + sconto + prezzo)
-productSchema.index({ category: 1, hasActiveDiscount: 1, price: 1 });
+// ⚡ PERFORMANCE: Compound index per query sconti (offerte page)
+productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, createdAt: -1 });
 
-// Indice per query vendor-specific con ordinamento
-productSchema.index({ seller: 1, createdAt: -1 });
+// ⚡ PERFORMANCE: Compound index per query vendor-specific
+productSchema.index({ seller: 1, isActive: 1, createdAt: -1 });
 
 // Metodo virtuale per ottenere il prezzo corrente (scontato o originale)
 productSchema.virtual('currentPrice').get(function() {
