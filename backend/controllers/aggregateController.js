@@ -97,7 +97,7 @@ export const getShopPageData = async (req, res) => {
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
     
     // ⚡ PERFORMANCE: Select solo campi necessari per ShopPage (invece di tutto il documento)
-    const vendorSelect = 'businessName name slug logo businessDescription isApproved createdAt storeAddress businessCategories news';
+    const vendorSelect = 'businessName name slug logo businessDescription isApproved createdAt storeAddress businessCategories news socialLinks businessWhatsapp website businessEmail businessPhone shopSettings';
     
     let vendor;
     if (isObjectId) {
