@@ -613,6 +613,12 @@ export const handleStripeWebhook = async (req, res) => {
         }
       }
 
+      // ⚡ DUPLICATE EMAIL PREVENTION: Verifica se email già inviate
+      if (order.emailsSent) {
+        console.log('✅ [WEBHOOK] Email già inviate per questo ordine, skippo per evitare duplicati');
+        return res.json({ received: true });
+      }
+
       // Invia email di conferma acquisto
       try {
         let recipientEmail, recipientName;
@@ -734,6 +740,11 @@ export const handleStripeWebhook = async (req, res) => {
         // Attendi tutte le email ai venditori
         await Promise.all(vendorEmailPromises);
         console.log('✅ [WEBHOOK] Tutte le email ai venditori sono state inviate');
+        
+        // ⚡ DUPLICATE EMAIL PREVENTION: Marca email come inviate
+        order.emailsSent = true;
+        await order.save();
+        console.log('✅ [WEBHOOK] Flag emailsSent salvato su ordine');
       } catch (vendorEmailError) {
         console.error('❌ [WEBHOOK] Errore invio email ai venditori:', vendorEmailError);
         // Non bloccare il webhook se le email ai venditori falliscono

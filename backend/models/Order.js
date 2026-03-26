@@ -238,6 +238,11 @@ const orderSchema = new mongoose.Schema(
     refundReason: {
       type: String
     },
+    // Flag per prevenire invio email duplicate
+    emailsSent: {
+      type: Boolean,
+      default: false
+    },
     // Sistema calcolo earnings per venditori (multivendor)
     vendorEarnings: [
       {

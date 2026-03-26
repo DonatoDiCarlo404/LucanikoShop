@@ -44,6 +44,7 @@ export const handleCheckoutSuccess = async (req, res) => {
     
     if (existingOrder) {
       console.log('✅ [SUCCESS] Ordine già esistente:', existingOrder._id);
+      console.log('✅ [SUCCESS] Email già inviate:', existingOrder.emailsSent ? 'SÌ' : 'NO');
       return res.json({
         success: true,
         message: 'Ordine già processato dal webhook',
@@ -342,6 +343,11 @@ export const handleCheckoutSuccess = async (req, res) => {
       // Attendi tutte le email ai venditori
       await Promise.all(vendorEmailPromises);
       console.log('✅ [SUCCESS] Tutte le email ai venditori sono state inviate');
+      
+      // ⚡ DUPLICATE EMAIL PREVENTION: Marca email come inviate
+      order.emailsSent = true;
+      await order.save();
+      console.log('✅ [SUCCESS] Flag emailsSent salvato su ordine');
     } catch (vendorEmailError) {
       console.error('❌ [SUCCESS] Errore invio email ai venditori:', vendorEmailError);
       // Non bloccare la risposta se le email ai venditori falliscono

@@ -98,17 +98,19 @@ const AdminDashboard = () => {
   // Stato per AlertModal
   const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'info' });
   
+  // ⚡ LAZY LOADING: Traccia quali tab sono stati caricati
+  const [loadedTabs, setLoadedTabs] = useState(new Set(['pending-sellers'])); // Tab default
+  const [activeTab, setActiveTab] = useState('pending-sellers');
+  
   // Funzione helper per mostrare alert modal
   const showAlert = (message, type = 'info') => {
     setAlertModal({ show: true, message, type });
   };
 
   useEffect(() => {
+    // ⚡ LAZY LOADING: Carica solo i dati essenziali all'apertura
+    // News/Sponsors/Experiences/Events saranno caricati quando l'utente apre il tab
     loadData();
-    loadNews();
-    loadSponsors();
-    loadExperiences();
-    loadEvents();
   }, []);
 
   const loadData = async () => {
@@ -127,6 +129,28 @@ const AdminDashboard = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ⚡ LAZY LOADING: Handler per cambio tab - carica dati solo quando necessario
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    
+    // Carica dati solo se non ancora caricati
+    if (!loadedTabs.has(tabKey)) {
+      if (tabKey === 'news' && adminNews.length === 0) {
+        loadNews();
+        setLoadedTabs(prev => new Set([...prev, 'news']));
+      } else if (tabKey === 'sponsors' && sponsors.length === 0) {
+        loadSponsors();
+        setLoadedTabs(prev => new Set([...prev, 'sponsors']));
+      } else if (tabKey === 'experiences' && experiences.length === 0) {
+        loadExperiences();
+        setLoadedTabs(prev => new Set([...prev, 'experiences']));
+      } else if (tabKey === 'events' && events.length === 0) {
+        loadEvents();
+        setLoadedTabs(prev => new Set([...prev, 'events']));
+      }
     }
   };
 
@@ -1157,7 +1181,12 @@ const AdminDashboard = () => {
       )}
 
       {/* Tabs per Venditori */}
-      <Tabs defaultActiveKey="pending-sellers" className="mb-3">
+      <Tabs 
+        activeKey={activeTab}
+        onSelect={handleTabChange}
+        defaultActiveKey="pending-sellers" 
+        className="mb-3"
+      >
         {/* Tab Registra Azienda */}
         <Tab 
           eventKey="register-company" 

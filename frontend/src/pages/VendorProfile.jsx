@@ -30,6 +30,7 @@ const VendorProfile = () => {
   
   // State per la tab attiva
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'info');
+  const [loadedTabs, setLoadedTabs] = useState(new Set(['info'])); // Traccia quali tab hanno già caricato i dati
 
   // State per profilo
   const [loading, setLoading] = useState(true);
@@ -278,15 +279,9 @@ const VendorProfile = () => {
     if (!user || (user.role !== 'seller' && user.role !== 'admin')) {
       navigate('/');
     } else {
+      // ⚡ PERFORMANCE: Carica solo il profilo all'apertura
+      // Altri dati vengono caricati lazy quando si apre il tab corrispondente
       loadProfile();
-      // Carica sempre i prodotti
-      loadStats();
-      // Carica sconti
-      loadDiscounts();
-      // Carica categorie
-      loadCategories();
-      // Carica documenti sempre
-      loadVendorDocuments();
     }
   }, [user, navigate, sellerId]);
 
@@ -518,6 +513,66 @@ const VendorProfile = () => {
       console.error('Errore caricamento categorie:', err);
     }
   };
+
+  // ⚡ PERFORMANCE: Lazy loading dei dati quando si cambia tab
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', tabKey);
+    setSearchParams(params);
+
+    // Carica i dati solo se il tab non è stato già caricato
+    if (!loadedTabs.has(tabKey)) {
+      setLoadedTabs(prev => new Set([...prev, tabKey]));
+
+      // Carica i dati in base al tab
+      switch (tabKey) {
+        case 'stats':
+          loadStats();
+          break;
+        case 'discounts':
+          loadDiscounts();
+          break;
+        case 'products':
+          loadCategories();
+          loadStats(); // Carica anche i prodotti per visualizzarli
+          break;
+        case 'subscription':
+          loadVendorDocuments();
+          break;
+        default:
+          // Tab senza dati extra da caricare
+          break;
+      }
+    }
+  };
+
+  // ⚡ PERFORMANCE: Carica dati del tab iniziale quando il profilo è pronto
+  useEffect(() => {
+    if (profileData && !loadedTabs.has(activeTab)) {
+      setLoadedTabs(prev => new Set([...prev, activeTab]));
+      
+      // Carica i dati in base al tab attivo iniziale
+      switch (activeTab) {
+        case 'stats':
+          loadStats();
+          break;
+        case 'discounts':
+          loadDiscounts();
+          break;
+        case 'products':
+          loadCategories();
+          loadStats();
+          break;
+        case 'subscription':
+          loadVendorDocuments();
+          break;
+        default:
+          // Tab senza dati extra da caricare
+          break;
+      }
+    }
+  }, [profileData, activeTab]);
 
   // Carica statistiche e recensioni come in ShopPage.jsx
   const loadStats = async () => {
@@ -1301,12 +1356,7 @@ const VendorProfile = () => {
 
       <Tabs 
         activeKey={activeTab} 
-        onSelect={(k) => {
-          setActiveTab(k);
-          const params = new URLSearchParams(searchParams);
-          params.set('tab', k);
-          setSearchParams(params);
-        }}
+        onSelect={handleTabChange}
         className="mb-4 vendor-tabs-custom"
       >
         {/* TAB INFORMAZIONI AZIENDA */}
