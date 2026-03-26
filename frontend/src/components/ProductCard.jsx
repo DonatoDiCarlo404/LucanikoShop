@@ -362,7 +362,7 @@ const ProductCard = ({ product, fromShop }) => {
                 </>
               ) : (product.hasVariants || minVariantPrice !== null) ? (
                 <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>
-                  {minVariantPrice !== null ? `da €${minVariantPrice.toFixed(2)}` : 'Prezzo su varianti'}
+                  {minVariantPrice !== null ? `da €${minVariantPrice.toFixed(2)}` : (typeof product.price === 'number' ? `da €${product.price.toFixed(2)}` : 'Prezzo su varianti')}
                 </h5>
               ) : typeof product.price === 'number' ? (
                 <h5 className="mb-0" style={{ fontSize: '1rem', color: '#004b75', fontWeight: 700 }}>

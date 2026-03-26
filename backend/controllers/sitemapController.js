@@ -9,8 +9,11 @@ export const generateSitemap = async (req, res) => {
     const baseUrl = 'https://lucanikoshop.it';
     const today = new Date().toISOString().split('T')[0];
 
-    // Recupera prodotti attivi
-    const products = await Product.find({ status: 'approved' })
+    // Recupera prodotti attivi e visibili
+    const products = await Product.find({ 
+      isActive: true,
+      isVisible: true 
+    })
       .select('_id name updatedAt')
       .lean();
 

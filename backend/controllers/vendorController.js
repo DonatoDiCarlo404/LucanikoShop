@@ -29,10 +29,11 @@ export const getPublicVendorProfile = async (req, res) => {
       return res.status(404).json({ message: 'Questo utente non è un venditore' });
     }
 
-    // Ottieni prodotti del venditore (inclusi quelli in modalità vacanza)
+    // Ottieni prodotti del venditore (inclusi quelli in modalità vacanza ma solo quelli visibili)
     // ProductCard gestirà il badge "Non disponibile" per prodotti con isActive: false
     const products = await Product.find({ 
-      seller: vendor._id
+      seller: vendor._id,
+      isVisible: true // Solo prodotti visibili nel marketplace
     })
       .populate('category', 'name')
       .populate('subcategory', 'name')

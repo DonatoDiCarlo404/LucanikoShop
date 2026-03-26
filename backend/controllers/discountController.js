@@ -1,4 +1,5 @@
 import { Discount, Product } from '../models/index.js';
+import { invalidateCache } from '../middlewares/cache.js';
 
 // @desc    Crea un nuovo sconto
 // @route   POST /api/discounts
@@ -89,6 +90,10 @@ export const createDiscount = async (req, res) => {
     const populatedDiscount = await Discount.findById(discount._id)
       .populate('products', 'name price hasActiveDiscount discountedPrice')
       .populate('categories', 'name');
+
+    // Invalida cache sconti e prodotti
+    await invalidateCache('cache:/api/discounts*');
+    await invalidateCache('cache:/api/products*');
 
     res.status(201).json({
       success: true,
@@ -215,6 +220,10 @@ export const updateDiscount = async (req, res) => {
       await applyDiscountToCategories(discount);
     }
 
+    // Invalida cache
+    await invalidateCache('cache:/api/discounts*');
+    await invalidateCache('cache:/api/products*');
+
     res.status(200).json({
       success: true,
       discount
@@ -269,6 +278,10 @@ export const deleteDiscount = async (req, res) => {
     }
 
     await discount.deleteOne();
+
+    // Invalida cache
+    await invalidateCache('cache:/api/discounts*');
+    await invalidateCache('cache:/api/products*');
 
     res.status(200).json({
       success: true,
@@ -331,6 +344,10 @@ export const toggleDiscount = async (req, res) => {
       }
     }
 
+    // Invalida cache
+    await invalidateCache('cache:/api/discounts*');
+    await invalidateCache('cache:/api/products*');
+
     res.status(200).json({
       success: true,
       discount
@@ -348,25 +365,138 @@ export const toggleDiscount = async (req, res) => {
 // @access  Public
 export const getActiveDiscountedProducts = async (req, res) => {
   try {
-    const products = await Product.find({
+    const { 
+      page = 1, 
+      limit = 12, 
+      sortBy = 'random',  // random | discount-desc | discount-asc | date-desc
+      category, 
+      subcategory,
+      minDiscount,
+      maxDiscount,
+      search
+    } = req.query;
+
+    // Query base: prodotti con sconto attivo + visibili
+    let query = {
       hasActiveDiscount: true,
       isActive: true,
+      isVisible: true,
       $or: [
-        // Prodotti senza varianti con stock > 0
         { hasVariants: false, stock: { $gt: 0 } },
-        // Prodotti con varianti (che hanno stock nelle varianti)
         { hasVariants: true, 'variants.0': { $exists: true } }
       ]
-    })
-      .populate('seller', 'name businessName')
-      .populate('activeDiscount', 'name discountType discountValue endDate')
-      .populate('category', 'name')
-      .populate('subcategory', 'name')
-      .sort('-discountPercentage');
+    };
+
+    // Filtro categoria
+    if (category) {
+      query.category = category;
+    }
+
+    // Filtro sottocategoria
+    if (subcategory) {
+      query.subcategory = subcategory;
+    }
+
+    // Filtro percentuale sconto
+    if (minDiscount || maxDiscount) {
+      query.discountPercentage = {};
+      if (minDiscount) query.discountPercentage.$gte = Number(minDiscount);
+      if (maxDiscount) query.discountPercentage.$lte = Number(maxDiscount);
+    }
+
+    // Ricerca full-text
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    const skip = (page - 1) * limit;
+    const total = await Product.countDocuments(query);
+    let products;
+
+    // ⚡ PERFORMANCE: Randomizzazione con $sample o sorting classico
+    if (sortBy === 'random') {
+      const sampleSize = Math.min(Number(limit), total);
+      
+      const pipeline = [
+        { $match: query },
+        { $sample: { size: sampleSize } }, // ⚡ Random nativo MongoDB
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'seller',
+            foreignField: '_id',
+            as: 'seller'
+          }
+        },
+        { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'subcategory',
+            foreignField: '_id',
+            as: 'subcategory'
+          }
+        },
+        { $unwind: { path: '$subcategory', preserveNullAndEmptyArrays: true } },
+        {
+          $lookup: {
+            from: 'discounts',
+            localField: 'activeDiscount',
+            foreignField: '_id',
+            as: 'activeDiscount'
+          }
+        },
+        { $unwind: { path: '$activeDiscount', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            'seller.password': 0,
+            'seller.paymentMethods': 0,
+            'description': 0,
+            'customAttributes': 0,
+            'attributes': 0
+          }
+        }
+      ];
+
+      products = await Product.aggregate(pipeline);
+    } else {
+      // Sorting deterministico
+      let sortOptions = {};
+      if (sortBy === 'discount-desc') {
+        sortOptions = { discountPercentage: -1 };
+      } else if (sortBy === 'discount-asc') {
+        sortOptions = { discountPercentage: 1 };
+      } else if (sortBy === 'date-desc') {
+        sortOptions = { createdAt: -1 };
+      }
+
+      products = await Product.find(query)
+        .select('-description -customAttributes -attributes')
+        .populate('seller', 'name businessName slug')
+        .populate('activeDiscount', 'name discountType discountValue endDate')
+        .populate('category', 'name')
+        .populate('subcategory', 'name')
+        .limit(Number(limit))
+        .skip(skip)
+        .sort(sortOptions)
+        .lean(); // ⚡ Plain objects per performance
+    }
 
     res.status(200).json({
       success: true,
       count: products.length,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
       products
     });
   } catch (error) {

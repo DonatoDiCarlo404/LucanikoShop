@@ -478,7 +478,10 @@ const VendorDashboard = () => {
             )}
           </div>
           
-          <Button variant="outline-primary" onClick={() => navigate('/vendor/profile')}>
+          <Button 
+            variant="outline-primary" 
+            onClick={() => navigate(user.role === 'admin' && sellerId ? `/vendor/profile?sellerId=${sellerId}` : '/vendor/profile')}
+          >
             <i className="bi bi-person-badge me-2"></i>
             Profilo Aziendale
           </Button>
@@ -493,7 +496,7 @@ const VendorDashboard = () => {
             <Card className="text-center">
               <Card.Body>
                 <h3 className="text-success">€{earnings ? earnings.totalEarnings.toFixed(2) : stats.totalRevenue.toFixed(2)}</h3>
-                <p className="text-muted mb-0">Fatturato Totale</p>
+                <p className="text-muted mb-0">Ricavi totali (Vendita prodotti + spedizione - commissioni Stripe)</p>
               </Card.Body>
             </Card>
           </Col>
@@ -534,7 +537,7 @@ const VendorDashboard = () => {
                   <i className="bi bi-cash-stack fs-2 text-success"></i>
                 </div>
                 <h3 className="text-success mb-1">€{stats.totalRevenue.toFixed(2)}</h3>
-                <p className="text-muted mb-0 small">Guadagni Netti</p>
+                <p className="text-muted mb-0 small">Ricavi Prodotti (Solo incasso vendita prodotti)</p>
               </Card.Body>
             </Card>
           </Col>
@@ -793,58 +796,6 @@ const VendorDashboard = () => {
             </Card.Body>
           </Card>
         </Tab>
-
-        {stats && (
-          <Tab eventKey="stats" title={<span style={{color: activeTab === 'stats' ? '#00bf63' : '#004b75'}}>Statistiche Dettagliate</span>}>
-            <Card>
-              <Card.Body>
-                <h5 className="mb-4">Riepilogo Ordini per Stato</h5>
-                <Row>
-                  <Col md={4} className="mb-3">
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4 className="text-warning">{stats.statusCount.pending}</h4>
-                        <p className="mb-0">In Attesa</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4 className="text-info">{stats.statusCount.processing}</h4>
-                        <p className="mb-0">In Lavorazione</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4 className="text-primary">{stats.statusCount.shipped}</h4>
-                        <p className="mb-0">Spediti</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4 className="text-success">{stats.statusCount.delivered}</h4>
-                        <p className="mb-0">Consegnati</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={4} className="mb-3">
-                    <Card className="text-center">
-                      <Card.Body>
-                        <h4 className="text-danger">{stats.statusCount.cancelled}</h4>
-                        <p className="mb-0">Annullati</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          </Tab>
-        )}
       </Tabs>
 
       {/* Modal Aggiornamento Stato Ordine */}

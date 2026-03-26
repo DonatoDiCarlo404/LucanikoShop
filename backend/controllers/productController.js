@@ -37,8 +37,11 @@ export const getProducts = async (req, res) => {
     const { search, category, subcategory, minPrice, maxPrice, sortBy, page = 1, limit = 12 } = req.query;
     timers.start = 0;
 
-    // Costruisci query - mostra tutti i prodotti (isActive gestito nel frontend)
-    let query = {};
+    // Costruisci query - mostra solo prodotti attivi e visibili
+    let query = {
+      isActive: true,
+      isVisible: true
+    };
 
     // Ricerca full-text
     if (search) {
@@ -103,17 +106,15 @@ export const getProducts = async (req, res) => {
     const total = await Product.countDocuments(query);
     timers.countDocuments = Date.now() - startTime;
 
-    // ⚡ PERFORMANCE FIX: Random sorting sempre con $sample MongoDB nativo
-    // Seed ignorato per performance (evita sorting in-memory di tutti i prodotti)
+    // ⚡ PERFORMANCE: Random sorting con $sample MongoDB nativo
+    // Ogni caricamento restituisce prodotti random per massima varietà
     if (useRandom) {
-      // Calcola quanti documenti servono per questa pagina
+      // Sample diretto della quantità richiesta (no skip - ogni page è indipendente)
       const sampleSize = Math.min(Number(limit), total);
       
       const pipeline = [
         { $match: query },
-        { $sample: { size: sampleSize + skip } }, // Prendi più elementi per simulare skip
-        { $skip: skip },
-        { $limit: Number(limit) },
+        { $sample: { size: sampleSize } }, // ⚡ Sample diretto - massima performance
         {
           $lookup: {
             from: 'users',
@@ -521,11 +522,14 @@ export const getMyProducts = async (req, res) => {
       ? req.query.vendorId 
       : req.user._id;
 
+    // ⚡ PERFORMANCE: Escludi campi pesanti non necessari per la lista
     const products = await Product.find({ seller: sellerId })
+      .select('-description -customAttributes -attributes')
       .populate('category', 'name')
       .populate('subcategory', 'name')
       .populate('seller', 'businessName name slug')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // ⚡ .lean() per oggetti plain JS (più veloci)
 
     res.json(products);
   } catch (error) {
@@ -585,7 +589,8 @@ export const getSuggestedProducts = async (req, res) => {
     // Costruisci query base
     let query = {
       _id: { $nin: productObjectIds }, // Escludi prodotti già nel carrello
-      isActive: true // Solo prodotti attivi
+      isActive: true, // Solo prodotti attivi
+      isVisible: true // Solo prodotti visibili nel marketplace
     };
 
     // Se cerchiamo prodotti dello stesso venditore
@@ -649,7 +654,8 @@ export const getOtherCategoriesProducts = async (req, res) => {
 
     // Costruisci query - escludi categoria specificata
     let query = {
-      isActive: true
+      isActive: true,
+      isVisible: true
     };
 
     // Se c'è una categoria da escludere, trova il suo ID
@@ -714,6 +720,39 @@ export const getOtherCategoriesProducts = async (req, res) => {
     res.json({ products });
   } catch (error) {
     console.error('Errore recupero prodotti altre categorie:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Toggle visibilità prodotto (nasconde/mostra dal marketplace)
+// @route   PATCH /api/products/:id/toggle-visibility
+// @access  Private (seller proprietario o admin)
+export const toggleProductVisibility = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Prodotto non trovato' });
+    }
+
+    // Verifica che sia il proprietario o admin
+    if (product.seller.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Non autorizzato a modificare questo prodotto' });
+    }
+
+    // Toggle della visibilità
+    product.isVisible = !product.isVisible;
+    await product.save();
+
+    // Invalida cache prodotti e aggregate (shop pages)
+    await invalidateCache('cache:/api/products*');
+    await invalidateCache('cache:/api/aggregate*');
+
+    res.json({ 
+      message: product.isVisible ? 'Prodotto visibile nel marketplace' : 'Prodotto nascosto dal marketplace',
+      isVisible: product.isVisible 
+    });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

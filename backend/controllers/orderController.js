@@ -124,7 +124,49 @@ export const getVendorOrders = async (req, res) => {
             .populate('items.product', 'name images customAttributes')
             .sort({ createdAt: -1 });
 
-        res.status(200).json(orders);
+        // Filtra tracking info per mostrare solo quello del venditore corrente
+        const filteredOrders = orders.map(order => {
+            const orderObj = order.toObject();
+
+            // Identifica tutti i venditori nell'ordine
+            const vendorsInOrder = [...new Set(orderObj.items.map(item => 
+                item.seller._id ? item.seller._id.toString() : item.seller.toString()
+            ))];
+            const isMultiVendor = vendorsInOrder.length > 1;
+
+            // In ordini multivendor, mostra solo il tracking del venditore corrente
+            if (isMultiVendor && orderObj.vendorShipments && orderObj.vendorShipments.length > 0) {
+                const vendorShipment = orderObj.vendorShipments.find(
+                    vs => vs.vendorId.toString() === sellerId.toString()
+                );
+
+                // Sovrascrivi trackingInfo con i dati specifici del venditore
+                if (vendorShipment) {
+                    orderObj.trackingInfo = {
+                        trackingNumber: vendorShipment.trackingNumber,
+                        carrier: vendorShipment.carrier,
+                        updatedAt: vendorShipment.updatedAt
+                    };
+                    // Aggiungi anche lo status specifico del venditore
+                    orderObj.vendorStatus = vendorShipment.status;
+                } else {
+                    // Se non ha ancora trackingInfo, mostra vuoto
+                    orderObj.trackingInfo = {
+                        trackingNumber: '',
+                        carrier: '',
+                        updatedAt: null
+                    };
+                    orderObj.vendorStatus = 'pending';
+                }
+
+                // Rimuovi vendorShipments completo per privacy (non serve al frontend)
+                delete orderObj.vendorShipments;
+            }
+
+            return orderObj;
+        });
+
+        res.status(200).json(filteredOrders);
     } catch (error) {
         console.error('Errore nel recupero ordini venditore:', error);
         res.status(500).json({ message: error.message });
@@ -215,27 +257,119 @@ export const updateOrderStatus = async (req, res) => {
             return res.status(403).json({ message: 'Non autorizzato a modificare questo ordine' });
         }
 
-        // Aggiorna stato
-        if (status) {
-            order.status = status;
-            if (status === 'delivered') {
-                order.isDelivered = true;
-                order.deliveredAt = Date.now();
-            }
-        }
+        // Identifica tutti i venditori nell'ordine
+        const vendorsInOrder = [...new Set(order.items.map(item => item.seller.toString()))];
+        const isMultiVendor = vendorsInOrder.length > 1;
 
-        // Aggiungi tracking info se fornito
-        if (trackingNumber || carrier) {
-            if (!order.trackingInfo) {
-                order.trackingInfo = {};
+        // MULTIVENDOR: Aggiorna solo il tracking del venditore corrente
+        if (isMultiVendor && req.user.role === 'seller') {
+            // Inizializza array se non esiste
+            if (!order.vendorShipments) {
+                order.vendorShipments = [];
             }
-            if (trackingNumber) {
-                order.trackingInfo.trackingNumber = trackingNumber;
+
+            // Trova o crea l'entry per questo venditore
+            let vendorShipment = order.vendorShipments.find(
+                vs => vs.vendorId.toString() === req.user._id.toString()
+            );
+
+            if (!vendorShipment) {
+                // Crea nuova entry per questo venditore
+                vendorShipment = {
+                    vendorId: req.user._id,
+                    trackingNumber: trackingNumber || '',
+                    carrier: carrier || '',
+                    status: status || 'pending',
+                    updatedAt: Date.now()
+                };
+                order.vendorShipments.push(vendorShipment);
+            } else {
+                // Aggiorna entry esistente
+                if (trackingNumber !== undefined) vendorShipment.trackingNumber = trackingNumber;
+                if (carrier !== undefined) vendorShipment.carrier = carrier;
+                if (status) vendorShipment.status = status;
+                vendorShipment.updatedAt = Date.now();
             }
-            if (carrier) {
-                order.trackingInfo.carrier = carrier;
+
+            // Aggiorna lo status globale solo se TUTTI i venditori hanno spedito
+            if (status === 'shipped' || status === 'delivered') {
+                const allVendorsShipped = vendorsInOrder.every(vendorId => {
+                    const vs = order.vendorShipments.find(
+                        vs => vs.vendorId.toString() === vendorId
+                    );
+                    return vs && (vs.status === 'shipped' || vs.status === 'delivered');
+                });
+
+                if (allVendorsShipped) {
+                    order.status = status;
+                    if (status === 'delivered') {
+                        order.isDelivered = true;
+                        order.deliveredAt = Date.now();
+                    }
+                } else {
+                    // Almeno un venditore ha spedito, ma non tutti
+                    if (order.status === 'pending') {
+                        order.status = 'processing';
+                    }
+                }
+            } else if (status) {
+                // Per altri stati, aggiorna solo se non è già shipped/delivered
+                if (order.status !== 'shipped' && order.status !== 'delivered') {
+                    order.status = status;
+                }
             }
-            order.trackingInfo.updatedAt = Date.now();
+        } 
+        // SINGLE VENDOR o ADMIN: Comportamento classico
+        else {
+            // Aggiorna stato globale
+            if (status) {
+                order.status = status;
+                if (status === 'delivered') {
+                    order.isDelivered = true;
+                    order.deliveredAt = Date.now();
+                }
+            }
+
+            // Aggiungi tracking info (retrocompatibilità)
+            if (trackingNumber || carrier) {
+                if (!order.trackingInfo) {
+                    order.trackingInfo = {};
+                }
+                if (trackingNumber) {
+                    order.trackingInfo.trackingNumber = trackingNumber;
+                }
+                if (carrier) {
+                    order.trackingInfo.carrier = carrier;
+                }
+                order.trackingInfo.updatedAt = Date.now();
+            }
+
+            // Se admin in ordine multivendor, aggiorna anche vendorShipments per coerenza
+            if (req.user.role === 'admin' && isMultiVendor) {
+                if (!order.vendorShipments) {
+                    order.vendorShipments = [];
+                }
+                // Aggiorna tutti i venditori con le stesse info
+                vendorsInOrder.forEach(vendorId => {
+                    let vs = order.vendorShipments.find(
+                        vs => vs.vendorId.toString() === vendorId
+                    );
+                    if (!vs) {
+                        order.vendorShipments.push({
+                            vendorId: vendorId,
+                            trackingNumber: trackingNumber || '',
+                            carrier: carrier || '',
+                            status: status || 'pending',
+                            updatedAt: Date.now()
+                        });
+                    } else {
+                        if (trackingNumber !== undefined) vs.trackingNumber = trackingNumber;
+                        if (carrier !== undefined) vs.carrier = carrier;
+                        if (status) vs.status = status;
+                        vs.updatedAt = Date.now();
+                    }
+                });
+            }
         }
 
         const updatedOrder = await order.save();

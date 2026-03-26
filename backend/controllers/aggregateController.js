@@ -112,9 +112,11 @@ export const getShopPageData = async (req, res) => {
     }
 
     // Carica prodotti del vendor in parallelo
+    // Mostra TUTTI i prodotti visibili (inclusi quelli in modalità vacanza)
+    // ProductCard gestirà il badge "Non disponibile" per isActive: false
     const products = await Product.find({ 
       seller: vendor._id,
-      isActive: true 
+      isVisible: true
     })
       .populate('category', 'name')
       .populate('subcategory', 'name')

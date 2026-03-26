@@ -12,6 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
   const [pendingProductsCount, setPendingProductsCount] = useState(0);
+  const [vendorUnreadCount, setVendorUnreadCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,16 @@ const Navbar = () => {
       const interval = setInterval(() => {
         loadPendingCount();
         loadPendingProductsCount();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+
+    if (user && user.role === 'seller' && user.isApproved) {
+      loadVendorNotifications();
+
+      // Refresh ogni 30 secondi
+      const interval = setInterval(() => {
+        loadVendorNotifications();
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -50,6 +61,24 @@ const Navbar = () => {
       }
     } catch (err) {
       console.error('Errore caricamento prodotti pendenti:', err);
+    }
+  };
+
+  const loadVendorNotifications = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/notifications`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVendorUnreadCount(data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error('Errore caricamento notifiche venditore:', err);
     }
   };
 
@@ -106,6 +135,11 @@ const Navbar = () => {
                   <span>
                     <i className="bi bi-graph-up"></i> Dashboard Venditore
                   </span>
+                  {vendorUnreadCount > 0 && (
+                    <Badge bg="danger" className="ms-2">
+                      {vendorUnreadCount}
+                    </Badge>
+                  )}
                 </Nav.Link>
                 <Nav.Link 
                   className="text-start d-lg-none w-100" 
@@ -295,6 +329,11 @@ const Navbar = () => {
                   <>
                     <NavDropdown.Item onClick={() => navigate('/vendor/dashboard')}>
                       <span><i className="bi bi-graph-up me-2"></i> Dashboard Venditore</span>
+                      {vendorUnreadCount > 0 && (
+                        <Badge bg="danger" className="ms-2">
+                          {vendorUnreadCount}
+                        </Badge>
+                      )}
                     </NavDropdown.Item>
                     <NavDropdown.Item onClick={() => navigate('/my-products')}>
                       <span><i className="bi bi-bag-check me-2"></i> I miei prodotti</span>

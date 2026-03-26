@@ -10,6 +10,7 @@ import {
   getPendingProductsCount,
   getSuggestedProducts,
   getOtherCategoriesProducts,
+  toggleProductVisibility,
 } from '../controllers/productController.js';
 import { protect, seller, admin } from '../middlewares/auth.js';
 import { cache } from '../middlewares/cache.js';
@@ -35,6 +36,7 @@ router.get('/pending/count', protect, admin, getPendingProductsCount);
 
 // Rotte protette (seller/admin)
 router.post('/', protect, seller, createProduct);
+router.patch('/:id/toggle-visibility', protect, seller, toggleProductVisibility);
 router.put('/:id', protect, seller, updateProduct);
 router.delete('/:id', protect, seller, deleteProduct);
 router.post('/:id/images', protect, seller, addProductImage);

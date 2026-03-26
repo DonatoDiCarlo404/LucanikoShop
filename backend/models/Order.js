@@ -202,6 +202,31 @@ const orderSchema = new mongoose.Schema(
         type: Date
       }
     },
+    // Tracking separato per ogni venditore in ordini multivendor
+    vendorShipments: [
+      {
+        vendorId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true
+        },
+        trackingNumber: {
+          type: String
+        },
+        carrier: {
+          type: String
+        },
+        status: {
+          type: String,
+          enum: ['pending', 'processing', 'shipped', 'delivered'],
+          default: 'pending'
+        },
+        updatedAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
     // Campi per gestione rimborsi
     isRefunded: {
       type: Boolean,
@@ -258,6 +283,7 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ buyer: 1, createdAt: -1 });
 orderSchema.index({ 'items.seller': 1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ 'vendorShipments.vendorId': 1 }); // Performance per tracking multivendor
 
 const Order = mongoose.model('Order', orderSchema);
 

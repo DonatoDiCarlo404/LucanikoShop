@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI, API_URL, productsAPI } from '../services/api';
+import { authAPI, API_URL, productsAPI, aggregateAPI } from '../services/api';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   Container,
@@ -525,10 +525,10 @@ const VendorProfile = () => {
       // Determina quale venditore stiamo visualizzando
       const vendorId = (user.role === 'admin' && sellerId) ? sellerId : user._id;
       
-      // Carica prodotti del venditore
+      // ⚡ PERFORMANCE: Carica solo i prodotti del venditore specifico
       let productsUrl = `${API_URL}/products/seller/my-products`;
       if (user.role === 'admin' && sellerId) {
-        productsUrl = `${API_URL}/admin/products`;
+        productsUrl = `${API_URL}/products/seller/my-products?vendorId=${sellerId}`;
       }
       
       const productsRes = await fetch(productsUrl, {
@@ -536,33 +536,29 @@ const VendorProfile = () => {
       });
       let vendorProducts = [];
       if (productsRes.ok) {
-        const allProducts = await productsRes.json();
-        vendorProducts = Array.isArray(allProducts)
-          ? (user.role === 'admin' && sellerId
-              ? allProducts.filter(p => p.seller?._id === vendorId || p.seller === vendorId)
-              : allProducts)
-          : [];
+        vendorProducts = await productsRes.json();
         setProducts(vendorProducts);
       }
 
-      // Carica tutte le recensioni dei prodotti del venditore
+      // ⚡ PERFORMANCE: Carica tutte le recensioni in una chiamata batch
       const productIds = vendorProducts.map(p => p._id);
       let allReviews = [];
-      for (const pid of productIds) {
-        const res = await fetch(`${API_URL}/reviews/${pid}`);
-        if (res.ok) {
-          const reviews = await res.json();
-          allReviews = allReviews.concat(reviews);
+      if (productIds.length > 0) {
+        try {
+          const { reviews: reviewsByProduct } = await aggregateAPI.getBatchReviews(productIds);
+          // Appiattisci l'oggetto in un array
+          allReviews = Object.values(reviewsByProduct).flat();
+        } catch (err) {
+          console.error('Errore caricamento recensioni batch:', err);
         }
       }
       const totalReviews = allReviews.length;
       const avgRating = totalReviews > 0 ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
 
-      // Carica ordini recenti
-      // Se admin visualizza altro venditore, usa endpoint admin per ottenere tutti gli ordini
+      // ⚡ PERFORMANCE: Carica solo gli ordini del venditore specifico
       let ordersUrl = `${API_URL}/orders/vendor/received`;
       if (user.role === 'admin' && sellerId) {
-        ordersUrl = `${API_URL}/admin/orders`;
+        ordersUrl = `${API_URL}/orders/vendor/received?vendorId=${sellerId}`;
       }
       
       const ordersRes = await fetch(ordersUrl, {
@@ -570,19 +566,7 @@ const VendorProfile = () => {
       });
       let ordersData = [];
       if (ordersRes.ok) {
-        const allOrders = await ordersRes.json();
-        
-        // Se admin visualizza altro venditore, filtra gli ordini per quel venditore
-        if (user.role === 'admin' && sellerId) {
-          ordersData = allOrders.filter(order => 
-            order.items.some(item => 
-              item.seller?._id === vendorId || item.seller === vendorId
-            )
-          );
-        } else {
-          ordersData = allOrders;
-        }
-        
+        ordersData = await ordersRes.json();
         setOrders(ordersData.slice(0, 5));
       }
 
@@ -1016,6 +1000,39 @@ const VendorProfile = () => {
       loadDiscounts();
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  // Toggle visibilità prodotto (nasconde/mostra dal marketplace)
+  const handleToggleVisibility = async (productId, currentVisibility) => {
+    try {
+      const action = currentVisibility ? 'nascondere' : 'mostrare';
+      const res = await fetch(`${API_URL}/products/${productId}/toggle-visibility`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Errore nell\'aggiornamento della visibilità');
+      }
+
+      const data = await res.json();
+      
+      // Aggiorna la lista prodotti localmente
+      setProducts(prevProducts => 
+        prevProducts.map(p => 
+          p._id === productId ? { ...p, isVisible: data.isVisible } : p
+        )
+      );
+
+      setSuccess(data.message);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -2055,7 +2072,15 @@ const VendorProfile = () => {
                                 onClick={() => navigate(`/products/${product._id}`)}
                                 title="Visualizza"
                               >
-                                <i className="bi bi-eye"></i>
+                                <i className="bi bi-eyeglasses"></i>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={product.isVisible === false ? "outline-secondary" : "outline-warning"}
+                                onClick={() => handleToggleVisibility(product._id, product.isVisible)}
+                                title={product.isVisible === false ? "Mostra nel marketplace" : "Nascondi dal marketplace"}
+                              >
+                                <i className={product.isVisible === false ? "bi bi-eye-slash" : "bi bi-eye"}></i>
                               </Button>
                               <Button
                                 size="sm"
