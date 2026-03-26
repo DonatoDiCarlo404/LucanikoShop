@@ -39,17 +39,8 @@ const ShopPage = () => {
     loadShopData();
   }, [sellerId]);
 
-  useEffect(() => {
-    if (shopData?.vendor?.businessCategories) {
-      loadSubcategories();
-    }
-  }, [shopData]);
-
-  useEffect(() => {
-    if (shopData?.products) {
-      loadAllReviews();
-    }
-  }, [shopData]);
+  // ⚡ LAZY LOADING: sottocategorie e recensioni caricate solo quando servono
+  // Non più in useEffect automatico per velocizzare caricamento iniziale
 
   // Reset pagina a 1 quando cambiano i filtri
   useEffect(() => {
@@ -76,9 +67,13 @@ const ShopPage = () => {
     }
   };
 
+  // ⚡ LAZY LOADING: carica sottocategorie solo quando l'utente apre il dropdown filtro
   const loadSubcategories = async () => {
+    // Se già caricate, non ricaricare
+    if (subcategories.length > 0) return;
+
     try {
-      const businessCategories = shopData.vendor.businessCategories;
+      const businessCategories = shopData?.vendor?.businessCategories;
       
       if (!businessCategories || businessCategories.length === 0) {
         setSubcategories([]);
@@ -112,7 +107,11 @@ const ShopPage = () => {
     }
   };
 
+  // ⚡ LAZY LOADING: carica recensioni solo quando l'utente apre il modale
   const loadAllReviews = async () => {
+    // Se già caricate, non ricaricare
+    if (allReviews.length > 0) return;
+
     if (!shopData?.products || shopData.products.length === 0) {
       setAllReviews([]);
       return;
@@ -373,7 +372,10 @@ const ShopPage = () => {
                     <Button 
                       variant="outline-primary" 
                       size="sm"
-                      onClick={() => setShowReviewsModal(true)}
+                      onClick={() => {
+                        setShowReviewsModal(true);
+                        loadAllReviews(); // ⚡ Carica solo quando necessario
+                      }}
                     >
                       Vedi tutte le recensioni
                     </Button>
@@ -496,12 +498,13 @@ const ShopPage = () => {
                 />
               </div>
             </div>
-            {/* Dropdown Sottocategorie */}
-            {subcategories.length > 0 && (
+            {/* Dropdown Sottocategorie - LAZY LOADING al primo click */}
+            {shopData?.vendor?.businessCategories?.length > 0 && (
               <div style={{ minWidth: 220 }}>
                 <select
                   className="form-select shadow"
                   value={selectedSubcategory}
+                  onFocus={loadSubcategories} // ⚡ Carica solo quando l'utente apre il dropdown
                   onChange={e => setSelectedSubcategory(e.target.value)}
                   style={{ 
                     fontSize: 15, 

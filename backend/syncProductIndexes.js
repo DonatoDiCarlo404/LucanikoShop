@@ -39,6 +39,7 @@ async function syncIndexes() {
     console.log('   • subcategory');
     console.log('   • hasActiveDiscount + isActive + isVisible + createdAt');
     console.log('   • seller + isActive + createdAt');
+    console.log('   • seller + isVisible + createdAt (⚡ NUOVO per ShopPage)');
 
     process.exit(0);
   } catch (error) {

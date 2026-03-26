@@ -528,8 +528,9 @@ export const getMyProducts = async (req, res) => {
       : req.user._id;
 
     // ⚡ PERFORMANCE: Escludi campi pesanti non necessari per la lista
+    // NOTA: customAttributes è necessario per visualizzare i nomi delle varianti
     const products = await Product.find({ seller: sellerId })
-      .select('-description -customAttributes -attributes')
+      .select('-description -attributes')
       .populate('category', 'name')
       .populate('subcategory', 'name')
       .populate('seller', 'businessName name slug')

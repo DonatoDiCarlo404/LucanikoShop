@@ -225,6 +225,8 @@ productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, createdAt
 
 // ⚡ PERFORMANCE: Compound index per query vendor-specific
 productSchema.index({ seller: 1, isActive: 1, createdAt: -1 });
+// ⚡ CRITICAL: Index per ShopPage (seller + isVisible + sort) - usato da getShopPageData
+productSchema.index({ seller: 1, isVisible: 1, createdAt: -1 });
 
 // Metodo virtuale per ottenere il prezzo corrente (scontato o originale)
 productSchema.virtual('currentPrice').get(function() {

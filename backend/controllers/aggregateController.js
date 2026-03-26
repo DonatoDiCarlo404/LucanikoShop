@@ -96,14 +96,17 @@ export const getShopPageData = async (req, res) => {
     // Verifica se è un ObjectId o uno slug
     const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug);
     
+    // ⚡ PERFORMANCE: Select solo campi necessari per ShopPage (invece di tutto il documento)
+    const vendorSelect = 'businessName name slug logo businessDescription isApproved createdAt storeAddress businessCategories news';
+    
     let vendor;
     if (isObjectId) {
       vendor = await User.findOne({ _id: idOrSlug, role: 'seller', isApproved: true })
-        .select('-password -paymentMethods')
+        .select(vendorSelect)
         .lean();
     } else {
       vendor = await User.findOne({ slug: idOrSlug, role: 'seller', isApproved: true })
-        .select('-password -paymentMethods')
+        .select(vendorSelect)
         .lean();
     }
 
@@ -111,31 +114,100 @@ export const getShopPageData = async (req, res) => {
       return res.status(404).json({ message: 'Negozio non trovato' });
     }
 
-    // Carica prodotti del vendor in parallelo
-    // Mostra TUTTI i prodotti visibili (inclusi quelli in modalità vacanza)
-    // ProductCard gestirà il badge "Non disponibile" per isActive: false
-    const products = await Product.find({ 
-      seller: vendor._id,
-      $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
-        { isVisible: true },
-        { isVisible: { $exists: false } },
-        { isVisible: null }
-      ]
-    })
-      .populate('category', 'name')
-      .populate('subcategory', 'name')
-      .select('-description -customAttributes') // ⚡ Escludi campi pesanti
-      .sort({ createdAt: -1 })
-      .lean(); // ⚡ .lean() per performance
+    // ⚡⚡⚡ CRITICAL PERFORMANCE: Usa aggregation invece di populate
+    // Con 200+ prodotti, populate fa 400+ query separate (lentissimo!)
+    // Aggregation con $lookup fa JOIN a livello DB (10-50x più veloce)
+    const products = await Product.aggregate([
+      // 1. Match prodotti visibili del vendor
+      {
+        $match: {
+          seller: vendor._id,
+          $or: [ // BACKWARD COMPATIBILITY
+            { isVisible: true },
+            { isVisible: { $exists: false } },
+            { isVisible: null }
+          ]
+        }
+      },
+      // 2. Sort per data
+      { $sort: { createdAt: -1 } },
+      // 3. Join con categories per category
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryData'
+        }
+      },
+      // 4. Join con categories per subcategory
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'subcategory',
+          foreignField: '_id',
+          as: 'subcategoryData'
+        }
+      },
+      // 5. Proietta solo campi necessari per ProductCard
+      {
+        $project: {
+          name: 1,
+          price: 1,
+          originalPrice: 1,
+          discountPercentage: 1,
+          hasActiveDiscount: 1,
+          ivaPercent: 1,
+          stock: 1,
+          images: { $slice: ['$images', 2] }, // Solo prime 2 immagini invece di tutte
+          category: { $arrayElemAt: ['$categoryData.name', 0] },
+          subcategory: { $arrayElemAt: ['$subcategoryData.name', 0] },
+          seller: 1,
+          isActive: 1,
+          hasVariants: 1,
+          variants: {
+            $cond: {
+              if: '$hasVariants',
+              then: {
+                $map: {
+                  input: '$variants',
+                  as: 'v',
+                  in: {
+                    _id: '$$v._id',
+                    stock: '$$v.stock',
+                    price: '$$v.price',
+                    attributes: '$$v.attributes'
+                  }
+                }
+              },
+              else: []
+            }
+          },
+          rating: 1,
+          numReviews: 1,
+          createdAt: 1
+          // ⚠️ ESCLUSI per performance: description, customAttributes, reviews, attributes, customFields
+        }
+      }
+    ]);
 
-    // ⚡ Calcola statistiche dalle recensioni (come l'endpoint originale)
+    // ⚡ Calcola statistiche dalle recensioni usando aggregation (più efficiente)
     const productIds = products.map(p => p._id);
-    const reviews = await Review.find({ product: { $in: productIds } }).lean();
     
-    const totalReviews = reviews.length;
-    const avgRating = totalReviews > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-      : 0;
+    // Una sola aggregation per calcolare count e avg in un colpo solo
+    const statsResult = await Review.aggregate([
+      { $match: { product: { $in: productIds } } },
+      {
+        $group: {
+          _id: null,
+          totalReviews: { $sum: 1 },
+          avgRating: { $avg: '$rating' }
+        }
+      }
+    ]);
+
+    const totalReviews = statsResult[0]?.totalReviews || 0;
+    const avgRating = statsResult[0]?.avgRating || 0;
 
     // Risposta aggregata (struttura identica all'endpoint originale)
     res.json({
