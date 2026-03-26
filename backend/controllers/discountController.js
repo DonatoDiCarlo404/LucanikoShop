@@ -420,66 +420,74 @@ export const getActiveDiscountedProducts = async (req, res) => {
     }
 
     const skip = (page - 1) * limit;
-    const total = await Product.countDocuments(query);
-    let products;
+    let products, total;
 
-    // ⚡ PERFORMANCE: Randomizzazione con $sample o sorting classico
+    // ⚡⚡⚡ PERFORMANCE: Usa $facet per count + data in una sola query
     if (sortBy === 'random') {
-      const sampleSize = Math.min(Number(limit), total);
+      const sampleSize = Math.min(Number(limit), 100); // Limit max per performance
       
       const pipeline = [
         { $match: query },
-        { $sample: { size: sampleSize } }, // ⚡ Random nativo MongoDB
+        // ⚡ $facet permette count e data in parallelo (1 query invece di 2)
         {
-          $lookup: {
-            from: 'users',
-            localField: 'seller',
-            foreignField: '_id',
-            as: 'seller'
-          }
-        },
-        { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: 'categories',
-            localField: 'category',
-            foreignField: '_id',
-            as: 'category'
-          }
-        },
-        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: 'categories',
-            localField: 'subcategory',
-            foreignField: '_id',
-            as: 'subcategory'
-          }
-        },
-        { $unwind: { path: '$subcategory', preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: 'discounts',
-            localField: 'activeDiscount',
-            foreignField: '_id',
-            as: 'activeDiscount'
-          }
-        },
-        { $unwind: { path: '$activeDiscount', preserveNullAndEmptyArrays: true } },
-        {
-          $project: {
-            'seller.password': 0,
-            'seller.paymentMethods': 0,
-            'description': 0,
-            'customAttributes': 0,
-            'attributes': 0
+          $facet: {
+            totalCount: [{ $count: 'count' }],
+            products: [
+              { $sample: { size: sampleSize } },
+              // ⚡ Project PRIMA dei lookup per escludere campi pesanti subito
+              {
+                $project: {
+                  description: 0,
+                  customAttributes: 0,
+                  attributes: 0,
+                  reviews: 0,
+                  images: { $slice: ['$images', 2] } // Solo prime 2 immagini
+                }
+              },
+              // ⚡ Lookup ottimizzati: solo campi necessari
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'seller',
+                  foreignField: '_id',
+                  pipeline: [
+                    { $project: { name: 1, businessName: 1, slug: 1 } } // Solo campi usati da ProductCard
+                  ],
+                  as: 'seller'
+                }
+              },
+              { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: 'categories',
+                  localField: 'category',
+                  foreignField: '_id',
+                  pipeline: [{ $project: { name: 1 } }],
+                  as: 'category'
+                }
+              },
+              { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: 'categories',
+                  localField: 'subcategory',
+                  foreignField: '_id',
+                  pipeline: [{ $project: { name: 1 } }],
+                  as: 'subcategory'
+                }
+              },
+              { $unwind: { path: '$subcategory', preserveNullAndEmptyArrays: true } }
+              // ⚡ RIMOSSO activeDiscount lookup: non usato da ProductCard!
+            ]
           }
         }
       ];
 
-      products = await Product.aggregate(pipeline);
+      const result = await Product.aggregate(pipeline);
+      total = result[0]?.totalCount[0]?.count || 0;
+      products = result[0]?.products || [];
     } else {
-      // Sorting deterministico
+      // ⚡ Sorting deterministico con aggregation per consistency e performance
       let sortOptions = {};
       if (sortBy === 'discount-desc') {
         sortOptions = { discountPercentage: -1 };
@@ -489,16 +497,63 @@ export const getActiveDiscountedProducts = async (req, res) => {
         sortOptions = { createdAt: -1 };
       }
 
-      products = await Product.find(query)
-        .select('-description -customAttributes -attributes')
-        .populate('seller', 'name businessName slug')
-        .populate('activeDiscount', 'name discountType discountValue endDate')
-        .populate('category', 'name')
-        .populate('subcategory', 'name')
-        .limit(Number(limit))
-        .skip(skip)
-        .sort(sortOptions)
-        .lean(); // ⚡ Plain objects per performance
+      // ⚡ Usa aggregation anche per sorting (più veloce di populate)
+      const pipeline = [
+        { $match: query },
+        {
+          $facet: {
+            totalCount: [{ $count: 'count' }],
+            products: [
+              { $sort: sortOptions },
+              { $skip: skip },
+              { $limit: Number(limit) },
+              {
+                $project: {
+                  description: 0,
+                  customAttributes: 0,
+                  attributes: 0,
+                  reviews: 0,
+                  images: { $slice: ['$images', 2] }
+                }
+              },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'seller',
+                  foreignField: '_id',
+                  pipeline: [{ $project: { name: 1, businessName: 1, slug: 1 } }],
+                  as: 'seller'
+                }
+              },
+              { $unwind: { path: '$seller', preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: 'categories',
+                  localField: 'category',
+                  foreignField: '_id',
+                  pipeline: [{ $project: { name: 1 } }],
+                  as: 'category'
+                }
+              },
+              { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+              {
+                $lookup: {
+                  from: 'categories',
+                  localField: 'subcategory',
+                  foreignField: '_id',
+                  pipeline: [{ $project: { name: 1 } }],
+                  as: 'subcategory'
+                }
+              },
+              { $unwind: { path: '$subcategory', preserveNullAndEmptyArrays: true } }
+            ]
+          }
+        }
+      ];
+
+      const result = await Product.aggregate(pipeline);
+      total = result[0]?.totalCount[0]?.count || 0;
+      products = result[0]?.products || [];
     }
 
     res.status(200).json({

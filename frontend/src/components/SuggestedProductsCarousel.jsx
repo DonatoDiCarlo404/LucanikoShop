@@ -18,8 +18,13 @@ const SuggestedProductsCarousel = ({ cartItems, sameVendor = true, title, titleC
   const { addToCart } = useCart();
   const { user } = useAuth();
 
+  // ⚡ LAZY LOADING: Ritarda il caricamento per dare priorità al prodotto principale
   useEffect(() => {
-    fetchSuggestedProducts();
+    const timer = setTimeout(() => {
+      fetchSuggestedProducts();
+    }, 800); // Ritardo 800ms per non bloccare il rendering iniziale della pagina
+    
+    return () => clearTimeout(timer);
   }, [cartItems]);
 
   // Controlla wishlist quando cambiano i prodotti o l'utente
