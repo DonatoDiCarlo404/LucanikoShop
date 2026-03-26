@@ -38,9 +38,14 @@ export const getProducts = async (req, res) => {
     timers.start = 0;
 
     // Costruisci query - mostra solo prodotti attivi e visibili
+    // BACKWARD COMPATIBILITY: isVisible undefined = true (prodotti esistenti prima del campo)
     let query = {
       isActive: true,
-      isVisible: true
+      $or: [
+        { isVisible: true },
+        { isVisible: { $exists: false } },
+        { isVisible: null }
+      ]
     };
 
     // Ricerca full-text
@@ -590,7 +595,11 @@ export const getSuggestedProducts = async (req, res) => {
     let query = {
       _id: { $nin: productObjectIds }, // Escludi prodotti già nel carrello
       isActive: true, // Solo prodotti attivi
-      isVisible: true // Solo prodotti visibili nel marketplace
+      $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
+        { isVisible: true },
+        { isVisible: { $exists: false } },
+        { isVisible: null }
+      ]
     };
 
     // Se cerchiamo prodotti dello stesso venditore
@@ -655,7 +664,11 @@ export const getOtherCategoriesProducts = async (req, res) => {
     // Costruisci query - escludi categoria specificata
     let query = {
       isActive: true,
-      isVisible: true
+      $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
+        { isVisible: true },
+        { isVisible: { $exists: false } },
+        { isVisible: null }
+      ]
     };
 
     // Se c'è una categoria da escludere, trova il suo ID

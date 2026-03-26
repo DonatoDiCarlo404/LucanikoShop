@@ -12,7 +12,11 @@ export const generateSitemap = async (req, res) => {
     // Recupera prodotti attivi e visibili
     const products = await Product.find({ 
       isActive: true,
-      isVisible: true 
+      $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
+        { isVisible: true },
+        { isVisible: { $exists: false } },
+        { isVisible: null }
+      ]
     })
       .select('_id name updatedAt')
       .lean();

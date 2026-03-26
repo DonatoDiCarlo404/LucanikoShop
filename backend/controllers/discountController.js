@@ -380,10 +380,20 @@ export const getActiveDiscountedProducts = async (req, res) => {
     let query = {
       hasActiveDiscount: true,
       isActive: true,
-      isVisible: true,
-      $or: [
-        { hasVariants: false, stock: { $gt: 0 } },
-        { hasVariants: true, 'variants.0': { $exists: true } }
+      $and: [
+        {
+          $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
+            { isVisible: true },
+            { isVisible: { $exists: false } },
+            { isVisible: null }
+          ]
+        },
+        {
+          $or: [
+            { hasVariants: false, stock: { $gt: 0 } },
+            { hasVariants: true, 'variants.0': { $exists: true } }
+          ]
+        }
       ]
     };
 

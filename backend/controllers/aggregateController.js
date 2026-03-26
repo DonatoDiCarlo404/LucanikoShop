@@ -116,7 +116,11 @@ export const getShopPageData = async (req, res) => {
     // ProductCard gestirà il badge "Non disponibile" per isActive: false
     const products = await Product.find({ 
       seller: vendor._id,
-      isVisible: true
+      $or: [ // BACKWARD COMPATIBILITY: isVisible undefined = true
+        { isVisible: true },
+        { isVisible: { $exists: false } },
+        { isVisible: null }
+      ]
     })
       .populate('category', 'name')
       .populate('subcategory', 'name')
