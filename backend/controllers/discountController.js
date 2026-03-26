@@ -437,11 +437,13 @@ export const getActiveDiscountedProducts = async (req, res) => {
               // ⚡ Project PRIMA dei lookup per escludere campi pesanti subito
               {
                 $project: {
+                  // Escludi solo campi effettivamente non usati da ProductCard
                   description: 0,
                   customAttributes: 0,
                   attributes: 0,
-                  reviews: 0,
-                  images: { $slice: ['$images', 2] } // Solo prime 2 immagini
+                  reviews: 0
+                  // ⚡ NON escludere images, name, price, stock, variants, ecc.
+                  // ProductCard li usa tutti!
                 }
               },
               // ⚡ Lookup ottimizzati: solo campi necessari
