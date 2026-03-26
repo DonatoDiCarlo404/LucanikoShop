@@ -160,8 +160,28 @@ export const getShopPageData = async (req, res) => {
           ivaPercent: 1,
           stock: 1,
           images: { $slice: ['$images', 2] }, // Solo prime 2 immagini invece di tutte
-          category: { $arrayElemAt: ['$categoryData.name', 0] },
-          subcategory: { $arrayElemAt: ['$subcategoryData.name', 0] },
+          // ⚡ IMPORTANTE: Restituisci oggetti completi per category/subcategory (non solo nomi)
+          // ShopPage.jsx usa p.subcategory._id per il filtro!
+          category: { 
+            $cond: {
+              if: { $gt: [{ $size: '$categoryData' }, 0] },
+              then: { 
+                _id: { $arrayElemAt: ['$categoryData._id', 0] },
+                name: { $arrayElemAt: ['$categoryData.name', 0] }
+              },
+              else: null
+            }
+          },
+          subcategory: { 
+            $cond: {
+              if: { $gt: [{ $size: '$subcategoryData' }, 0] },
+              then: { 
+                _id: { $arrayElemAt: ['$subcategoryData._id', 0] },
+                name: { $arrayElemAt: ['$subcategoryData.name', 0] }
+              },
+              else: null
+            }
+          },
           seller: 1,
           isActive: 1,
           hasVariants: 1,

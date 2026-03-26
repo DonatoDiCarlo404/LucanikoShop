@@ -181,10 +181,11 @@ const ShopPage = () => {
   // Normalizza i prodotti per assicurare compatibilità con ProductCard
   const normalizedProducts = products.map(p => ({
     ...p,
-    // Assicura che category sia un oggetto con name, o una stringa
-    category: typeof p.category === 'object' && p.category?.name 
-      ? p.category.name 
-      : (typeof p.category === 'string' ? p.category : 'N/A'),
+    // ⚡ IMPORTANTE: NON convertire category/subcategory in stringhe!
+    // Lascia gli oggetti { _id, name } come restituiti dall'aggregation
+    // ProductCard gestisce sia oggetti che stringhe, ma il filtro ha bisogno dell'_id
+    category: p.category, // Già normalizzato dal backend
+    subcategory: p.subcategory, // Già normalizzato dal backend
     // NON forzare price se non definito, lascialo undefined per permettere a ProductCard di usare variants
     price: typeof p.price === 'number' ? p.price : undefined,
     // Assicura che stock sia un numero
@@ -203,11 +204,14 @@ const ShopPage = () => {
   // Filtra prodotti per nome e sottocategoria
   const filteredProducts = normalizedProducts.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // ⚡ FIX: Converti entrambi in stringa per confronto affidabile
+    // p.subcategory può essere: null, undefined, stringa, o oggetto { _id, name }
     const matchesSubcategory = !selectedSubcategory || 
       (p.subcategory && 
        (typeof p.subcategory === 'object' 
-         ? p.subcategory._id === selectedSubcategory 
-         : p.subcategory === selectedSubcategory));
+         ? String(p.subcategory._id) === String(selectedSubcategory) 
+         : String(p.subcategory) === String(selectedSubcategory)));
     
     return matchesSearch && matchesSubcategory;
   });
