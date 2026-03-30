@@ -228,6 +228,8 @@ productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, category:
 productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, category: 1, subcategory: 1 });
 // ⚡ CRITICAL: Index per OffersAndDiscounts ordinato per % sconto
 productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, discountPercentage: -1 });
+// ⚡ CRITICAL: Index per ricerca nome in OffersAndDiscounts (supporta regex query)
+productSchema.index({ hasActiveDiscount: 1, isActive: 1, isVisible: 1, name: 1 });
 
 // ⚡ PERFORMANCE: Compound index per query vendor-specific
 productSchema.index({ seller: 1, isActive: 1, createdAt: -1 });

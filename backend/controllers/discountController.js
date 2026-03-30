@@ -1,5 +1,6 @@
 import { Discount, Product } from '../models/index.js';
 import { invalidateCache } from '../middlewares/cache.js';
+import mongoose from 'mongoose';
 
 // @desc    Crea un nuovo sconto
 // @route   POST /api/discounts
@@ -397,14 +398,24 @@ export const getActiveDiscountedProducts = async (req, res) => {
       ]
     };
 
-    // Filtro categoria
+    // Filtro categoria - ⚡ Converti esplicitamente a ObjectId
     if (category) {
-      query.category = category;
+      try {
+        query.category = new mongoose.Types.ObjectId(category);
+      } catch (err) {
+        // Se non è un ObjectId valido, usa la stringa (per retrocompatibilità)
+        query.category = category;
+      }
     }
 
-    // Filtro sottocategoria
+    // Filtro sottocategoria - ⚡ Converti esplicitamente a ObjectId
     if (subcategory) {
-      query.subcategory = subcategory;
+      try {
+        query.subcategory = new mongoose.Types.ObjectId(subcategory);
+      } catch (err) {
+        // Se non è un ObjectId valido, usa la stringa (per retrocompatibilità)
+        query.subcategory = subcategory;
+      }
     }
 
     // Filtro percentuale sconto
@@ -414,9 +425,11 @@ export const getActiveDiscountedProducts = async (req, res) => {
       if (maxDiscount) query.discountPercentage.$lte = Number(maxDiscount);
     }
 
-    // Ricerca full-text
+    // ⚡ Ricerca parziale case-insensitive (match anche stringhe parziali)
     if (search) {
-      query.$text = { $search: search };
+      // Escape caratteri speciali regex
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.name = { $regex: escapedSearch, $options: 'i' };
     }
 
     const skip = (page - 1) * limit;
@@ -492,11 +505,14 @@ export const getActiveDiscountedProducts = async (req, res) => {
       // ⚡ Sorting deterministico con aggregation per consistency e performance
       let sortOptions = {};
       if (sortBy === 'discount-desc') {
-        sortOptions = { discountPercentage: -1 };
+        sortOptions = { discountPercentage: -1, createdAt: -1 };
       } else if (sortBy === 'discount-asc') {
-        sortOptions = { discountPercentage: 1 };
+        sortOptions = { discountPercentage: 1, createdAt: -1 };
       } else if (sortBy === 'date-desc') {
-        sortOptions = { createdAt: -1 };
+        sortOptions = { createdAt: -1, _id: -1 };
+      } else {
+        // Fallback per altri casi
+        sortOptions = { createdAt: -1, _id: -1 };
       }
 
       // ⚡ Usa aggregation anche per sorting (più veloce di populate)
@@ -514,8 +530,8 @@ export const getActiveDiscountedProducts = async (req, res) => {
                   description: 0,
                   customAttributes: 0,
                   attributes: 0,
-                  reviews: 0,
-                  images: { $slice: ['$images', 2] }
+                  reviews: 0
+                  // ⚡ RIMOSSO images slice per evitare errori con null/undefined
                 }
               },
               {
@@ -567,6 +583,8 @@ export const getActiveDiscountedProducts = async (req, res) => {
       products
     });
   } catch (error) {
+    console.error('[DISCOUNTS ERROR]:', error.message);
+    
     res.status(400).json({
       success: false,
       message: error.message

@@ -30,19 +30,19 @@ const OffersAndDiscounts = () => {
     fetchCategories();
   }, []);
 
-  // Debounce per ricerca nome
+  // Debounce per ricerca nome - ⚡ 300ms per ricerca più reattiva
   useEffect(() => {
     const timer = setTimeout(() => {
       if (filters.name !== undefined) {
         fetchDiscountedProducts(true);
       }
-    }, 500);
+    }, 300); // ⚡ Ridotto da 500ms a 300ms per maggiore reattività
     return () => clearTimeout(timer);
     // eslint-disable-next-line
   }, [filters.name]);
 
-  const fetchDiscountedProducts = async (reset = false) => {
-    const currentPage = reset ? 1 : page;
+  const fetchDiscountedProducts = async (reset = false, pageOverride = null) => {
+    const currentPage = reset ? 1 : (pageOverride || page);
     reset ? setLoading(true) : setLoadingMore(true);
     
     try {
@@ -100,8 +100,10 @@ const OffersAndDiscounts = () => {
   };
 
   const handleLoadMore = () => {
-    setPage(p => p + 1);
-    fetchDiscountedProducts(false);
+    const nextPage = page + 1;
+    setPage(nextPage);
+    // ⚡ Passa nextPage esplicitamente per evitare race condition
+    fetchDiscountedProducts(false, nextPage);
   };
 
   const fetchCategories = async () => {
@@ -152,6 +154,19 @@ const OffersAndDiscounts = () => {
 
   const handleSortChange = (e) => {
     setFilters(f => ({ ...f, sortBy: e.target.value }));
+  };
+
+  // ⚡ Reset filtri: ripristina tutti i filtri ai valori di default
+  const handleResetFilters = () => {
+    setFilters({
+      name: '',
+      category: '',
+      subcategory: '',
+      discountRanges: [],
+      sortBy: 'random'
+    });
+    setSubcategories([]);
+    setPage(1);
   };
 
   return (
@@ -251,6 +266,20 @@ const OffersAndDiscounts = () => {
                     <option value="discount-asc">Sconto: Basso → Alto</option>
                     <option value="date-desc">Più Recenti</option>
                   </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="d-none d-md-block">&nbsp;</Form.Label>
+                  <Button 
+                    variant="outline-secondary" 
+                    onClick={handleResetFilters} 
+                    className="w-100"
+                    style={{ borderColor: '#6c757d', color: '#6c757d' }}
+                  >
+                    <i className="bi bi-x-octagon me-1"></i>
+                    Reset filtri
+                  </Button>
                 </Form.Group>
               </Col>
             </Row>
