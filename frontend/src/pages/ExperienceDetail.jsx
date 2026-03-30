@@ -23,6 +23,8 @@ const ExperienceDetail = () => {
   const [experience, setExperience] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [similarExperiences, setSimilarExperiences] = useState([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   // Carica esperienza
   const loadExperience = async () => {
@@ -47,6 +49,34 @@ const ExperienceDetail = () => {
   useEffect(() => {
     loadExperience();
   }, [id]);
+
+  // ⚡ LAZY LOADING: Carica esperienze simili con ritardo per non bloccare il rendering
+  useEffect(() => {
+    if (experience && experience._id) {
+      const timer = setTimeout(() => {
+        loadSimilarExperiences();
+      }, 500); // Ritardo 500ms per dare priorità al contenuto principale
+      
+      return () => clearTimeout(timer);
+    }
+  }, [experience]);
+
+  // Carica esperienze simili
+  const loadSimilarExperiences = async () => {
+    try {
+      setSimilarLoading(true);
+      const res = await fetch(`${API_URL}/experiences/${id}/similar`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setSimilarExperiences(data);
+      }
+    } catch (err) {
+      console.error('Errore caricamento esperienze simili:', err);
+    } finally {
+      setSimilarLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -264,14 +294,135 @@ const ExperienceDetail = () => {
         </Row>
 
         {/* ALTRE ESPERIENZE DELLA STESSA CATEGORIA */}
-        <Row className="mt-5">
-          <Col>
-            <hr style={{ margin: '3rem 0 2rem 0', border: 'none', borderTop: '2px solid #e0e0e0' }} />
-            <h3 style={{ color: '#004b75', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
-              Altre esperienze simili
-            </h3>
-          </Col>
-        </Row>
+        {similarExperiences.length > 0 && (
+          <>
+            <Row className="mt-5">
+              <Col>
+                <hr style={{ margin: '3rem 0 2rem 0', border: 'none', borderTop: '2px solid #e0e0e0' }} />
+                <h3 style={{ color: '#004b75', fontWeight: 700, marginBottom: '1.5rem', textAlign: 'center' }}>
+                  Altre esperienze simili
+                </h3>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col>
+                <div 
+                  style={{
+                    display: 'flex',
+                    gap: '1.5rem',
+                    overflowX: 'auto',
+                    paddingBottom: '1rem',
+                    scrollBehavior: 'smooth',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                  className="similar-experiences-carousel"
+                >
+                  {similarExperiences.map((exp) => (
+                    <Card
+                      key={exp._id}
+                      style={{
+                        minWidth: '280px',
+                        maxWidth: '280px',
+                        cursor: 'pointer',
+                        border: '1px solid #e0e0e0',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                      className="similar-experience-card"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        navigate(`/esperienze/${exp._id}`);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-5px)';
+                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                      }}
+                    >
+                      {exp.images && exp.images.length > 0 ? (
+                        <Card.Img
+                          variant="top"
+                          src={CloudinaryPresets.thumbnail(exp.images[0].url)}
+                          alt={exp.title}
+                          loading="lazy"
+                          style={{
+                            height: '180px',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            height: '180px',
+                            backgroundColor: '#f8f9fa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <i className="bi bi-calendar-event" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+                        </div>
+                      )}
+                      <Card.Body>
+                        <div className="mb-2">
+                          {exp.categories && exp.categories.length > 0 && (
+                            <Badge 
+                              style={{ 
+                                fontSize: '0.75rem', 
+                                padding: '4px 8px', 
+                                backgroundColor: '#00bf63',
+                                color: '#fff'
+                              }}
+                            >
+                              {exp.categories[0]}
+                            </Badge>
+                          )}
+                        </div>
+                        <Card.Title 
+                          style={{ 
+                            fontSize: '1rem', 
+                            fontWeight: 600,
+                            color: '#004b75',
+                            marginBottom: '0.5rem',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {exp.title}
+                        </Card.Title>
+                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                          <div className="mb-1">
+                            <i className="bi bi-building me-1" style={{ color: '#004b75' }}></i>
+                            {exp.company}
+                          </div>
+                          <div>
+                            <i className="bi bi-geo-alt me-1" style={{ color: '#00bf63' }}></i>
+                            {exp.city}
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  ))}
+                </div>
+              </Col>
+            </Row>
+          </>
+        )}
+
+        {similarLoading && (
+          <Row className="mt-4">
+            <Col className="text-center">
+              <Spinner animation="border" size="sm" variant="primary" />
+              <p className="mt-2 text-muted">Caricamento esperienze simili...</p>
+            </Col>
+          </Row>
+        )}
       </Container>
     </>
   );

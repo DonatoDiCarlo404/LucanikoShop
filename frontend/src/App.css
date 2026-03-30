@@ -233,3 +233,31 @@ h1, h2, h3, h4, h5, h6,
 .menu, .menu-link, .menu-item, .navbar, .nav, .nav-link, .dropdown-menu, .dropdown-item {
   font-family: 'Rubik', Arial, Helvetica, sans-serif !important;
 }
+
+/* ⚡ Carosello Esperienze Simili - Performance ottimizzata */
+.similar-experiences-carousel {
+  scrollbar-width: thin;
+  scrollbar-color: #00bf63 #f1f1f1;
+}
+
+.similar-experiences-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.similar-experiences-carousel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.similar-experiences-carousel::-webkit-scrollbar-thumb {
+  background: #00bf63;
+  border-radius: 10px;
+}
+
+.similar-experiences-carousel::-webkit-scrollbar-thumb:hover {
+  background: #004b75;
+}
+
+.similar-experience-card {
+  flex-shrink: 0;
+}

@@ -47,6 +47,40 @@ export const getExperienceById = async (req, res) => {
   }
 };
 
+// @desc    Get similar experiences (same categories)
+// @route   GET /api/experiences/:id/similar
+// @access  Public
+export const getSimilarExperiences = async (req, res) => {
+  try {
+    const experience = await Experience.findById(req.params.id).lean();
+    if (!experience) {
+      return res.status(404).json({ message: 'Esperienza non trovata' });
+    }
+
+    // Ottieni categorie dell'esperienza corrente
+    const categories = experience.categories || [];
+    
+    if (categories.length === 0) {
+      return res.json([]);
+    }
+
+    // ⚡ PERFORMANCE: Query ottimizzata con .lean() e limit
+    const similarExperiences = await Experience.find({
+      _id: { $ne: req.params.id }, // Escludi esperienza corrente
+      status: 'active',
+      categories: { $in: categories } // Almeno una categoria in comune
+    })
+      .sort({ createdAt: -1 })
+      .limit(6) // ⚡ Massimo 6 esperienze
+      .lean(); // ⚡ Plain objects per performance
+
+    res.json(similarExperiences);
+  } catch (error) {
+    console.error('Errore recupero esperienze simili:', error);
+    res.status(500).json({ message: 'Errore recupero esperienze simili' });
+  }
+};
+
 // @desc    Create new experience
 // @route   POST /api/experiences
 // @access  Private/Admin

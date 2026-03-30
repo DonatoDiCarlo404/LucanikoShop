@@ -6,6 +6,7 @@ import {
   getExperiences,
   getAllExperiences,
   getExperienceById,
+  getSimilarExperiences,
   createExperience,
   updateExperience,
   deleteExperience
@@ -13,6 +14,7 @@ import {
 
 // Route pubbliche (CACHE: 5 minuti per liste, 10 minuti per dettagli)
 router.get('/', cache(300), getExperiences);
+router.get('/:id/similar', cache(600), getSimilarExperiences); // ⚡ Cache 10 minuti - PRIMA di /:id
 router.get('/:id', cache(600), getExperienceById);
 
 // Route admin
